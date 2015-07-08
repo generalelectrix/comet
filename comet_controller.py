@@ -175,7 +175,7 @@ if __name__ == '__main__':
                       args=(control_queue,
                             command_queue,
                             enttec,
-                            config['dmx_addr']-1,
+                            config['dmx_addr'],
                             #debug_queue))
                             None))
     backend.start()
@@ -188,13 +188,16 @@ if __name__ == '__main__':
 
 try:
     while True:
-        time.sleep(1)
+        user_input = raw_input('Enter q to quit.')
+        if user_input == 'q':
+            break
         #try:
         #    print(debug_queue.get(block=False))
         #except Empty:
-        #   time.sleep(0.1)
+        #    time.sleep(0.1)
 
-except KeyboardInterrupt :
+finally:
+    command_queue.put('quit')
     print("\nClosing OSCServer.")
     osc_controller.receiver.close()
     print("Waiting for Server-thread to finish")

@@ -45,7 +45,7 @@ def step_forwards(comet, _):
     comet.trigger_state.step_forwards()
 
 def step_backwards(comet, _):
-    comet.trigger_state.step_forwards()
+    comet.trigger_state.step_backwards()
 
 def trigger_sound_active(comet, state):
     """bool"""

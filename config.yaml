@@ -1,5 +1,5 @@
-receive_host: 10.1.10.21
+receive_host: 169.254.252.173
 receive_port: 8000
-send_host: 10.1.10.15
+send_host: 169.254.157.51
 send_port: 9000
 dmx_addr: 1
