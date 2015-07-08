@@ -34,7 +34,7 @@ class Comet(object):
 
         self.reset = False
 
-    def _render(self, dmx_univ):
+    def render(self, dmx_univ):
         """Render this Comet into a DMX universe."""
 
         # render the shutter value
@@ -56,13 +56,12 @@ class Comet(object):
         else:
             return 75
 
-
     def _render_mspeed(self):
         return unit_float_to_range(0, 255, self.mirror_speed)
 
 
 def unit_float_to_range(start, end, value):
-    return int((start-end)*value)+start
+    return int((end-start)*value)+start
 
 # clever Python enum trick
 # Idle isn't a great name, as the comet could be in music trig or auto trig
