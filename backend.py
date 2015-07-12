@@ -23,7 +23,7 @@ class Patch(dict):
             log.info("Tried to unpatch nonexistant comet with ID {}".format(ID))
 
 
-def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=None, framerate=30.0):
+def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=None, debug=False, framerate=30.0):
 
     comet = Comet(comet_addr)
 
@@ -31,12 +31,16 @@ def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=
 
     render_period = 1.0 / framerate
 
+    debug = debug
+
     while True:
         # check for quit command
         try:
             command = command_queue.get(block=False)
             if command == 'quit':
                 return
+            elif command == 'debug on'
+                debug = True
         except Empty:
             pass
 
@@ -60,7 +64,7 @@ def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=
         now = time.time()
         framerate = 1.0 / (now - last_render)
         last_render = now
-        if debug_queue is not None:
+        if debug:
             debug_queue.put(dmx_port.dmx_frame[:5])
 
 

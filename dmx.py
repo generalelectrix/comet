@@ -19,8 +19,9 @@ LABELS = {
 
 packet_start = [START_VAL,
                 LABELS['TX_DMX_PACKET'],
-                DMX_SIZE & 0xFF,
-                (DMX_SIZE >> 8) & 0xFF,]
+                (DMX_SIZE + 1) & 0xFF,
+                ( (DMX_SIZE + 1) >> 8) & 0xFF,
+                0]
 packet_start = ''.join([chr(v) for v in packet_start])
 packet_end = chr(END_VAL)
 

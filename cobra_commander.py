@@ -171,13 +171,14 @@ if __name__ == '__main__':
     osc_controller = OSCController(config, control_queue)
     setup_controls(osc_controller)
 
+    debug = config["debug"]
+
     backend = Process(target=run_backend,
                       args=(control_queue,
                             command_queue,
                             enttec,
                             config['dmx_addr'],
-                            #debug_queue))
-                            None))
+                            debug_queue,))
     backend.start()
 
     # start the osc server
@@ -188,13 +189,16 @@ if __name__ == '__main__':
 
 try:
     while True:
-        user_input = raw_input('Enter q to quit.')
-        if user_input == 'q':
-            break
-        #try:
-        #    print(debug_queue.get(block=False))
-        #except Empty:
-        #    time.sleep(0.1)
+        if debug:
+            try:
+                print(debug_queue.get(block=False))
+            except Empty:
+                time.sleep(0.1)
+        else:
+            user_input = raw_input('Enter q to quit.')
+            if user_input == 'q':
+                break
+
 
 finally:
     command_queue.put('quit')
