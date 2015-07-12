@@ -31,16 +31,12 @@ def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=
 
     render_period = 1.0 / framerate
 
-    debug = debug
-
     while True:
         # check for quit command
         try:
             command = command_queue.get(block=False)
             if command == 'quit':
                 return
-            elif command == 'debug on'
-                debug = True
         except Empty:
             pass
 
