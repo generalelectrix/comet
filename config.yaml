@@ -1,6 +1,6 @@
-receive_host: 169.254.252.173
+receive_host: 0.0.0.0
 receive_port: 8000
 send_host: 169.254.157.51
 send_port: 9000
 dmx_addr: 1
-debug: False
+debug: True

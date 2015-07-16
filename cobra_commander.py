@@ -132,34 +132,18 @@ if __name__ == '__main__':
     # fire it up!
 
     import os
-    import dmx
+    import pyenttec as dmx
     from backend import run_backend
     import time
     import threading
+    import socket
 
-    print("Available enttec ports:")
-    ports = []
-    n_port = 0
-    for item in os.listdir('/dev/'):
-        if "tty.usbserial" in item:
-            print("{}: {}".format(n_port, item))
-            n_port += 1
-            ports.append(item)
-    # select an enttec:
-    if len(ports) == 0:
-        print("No enttec ports found.  Exiting.")
-        quit()
-    elif len(ports) == 1:
-        selection = 0
-    else:
-        selection = int(raw_input("Select a port:"))
+
     try:
-        port_name = ports[selection]
-    except IndexError:
-        "Invalid port selection, exiting."
+        enttec = dmx.select_port()
+    except dmx.EnttecPortOpenError as err:
+        print(err)
         quit()
-
-    enttec = dmx.DMXConnection('/dev/' + port_name)
 
     control_queue = Queue()
     command_queue = Queue()
@@ -168,6 +152,9 @@ if __name__ == '__main__':
     # initialize control streams
     with open('config.yaml') as config_file:
         config = yaml.safe_load(config_file)
+
+    config["receive host"] = socket.gethostbyname(socket.gethostname())
+    print("Using local IP address {}".format(config["receive host"]))
     osc_controller = OSCController(config, control_queue)
     setup_controls(osc_controller)
 
@@ -177,13 +164,14 @@ if __name__ == '__main__':
                       args=(control_queue,
                             command_queue,
                             enttec,
-                            config['dmx_addr'],
-                            debug_queue,))
+                            config['dmx_addr']-1,
+                            debug_queue,
+                            debug))
     backend.start()
 
     # start the osc server
     # Start OSCServer
-    print("\nStarting OSCServer.  Use ctrl-c to quit.")
+    print("\nStarting OSCServer.")
     st = threading.Thread( target = osc_controller.receiver.serve_forever )
     st.start()
 

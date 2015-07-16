@@ -61,7 +61,7 @@ def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=
         framerate = 1.0 / (now - last_render)
         last_render = now
         if debug:
-            debug_queue.put(dmx_port.dmx_frame[:5])
+            debug_queue.put(dmx_port.dmx_frame[comet_addr:comet_addr+5])
 
 
 
