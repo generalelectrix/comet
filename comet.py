@@ -51,7 +51,7 @@ class Comet(object):
             return 0
         elif self.shutter_sound_active:
             return 125
-        elif self.strobing and self.strobe_rate > 0.0:
+        elif self.strobing:
             return unit_float_to_range(151,255,self.strobe_rate)
         else:
             return 75
