@@ -39,7 +39,7 @@ class OSCController(object):
         else:
             def callback(_, payload):
                 processed = preprocessor(payload)
-                self.send_comet_control(comet_control, payload)
+                self.send_comet_control(comet_control, processed)
 
         self.control_groups[group][name] = callback
 
@@ -111,6 +111,9 @@ def ignore_all_but_1(value):
 def quadratic_fader(value):
     return value**2
 
+def quartic_fader(value):
+    return value**4
+
 def setup_controls(cont):
 
     # make groups
@@ -121,7 +124,7 @@ def setup_controls(cont):
     # add controls
     cont.create_simple_control('Controls', 'Shutter', controls.Shutter)
     cont.create_simple_control('Controls', 'Strobe', controls.Strobe)
-    cont.create_simple_control('Controls', 'StrobeRate', controls.StrobeRate, quadratic_fader)
+    cont.create_simple_control('Controls', 'StrobeRate', controls.StrobeRate, quartic_fader)
     cont.create_simple_control('Controls', 'Mspeed', controls.Mspeed)
     cont.create_simple_control('Controls', 'AutoStep', controls.AutoStep)
     cont.create_simple_control('Controls', 'AutoStepRate', controls.AutoStepRate)
