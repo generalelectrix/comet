@@ -124,7 +124,7 @@ def setup_controls(cont):
     # add controls
     cont.create_simple_control('Controls', 'Shutter', controls.Shutter)
     cont.create_simple_control('Controls', 'Strobe', controls.Strobe)
-    cont.create_simple_control('Controls', 'StrobeRate', controls.StrobeRate, quartic_fader)
+    cont.create_simple_control('Controls', 'StrobeRate', controls.StrobeRate, quadratic_fader)
     cont.create_simple_control('Controls', 'Mspeed', controls.Mspeed)
     cont.create_simple_control('Controls', 'AutoStep', controls.AutoStep)
     cont.create_simple_control('Controls', 'AutoStepRate', controls.AutoStepRate)
