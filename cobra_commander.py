@@ -9,6 +9,8 @@ import controls
 from multiprocessing import Process, Queue
 from Queue import Empty
 
+from 
+
 
 class OSCController(object):
     """Class to manage oversight of an external OSC control surface."""
@@ -82,10 +84,10 @@ class OSCController(object):
         except KeyError:
             logging.log("Unknown control {} in group {}"
                         .format(control_name, group_name))
-        control(addr, payload)
+        control(addr, payload[0])
 
     def send_comet_control(self, control, value):
-        self.control_queue.put((control, value[0]))
+        self.control_queue.put((control, value))
 
     def send_button_on(self, addr):
         msg = OSC.OSCMessage()
@@ -98,6 +100,12 @@ class OSCController(object):
         msg.setAddress(addr)
         msg.append(0.0)
         self.sender.send(msg)
+
+def unpack(val_list):
+    """Decorator to unpack only first arg of touchOSC messages."""
+    def wrapped_callback(callback):
+        callback(val_list[0])
+    return wrapped_callback
 
 def ignore_all_but_1(value):
     return value if value == 1.0 else None
