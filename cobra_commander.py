@@ -102,6 +102,9 @@ class OSCController(object):
 def ignore_all_but_1(value):
     return value if value == 1.0 else None
 
+def quadratic_fader(value):
+    return value**2
+
 def setup_controls(cont):
 
     # make groups
@@ -112,7 +115,7 @@ def setup_controls(cont):
     # add controls
     cont.create_simple_control('Controls', 'Shutter', controls.Shutter)
     cont.create_simple_control('Controls', 'Strobe', controls.Strobe)
-    cont.create_simple_control('Controls', 'StrobeRate', controls.StrobeRate)
+    cont.create_simple_control('Controls', 'StrobeRate', controls.StrobeRate, quadratic_fader)
     cont.create_simple_control('Controls', 'Mspeed', controls.Mspeed)
     cont.create_simple_control('Controls', 'AutoStep', controls.AutoStep)
     cont.create_simple_control('Controls', 'AutoStepRate', controls.AutoStepRate)
