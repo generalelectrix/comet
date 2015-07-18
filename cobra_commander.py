@@ -17,9 +17,9 @@ class OSCController(object):
         self.receiver.addMsgHandler('default', self.handle_osc_message)
 
         # use a closure to pass messages back to this instance
-        def handle_osc_message(addr, type_tags, payload, source_addr):
-            self.handle_osc_message(addr, type_tags, payload, source_addr)
-        self.receiver.addMsgHandler('default', handle_osc_message)
+        #def handle_osc_message(addr, type_tags, payload, source_addr):
+        #    self.handle_osc_message(addr, type_tags, payload, source_addr)
+        #self.receiver.addMsgHandler('default', handle_osc_message)
 
         self.sender = OSC.OSCClient()
         self.sender.connect( (config['send_host'], config['send_port']) )
@@ -62,7 +62,7 @@ class OSCController(object):
                         self.send_button_on(this_addr)
                     else:
                         self.send_button_off(this_addr)
-            self.send_comet_control(comet_control, [x-1])
+            self.send_comet_control(comet_control, x-1)
         self.control_groups[group][name] = callback
 
 
