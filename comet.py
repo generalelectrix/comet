@@ -1,4 +1,5 @@
 """Abstraction layer on top of the DMX interface to a Coemar Comet."""
+from utils import unit_float_to_range
 
 class Comet(object):
     """Better control abstraction for the Coemar Comet.
@@ -56,10 +57,6 @@ class Comet(object):
 
     def _render_mspeed(self):
         return unit_float_to_range(0, 255, self.mirror_speed)
-
-
-def unit_float_to_range(start, end, value):
-    return int((end-start)*value)+start
 
 # clever Python enum trick
 # Idle isn't a great name, as the comet could be in music trig or auto trig
