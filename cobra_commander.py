@@ -139,10 +139,7 @@ def setup_controls(cont):
 
     cont.create_simple_control('Debug', 'Reset', controls.Reset)
 
-
-if __name__ == '__main__':
-    # fire it up!
-
+def main():
     import os
     import pyenttec as dmx
     from backend import run_backend
@@ -187,26 +184,30 @@ if __name__ == '__main__':
     st = threading.Thread( target = osc_controller.receiver.serve_forever )
     st.start()
 
-try:
-    while True:
-        if debug:
-            try:
-                print(debug_queue.get(block=False))
-            except Empty:
-                time.sleep(0.1)
-        else:
-            user_input = raw_input('Enter q to quit.')
-            if user_input == 'q':
-                break
+    try:
+        while True:
+            if debug:
+                try:
+                    print(debug_queue.get(block=False))
+                except Empty:
+                    time.sleep(0.1)
+            else:
+                user_input = raw_input('Enter q to quit.')
+                if user_input == 'q':
+                    break
 
 
-finally:
-    command_queue.put('quit')
-    print("\nClosing OSCServer.")
-    osc_controller.receiver.close()
-    print("Waiting for Server-thread to finish")
-    st.join() ##!!!
-    print("Done")
+    finally:
+        command_queue.put('quit')
+        print("\nClosing OSCServer.")
+        osc_controller.receiver.close()
+        print("Waiting for Server-thread to finish")
+        st.join() ##!!!
+        print("Done")
+
+if __name__ == '__main__':
+    # fire it up!
+    main()
 
 
 
