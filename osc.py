@@ -4,7 +4,7 @@ import logging
 class OSCController(object):
     """Class to manage oversight of an external OSC control surface."""
     def __init__(self, config, control_queue):
-        self.receiver = OSC.OSCServer( (config['receive_host'], config['receive_port']) )
+        self.receiver = OSC.OSCServer((config['receive_host'], config['receive_port']))
         self.receiver.addMsgHandler('default', self.handle_osc_message)
 
         # use a closure to pass messages back to this instance
@@ -13,7 +13,7 @@ class OSCController(object):
         #self.receiver.addMsgHandler('default', handle_osc_message)
 
         self.sender = OSC.OSCClient()
-        self.sender.connect( (config['send_host'], config['send_port']) )
+        self.sender.connect((config['send_host'], config['send_port']))
         self.control_groups = {}
 
         self.control_queue = control_queue

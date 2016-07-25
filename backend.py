@@ -1,5 +1,7 @@
+from __future__ import print_function
+
 from comet import Comet
-import controls
+from controls import control_map
 
 from Queue import Empty
 
@@ -35,7 +37,11 @@ def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=
                 continue
 
             # if we got a UI event, process it
-            controls.control_map[control](comet, value)
+            try:
+                control_map[control](comet, value)
+            except KeyError:
+                print("Unknown control: '{}'".format(control))
+
         # time to render
         comet.render(dmx_port.dmx_frame)
         dmx_port.render()

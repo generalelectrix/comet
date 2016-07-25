@@ -1,3 +1,4 @@
+"""...WHO COMMANDS THE COMMANDER???"""
 from __future__ import print_function
 
 from backend import run_backend
@@ -37,17 +38,15 @@ def main():
     else:
         debug_queue = None
 
-    backend = Process(target=run_backend,
-                      args=(control_queue,
-                            command_queue,
-                            enttec,
-                            config['dmx_addr']-1,
-                            debug_queue))
+    backend = Process(
+        target=run_backend,
+        args=(control_queue, command_queue, enttec, config['dmx_addr']-1, debug_queue))
+
     backend.start()
 
     print("\nStarting OSCServer.")
-    st = threading.Thread( target = osc_controller.receiver.serve_forever )
-    st.start()
+    osc_thread = threading.Thread(target=osc_controller.receiver.serve_forever)
+    osc_thread.start()
 
     try:
         while True:
@@ -67,7 +66,7 @@ def main():
         print("\nClosing OSCServer.")
         osc_controller.receiver.close()
         print("Waiting for Server-thread to finish")
-        st.join() ##!!!
+        osc_thread.join() ##!!!
         print("Done")
 
 if __name__ == '__main__':

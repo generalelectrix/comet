@@ -86,7 +86,6 @@ def quadratic_fader(value):
 def quartic_fader(value):
     return value**4
 
-
 def setup_comet_controls(cont):
 
     # make groups
