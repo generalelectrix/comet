@@ -74,3 +74,40 @@ control_map = {
     TrigSoundActive: trigger_sound_active,
     AutoStep: auto_step,
     AutoStepRate: auto_step_rate,}
+
+
+# preprocessor helper functions
+def ignore_all_but_1(value):
+    return value if value == 1.0 else None
+
+def quadratic_fader(value):
+    return value**2
+
+def quartic_fader(value):
+    return value**4
+
+
+def setup_comet_controls(cont):
+
+    # make groups
+    cont.create_control_group('Controls')
+    cont.create_control_group('Music')
+    cont.create_control_group('Debug')
+
+    # add controls
+    cont.create_simple_control('Controls', 'Shutter', Shutter)
+    cont.create_simple_control('Controls', 'Strobe', Strobe)
+    cont.create_simple_control('Controls', 'StrobeRate', StrobeRate, quadratic_fader)
+    cont.create_simple_control('Controls', 'Mspeed', Mspeed)
+    cont.create_simple_control('Controls', 'AutoStep', AutoStep)
+    cont.create_simple_control('Controls', 'AutoStepRate', AutoStepRate)
+
+    cont.create_simple_control('Controls', 'StepBackwards', StepBackwards, ignore_all_but_1)
+    cont.create_simple_control('Controls', 'StepForwards', StepForwards, ignore_all_but_1)
+
+    cont.create_radio_button_control('Controls', 'SelectMacro', (10,1), SelectMacro)
+
+    cont.create_simple_control('Music', 'ShutterSoundActive', ShutterSoundActive)
+    cont.create_simple_control('Music', 'TrigSoundActive', TrigSoundActive)
+
+    cont.create_simple_control('Debug', 'Reset', Reset)
