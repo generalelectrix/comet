@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from backend import run_backend
-from controls import setup_controls
+from comet_controls import setup_controls
 from multiprocessing import Process, Queue
 from osc import OSCController
 import pyenttec as dmx
