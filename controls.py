@@ -1,3 +1,4 @@
+from utils import ignore_all_but_1, quadratic_fader
 
 (Shutter,
  Strobe,
@@ -76,17 +77,7 @@ control_map = {
     AutoStepRate: auto_step_rate,}
 
 
-# preprocessor helper functions
-def ignore_all_but_1(value):
-    return value if value == 1.0 else None
-
-def quadratic_fader(value):
-    return value**2
-
-def quartic_fader(value):
-    return value**4
-
-def setup_comet_controls(cont):
+def setup_controls(cont):
 
     # make groups
     cont.create_control_group('Controls')

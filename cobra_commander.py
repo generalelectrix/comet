@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from backend import run_backend
-from controls import setup_comet_controls
+from controls import setup_controls
 from multiprocessing import Process, Queue
 from osc import OSCController
 import pyenttec as dmx
@@ -30,7 +30,7 @@ def main():
     config["receive host"] = socket.gethostbyname(socket.gethostname())
     print("Using local IP address {}".format(config["receive host"]))
     osc_controller = OSCController(config, control_queue)
-    setup_comet_controls(osc_controller)
+    setup_controls(osc_controller)
 
     debug = config["debug"]
     if debug:
