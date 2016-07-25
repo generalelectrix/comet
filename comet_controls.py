@@ -101,3 +101,4 @@ def setup_controls(cont):
     cont.create_simple_control('Music', 'TrigSoundActive', TrigSoundActive)
 
     cont.create_simple_control('Debug', 'Reset', Reset)
+
