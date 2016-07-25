@@ -1,27 +1,9 @@
 from comet import Comet
 import controls
-import logging as log
 
 from Queue import Empty
 
 import time
-
-class Patch(dict):
-    """Totally overkill and unused."""
-    def __init__(self):
-        super(Patch, self).__init__()
-        self.n_patched = 0
-
-    def patch(self, dmx_addr):
-        self[self.n_patched] = Comet(dmx_addr)
-        self.n_patched += 1
-
-    def unpatch(self, ID):
-        try:
-            del self[ID]
-        except KeyError:
-            log.info("Tried to unpatch nonexistant comet with ID {}".format(ID))
-
 
 def run_backend(control_queue, command_queue, dmx_port, comet_addr, debug_queue=None, debug=False, framerate=30.0):
 
