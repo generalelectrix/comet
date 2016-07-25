@@ -1,7 +1,5 @@
 """Abstraction layer on top of the DMX interface to a Coemar Comet."""
 
-from functools import wraps
-
 class Comet(object):
     """Better control abstraction for the Coemar Comet.
 
@@ -52,7 +50,7 @@ class Comet(object):
         elif self.shutter_sound_active:
             return 125
         elif self.strobing:
-            return unit_float_to_range(151,255,self.strobe_rate)
+            return unit_float_to_range(151, 255, self.strobe_rate)
         else:
             return 75
 
@@ -67,8 +65,8 @@ def unit_float_to_range(start, end, value):
 # Idle isn't a great name, as the comet could be in music trig or auto trig
 # the point here is that the Idle state is any state that implies a DMX
 # value outside the take a step ranges
-(Idle, StepForwards, StepBackwards) = range(3)
-(Forwards, Backwards) = range(2)
+Idle, StepForwards, StepBackwards = range(3)
+Forwards, Backwards = range(2)
 
 class TriggerState(object):
     """Helper object to contain Comet trigger state.
