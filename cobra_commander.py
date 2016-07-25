@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import sys
 import yaml
 import OSC
 import logging
@@ -8,6 +7,12 @@ import controls
 
 from multiprocessing import Process, Queue
 from Queue import Empty
+
+import pyenttec as dmx
+from backend import run_backend
+import time
+import threading
+import socket
 
 
 class OSCController(object):
@@ -31,19 +36,19 @@ class OSCController(object):
         if name not in self.control_groups:
             self.control_groups[name] = {}
 
-    def create_simple_control(self, group, name, comet_control, preprocessor=None):
+    def create_simple_control(self, group, name, control, preprocessor=None):
         """Create a pure osc listener, with no talkback."""
         if preprocessor is None:
             def callback(_, payload):
-                self.send_comet_control(comet_control, payload)
+                self.send_control(control, payload)
         else:
             def callback(_, payload):
                 processed = preprocessor(payload)
-                self.send_comet_control(comet_control, processed)
+                self.send_control(control, processed)
 
         self.control_groups[group][name] = callback
 
-    def create_radio_button_control(self, group, name, shape, comet_control):
+    def create_radio_button_control(self, group, name, shape, control):
         """Create a radio button array control.
 
         This has been special-cased for present purposes.
@@ -62,7 +67,7 @@ class OSCController(object):
                         self.send_button_on(this_addr)
                     else:
                         self.send_button_off(this_addr)
-            self.send_comet_control(comet_control, x-1)
+            self.send_control(control, x-1)
         self.control_groups[group][name] = callback
 
 
@@ -84,7 +89,7 @@ class OSCController(object):
                         .format(control_name, group_name))
         control(addr, payload[0])
 
-    def send_comet_control(self, control, value):
+    def send_control(self, control, value):
         self.control_queue.put((control, value))
 
     def send_button_on(self, addr):
@@ -98,12 +103,6 @@ class OSCController(object):
         msg.setAddress(addr)
         msg.append(0.0)
         self.sender.send(msg)
-
-def unpack(val_list):
-    """Decorator to unpack only first arg of touchOSC messages."""
-    def wrapped_callback(callback):
-        callback(val_list[0])
-    return wrapped_callback
 
 def ignore_all_but_1(value):
     return value if value == 1.0 else None
@@ -140,13 +139,6 @@ def setup_controls(cont):
     cont.create_simple_control('Debug', 'Reset', controls.Reset)
 
 def main():
-    import os
-    import pyenttec as dmx
-    from backend import run_backend
-    import time
-    import threading
-    import socket
-
 
     try:
         enttec = dmx.select_port()
@@ -156,7 +148,6 @@ def main():
 
     control_queue = Queue()
     command_queue = Queue()
-    debug_queue = Queue()
 
     # initialize control streams
     with open('config.yaml') as config_file:
@@ -168,18 +159,19 @@ def main():
     setup_controls(osc_controller)
 
     debug = config["debug"]
+    if debug:
+        debug_queue = Queue()
+    else:
+        debug_queue = None
 
     backend = Process(target=run_backend,
                       args=(control_queue,
                             command_queue,
                             enttec,
                             config['dmx_addr']-1,
-                            debug_queue,
-                            debug))
+                            debug_queue))
     backend.start()
 
-    # start the osc server
-    # Start OSCServer
     print("\nStarting OSCServer.")
     st = threading.Thread( target = osc_controller.receiver.serve_forever )
     st.start()
