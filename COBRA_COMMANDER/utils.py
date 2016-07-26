@@ -10,3 +10,23 @@ def quadratic_fader(value):
 
 def quartic_fader(value):
     return value**4
+
+def unipolar_fader_with_detent(value):
+    """Coerce the bottom 5% of the fader range to be a hard 0, and rescale the rest."""
+    if value < 0.05:
+        return 0.0
+    else:
+        return (value - 0.05) / 0.95
+
+def bipolar_fader_with_detent(value):
+    """Coerce the center 5% of the fader range to be a hard 0, and rescale the rest."""
+    if value < 0.0:
+        if value > -0.05:
+            return 0.0
+        else:
+            return (value + 0.05) / 0.95
+    else:
+        if value < 0.05:
+            return 0.0
+        else:
+            return (value - 0.05) / 0.95
