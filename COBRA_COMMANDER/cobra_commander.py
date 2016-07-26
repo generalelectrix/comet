@@ -1,6 +1,6 @@
 """...WHO COMMANDS THE COMMANDER???"""
 
-from logging import log
+import logging as log
 from show_loop import run_show, ControlError
 from comet import (
     Comet,
@@ -20,11 +20,15 @@ import yaml
 
 def main():
 
+    log.basicConfig(level=log.DEBUG)
+
+    log.info("Opening DMX port.")
     try:
         dmx_port = dmx.select_port()
     except dmx.EnttecPortOpenError as err:
         log.error(err)
         quit()
+    log.info("Opened DMX port.")
 
     control_queue = Queue()
 
@@ -42,10 +46,12 @@ def main():
         fixture = Comet(int(config['dmx_addr']))
         setup_controls = setup_comet_controls
         control_map = comet_control_map
+        log.info("Controlling a Comet.")
     elif fixture_choice == 'venus':
         fixture = Venus(int(config['dmx_addr']))
         setup_controls = setup_venus_controls
         control_map = venus_control_map
+        log.info("Controlling a Venus.")
     else:
         log.error("Unknown fixture type: {}".format(fixture_choice))
         return
@@ -65,7 +71,7 @@ def main():
             except KeyError:
                 raise ControlError("Unknown control: '{}'".format(control))
 
-    log.info("\nStarting OSCServer.")
+    log.info("Starting OSC server.")
     osc_thread = threading.Thread(target=osc_controller.receiver.serve_forever)
     osc_thread.start()
 
@@ -82,14 +88,13 @@ def main():
             quit_check=lambda: False,
             update_interval=int(config['update_interval']),
             report_framerate=config['debug']
-            )
-
+        )
     finally:
-        log.info("\nClosing OSCServer.")
+        log.info("Closing OSCServer.")
         osc_controller.receiver.close()
-        log.info("Waiting for Server-thread to finish")
-        osc_thread.join() ##!!!
-        log.info("Done")
+        log.info("Waiting for server thread to finish.")
+        osc_thread.join()
+        log.info("Done.")
 
 if __name__ == '__main__':
     # fire it up!

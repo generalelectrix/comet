@@ -52,6 +52,7 @@ class OSCController(object):
         self.control_groups[group][name] = callback
 
     def handle_osc_message(self, addr, type_tags, payload, source_addr):
+        logging.info('Receiving from {}'.format(addr))
         elements = addr.split('/')
         if len(elements) < 3:
             return
@@ -60,13 +61,13 @@ class OSCController(object):
         try:
             group = self.control_groups[group_name]
         except KeyError:
-            logging.log("Unknown control group: {}".format(group_name))
+            logging.error("Unknown control group: {}".format(group_name))
             return
         try:
             control = group[control_name]
         except KeyError:
-            logging.log("Unknown control {} in group {}"
-                        .format(control_name, group_name))
+            logging.error(
+                "Unknown control {} in group {}".format(control_name, group_name))
         control(addr, payload[0])
 
     def send_control(self, control, value):

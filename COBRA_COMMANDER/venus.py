@@ -1,6 +1,7 @@
 """Abstraction layer on top of the DMX interface to the RA venus."""
 from utils import (
     bipolar_fader_with_detent, unipolar_fader_with_detent, unit_float_to_range)
+import logging
 
 def bipolar_to_dir_and_val(bipolar_val):
     if bipolar_val < 0.0:
@@ -40,6 +41,8 @@ class Venus(object):
             col_val,
             lamp_val)
 
+        #logging.debug("{}".format(vals))
+
         for offset, val in enumerate(vals):
             dmx_univ[dmx_addr+offset] = val
 
@@ -70,7 +73,7 @@ Lamp on/off is split at 127 (high is on)
  CradleMotion,
  HeadRotation,
  ColorRotation,
- LampOn) = range(4)
+ LampOn) = range(5)
 
 # control actions
 def base_rotation(venus, speed):
