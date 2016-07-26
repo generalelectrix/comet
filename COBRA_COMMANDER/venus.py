@@ -18,3 +18,29 @@ class Venus(object):
         """Render this Comet into a DMX universe."""
         #TODO
         pass
+
+"""
+What do you think?
+
+======================================
+
+DMX profile Venus
+
+Motor 1 is base motor
+Motor 2 is crescent translate motor
+Motor 3 is saucer off axis rotate motor
+Motor 4 is color carousel
+
+Motor direction is split at 127
+Lamp on/off is split at 127 (high is on)
+
+1 - Motor 1 Dir
+2 - Motor 1 Speed
+3 - Motor 2 Dir
+4 - Motor 2 Speed
+5 - Motor 3 Dir
+6 - Motor 3 Speed
+7 - Motor 4 Dir
+8 - Motor 4 Speed
+9 - Lamp Control
+"""
