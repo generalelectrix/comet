@@ -2,8 +2,14 @@
 
 from logging import log
 from show_loop import run_show, ControlError
-from comet import Comet
-from comet_controls import setup_controls, control_map
+from comet import (
+    Comet,
+    setup_controls as setup_comet_controls,
+    control_map as comet_control_map)
+from venus import (
+    Venus,
+    setup_controls as setup_venus_controls,
+    control_map as venus_control_map)
 from osc import OSCController
 import pyenttec as dmx
 from multiprocessing import Queue
@@ -29,9 +35,22 @@ def main():
     config["receive host"] = socket.gethostbyname(socket.gethostname())
     log.info("Using local IP address {}".format(config["receive host"]))
     osc_controller = OSCController(config, control_queue)
-    setup_controls(osc_controller)
 
-    fixture = Comet(int(config['dmx_addr']))
+    # which italian hot rod you like?
+    fixture_choice = config['fixture']
+    if fixture_choice == 'comet':
+        fixture = Comet(int(config['dmx_addr']))
+        setup_controls = setup_comet_controls
+        control_map = comet_control_map
+    elif fixture_choice == 'venus':
+        fixture = Venus(int(config['dmx_addr']))
+        setup_controls = setup_venus_controls
+        control_map = venus_control_map
+    else:
+        log.error("Unknown fixture type: {}".format(fixture_choice))
+        return
+
+    setup_controls(osc_controller)
 
     def process_control_event(timeout):
         """Drain the control queue and apply the action."""
