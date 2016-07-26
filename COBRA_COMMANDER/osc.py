@@ -7,11 +7,6 @@ class OSCController(object):
         self.receiver = OSC.OSCServer((config['receive_host'], config['receive_port']))
         self.receiver.addMsgHandler('default', self.handle_osc_message)
 
-        # use a closure to pass messages back to this instance
-        #def handle_osc_message(addr, type_tags, payload, source_addr):
-        #    self.handle_osc_message(addr, type_tags, payload, source_addr)
-        #self.receiver.addMsgHandler('default', handle_osc_message)
-
         self.sender = OSC.OSCClient()
         self.sender.connect((config['send_host'], config['send_port']))
         self.control_groups = {}
