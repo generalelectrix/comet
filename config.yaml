@@ -4,3 +4,4 @@ send_host: 169.254.157.51
 send_port: 9000
 dmx_addr: 1
 debug: False
+update_interval: 20

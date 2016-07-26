@@ -51,7 +51,6 @@ class OSCController(object):
             self.send_control(control, x-1)
         self.control_groups[group][name] = callback
 
-
     def handle_osc_message(self, addr, type_tags, payload, source_addr):
         elements = addr.split('/')
         if len(elements) < 3:
