@@ -83,7 +83,7 @@ def main():
         run_show(
             render_action=render_action,
             control_action=process_control_event,
-            update_action=lambda _: None,
+            update_action=lambda timestep: fixture.update(timestep),
             retrieve_show_state=lambda: fixture,
             quit_check=lambda: False,
             update_interval=int(config['update_interval']),

@@ -52,7 +52,7 @@ class OSCController(object):
         self.control_groups[group][name] = callback
 
     def handle_osc_message(self, addr, type_tags, payload, source_addr):
-        logging.info('Receiving from {}'.format(addr))
+        #logging.debug("Receive from {}".format(addr))
         elements = addr.split('/')
         if len(elements) < 3:
             return

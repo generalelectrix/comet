@@ -1,6 +1,9 @@
 """Abstraction layer on top of the DMX interface to the RA venus."""
 from utils import (
-    bipolar_fader_with_detent, unipolar_fader_with_detent, unit_float_to_range)
+    bipolar_fader_with_detent,
+    unipolar_fader_with_detent,
+    unit_float_to_range,
+    RampingParameter)
 import logging
 
 def bipolar_to_dir_and_val(bipolar_val):
@@ -15,20 +18,27 @@ class Venus(object):
         """Create a new wrapper for a Venus."""
         self.dmx_addr = dmx_addr - 1
 
-        self.base_rotation = 0.0
-        self.cradle_motion = 0.0
-        self.head_rotation = 0.0
-        self.color_rotation = 0.0
+        self.base_rotation = RampingParameter()
+        self.cradle_motion = RampingParameter()
+        self.head_rotation = RampingParameter()
+        self.color_rotation = RampingParameter()
+
         self.lamp_on = False
+
+    def update(self, timestep):
+        self.base_rotation.update(timestep)
+        self.cradle_motion.update(timestep)
+        self.head_rotation.update(timestep)
+        self.color_rotation.update(timestep)
 
     def render(self, dmx_univ):
         """Render this Comet into a DMX universe."""
         dmx_addr = self.dmx_addr
 
-        base_dir, base_val = bipolar_to_dir_and_val(self.base_rotation)
-        cradle_val = unit_float_to_range(0, 255, self.cradle_motion)
-        head_dir, head_val = bipolar_to_dir_and_val(self.head_rotation)
-        col_dir, col_val = bipolar_to_dir_and_val(self.color_rotation)
+        base_dir, base_val = bipolar_to_dir_and_val(self.base_rotation.current)
+        cradle_val = unit_float_to_range(0, 255, self.cradle_motion.current)
+        head_dir, head_val = bipolar_to_dir_and_val(self.head_rotation.current)
+        col_dir, col_val = bipolar_to_dir_and_val(self.color_rotation.current)
         lamp_val = 255 if self.lamp_on else 0
 
         vals = (
@@ -73,20 +83,20 @@ Lamp on/off is split at 127 (high is on)
  CradleMotion,
  HeadRotation,
  ColorRotation,
- LampOn) = range(5)
+ LampControl) = range(5)
 
 # control actions
 def base_rotation(venus, speed):
-    venus.base_rotation = speed
+    venus.base_rotation.target = speed
 
 def cradle_motion(venus, speed):
-    venus.cradle_motion = speed
+    venus.cradle_motion.target = speed
 
 def head_rotation(venus, speed):
-    venus.head_rotation = speed
+    venus.head_rotation.target = speed
 
 def color_rotation(venus, speed):
-    venus.color_rotation = speed
+    venus.color_rotation.target = speed
 
 def lamp_on(venus, state):
     if state == 0.0:
@@ -100,7 +110,7 @@ control_map = {
     CradleMotion: cradle_motion,
     HeadRotation: head_rotation,
     ColorRotation: color_rotation,
-    LampOn: lamp_on}
+    LampControl: lamp_on}
 
 controls_page = 'Controls'
 lamp_page = 'Lamp'
@@ -121,5 +131,5 @@ def setup_controls(cont):
     cont.create_simple_control(
         controls_page, 'ColorRotation', ColorRotation, bipolar_fader_with_detent)
     cont.create_simple_control(
-        lamp_page, 'LampOn', LampOn)
+        lamp_page, 'LampControl', LampControl)
 

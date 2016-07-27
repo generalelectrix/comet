@@ -33,6 +33,9 @@ class Comet(object):
 
         self.reset = False
 
+    def update(self, timestep):
+        pass
+
     def render(self, dmx_univ):
         """Render this Comet into a DMX universe."""
 
