@@ -31,10 +31,19 @@ class Lumasphere (object):
     5: strobe 1 rate
     6: strobe 2 intensity
     7: strobe 2 rate
+
+    There are also two lamp dimmer channels, which are conventionally set to be
+    the two channels after the lumasphere's built-in controller:
+    8: lamp 1 dimmer
+    9: lamp 2 dimmer
     """
 
     def __init__(self, dmx_addr):
         self.dmx_addr = dmx_addr - 1
+
+        # unipolar
+        self.lamp_1_intensity = 0.0
+        self.lamp_2_intensity = 0.0
 
         # bipolar
         self.ball_rotation = RampingParameter()
@@ -85,8 +94,9 @@ class Lumasphere (object):
             self.strobe_1_state, self.strobe_1_intensity, self.strobe_1_rate)
         dmx_univ[start+5:start+7] = _render_strobe(
             self.strobe_2_state, self.strobe_2_intensity, self.strobe_2_rate)
-        log.info(dmx_univ[start:start+7])
-
+        dmx_univ[start+7] = unit_float_to_range(0, 255, self.lamp_1_intensity)
+        dmx_univ[start+8] = unit_float_to_range(0, 255, self.lamp_2_intensity)
+        log.info(dmx_univ[start:start+9])
 
 
 def build_lumasphere_controls():
@@ -105,6 +115,8 @@ def build_lumasphere_controls():
     def ball_rotation(fixture, value):
         fixture.ball_rotation.target = bipolar_fader_with_detent(value) * 0.5 # let's not go too fast, OK?
 
+    reflective_control('lamp_1_intensity', preprocessor=unipolar_fader_with_detent)
+    reflective_control('lamp_2_intensity', preprocessor=unipolar_fader_with_detent)
     control_map['ball_rotation'] = ball_rotation
     reflective_control('ball_start', preprocessor=bool)
     reflective_control('color_rotation', preprocessor=unipolar_fader_with_detent)
