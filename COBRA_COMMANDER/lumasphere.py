@@ -1,5 +1,10 @@
 
-from utils import unit_float_to_range, bipolar_fader_with_detent, unipolar_fader_with_detent
+from utils import (
+    unit_float_to_range,
+    bipolar_fader_with_detent,
+    unipolar_fader_with_detent,
+    RampingParameter)
+import logging as log
 
 def _render_strobe(state, intensity, rate):
     if state:
@@ -29,10 +34,10 @@ class Lumasphere (object):
     """
 
     def __init__(self, dmx_addr):
-        self.dmx_addr = dmx_addr
+        self.dmx_addr = dmx_addr - 1
 
         # bipolar
-        self.ball_rotation = 0.0
+        self.ball_rotation = RampingParameter()
 
         self.ball_start = False
 
@@ -50,11 +55,12 @@ class Lumasphere (object):
         self.strobe_2_rate = 0.0
 
     def update(self, timestep):
-        pass
+        self.ball_rotation.update(timestep)
 
     def _render_ball_rotation(self):
-        speed = abs(self.ball_rotation)
-        direction = speed >= 0.0
+        val = self.ball_rotation.current
+        speed = abs(val)
+        direction = val >= 0.0
         if self.ball_start and speed < 0.2:
             speed = 0.2
         dmx_speed = unit_float_to_range(0, 255, speed)
@@ -79,6 +85,9 @@ class Lumasphere (object):
             self.strobe_1_state, self.strobe_1_intensity, self.strobe_1_rate)
         dmx_univ[start+5:start+7] = _render_strobe(
             self.strobe_2_state, self.strobe_2_intensity, self.strobe_2_rate)
+        log.info(dmx_univ[start:start+7])
+
+
 
 def build_lumasphere_controls():
     """Create the lumasphere control mappings, returning the control map and setup_controls function."""
@@ -93,7 +102,10 @@ def build_lumasphere_controls():
             control = lambda fixture, value: setattr(fixture, name, value)
         control_map[name] = control
 
-    reflective_control('ball_rotation', preprocessor=bipolar_fader_with_detent)
+    def ball_rotation(fixture, value):
+        fixture.ball_rotation.target = bipolar_fader_with_detent(value) * 0.5 # let's not go too fast, OK?
+
+    control_map['ball_rotation'] = ball_rotation
     reflective_control('ball_start', preprocessor=bool)
     reflective_control('color_rotation', preprocessor=unipolar_fader_with_detent)
     reflective_control('color_start', preprocessor=bool)
@@ -105,6 +117,7 @@ def build_lumasphere_controls():
     reflective_control('strobe_2_rate')
 
     def setup_controls(cont):
+        cont.create_control_group('Lumasphere')
         for name in control_map.iterkeys():
             cont.create_simple_control('Lumasphere', name, name)
 

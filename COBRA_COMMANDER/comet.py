@@ -19,7 +19,7 @@ class Comet(object):
 
     def __init__(self, dmx_addr):
         """Create a new wrapper for a comet."""
-        self.dmx_addr = dmx_addr
+        self.dmx_addr = dmx_addr - 1
 
         self.shutter_open = False
         self.strobing = False

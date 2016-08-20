@@ -53,7 +53,7 @@ def main():
         setup_controls = setup_venus_controls
         control_map = venus_control_map
         log.info("Controlling the Venus.")
-    elif fixture_choice == 'lumapshere':
+    elif fixture_choice == 'lumasphere':
         fixture = Lumasphere(int(config['dmx_addr']))
         control_map, setup_controls = build_lumasphere_controls()
         log.info("Controlling the Lumasphere.")
