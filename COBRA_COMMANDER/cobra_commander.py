@@ -10,6 +10,7 @@ from venus import (
     Venus,
     setup_controls as setup_venus_controls,
     control_map as venus_control_map)
+from lumasphere import Lumasphere, build_lumasphere_controls
 from osc import OSCController
 import pyenttec as dmx
 from multiprocessing import Queue
@@ -51,7 +52,11 @@ def main():
         fixture = Venus(int(config['dmx_addr']))
         setup_controls = setup_venus_controls
         control_map = venus_control_map
-        log.info("Controlling a Venus.")
+        log.info("Controlling the Venus.")
+    elif fixture_choice == 'lumapshere':
+        fixture = Lumasphere(int(config['dmx_addr']))
+        control_map, setup_controls = build_lumasphere_controls()
+        log.info("Controlling the Lumasphere.")
     else:
         log.error("Unknown fixture type: {}".format(fixture_choice))
         return

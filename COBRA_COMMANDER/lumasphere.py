@@ -1,5 +1,5 @@
 
-from utils import unit_float_to_range
+from utils import unit_float_to_range, bipolar_fader_with_detent, unipolar_fader_with_detent
 
 def _render_strobe(state, intensity, rate):
     if state:
@@ -80,42 +80,32 @@ class Lumasphere (object):
         dmx_univ[start+5:start+7] = _render_strobe(
             self.strobe_2_state, self.strobe_2_intensity, self.strobe_2_rate)
 
-def reflective_control(name, preprocessor=None):
-    """Define a control that uses reflection to
+def build_lumasphere_controls():
+    """Create the lumasphere control mappings, returning the control map and setup_controls function."""
 
-# control actions
-def base_rotation(venus, speed):
-    """bipolar float"""
-    venus.base_rotation = speed
+    control_map = {}
 
-def cradle_rotation(venus, speed):
-    """unipolar float"""
-    venus.cradle_rotation = speed
+    def reflective_control(name, preprocessor=None):
+        """Define a control that uses reflection to push a value."""
+        if preprocessor is not None:
+            control = lambda fixture, value: setattr(fixture, name, preprocessor(value))
+        else:
+            control = lambda fixture, value: setattr(fixture, name, value)
+        control_map[name] = control
 
-def head_rotation(venus, speed):
-    """bipolar float"""
-    venus.head_rotation = speed
+    reflective_control('ball_rotation', preprocessor=bipolar_fader_with_detent)
+    reflective_control('ball_start', preprocessor=bool)
+    reflective_control('color_rotation', preprocessor=unipolar_fader_with_detent)
+    reflective_control('color_start', preprocessor=bool)
+    reflective_control('strobe_1_state', preprocessor=bool)
+    reflective_control('strobe_2_state', preprocessor=bool)
+    reflective_control('strobe_1_intensity')
+    reflective_control('strobe_2_intensity')
+    reflective_control('strobe_1_rate')
+    reflective_control('strobe_2_rate')
 
-def color_rotation(venus, speed):
-    """bipolar float"""
-    venus.color_rotation = speed
+    def setup_controls(cont):
+        for name in control_map.iterkeys():
+            cont.create_simple_control('Lumasphere', name, name)
 
-# control mapping
-control_map = {
-    BaseRotation: base_rotation,
-    CradleRotation: cradle_rotation,
-    HeadRotation: head_rotation,
-    ColorRotation: color_rotation,}
-
-
-def setup_controls(cont):
-
-    # make groups
-    cont.create_control_group('Controls')
-    cont.create_control_group('Debug')
-
-    # add controls
-    cont.create_simple_control('Controls', BaseRotation, BaseRotation)
-    cont.create_simple_control('Controls', CradleRotation, CradleRotation)
-    cont.create_simple_control('Controls', HeadRotation, HeadRotation)
-    cont.create_simple_control('Controls', ColorRotation, ColorRotation)
+    return control_map, setup_controls

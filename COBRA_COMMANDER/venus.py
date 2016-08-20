@@ -15,7 +15,7 @@ def bipolar_to_dir_and_val(bipolar_val):
 class Venus(object):
 
     def __init__(self, dmx_addr):
-        """Create a new wrapper for a Venus."""
+        """Create a new wrapper for the Venus."""
         self.dmx_addr = dmx_addr - 1
 
         self.base_rotation = RampingParameter()
@@ -32,7 +32,7 @@ class Venus(object):
         self.color_rotation.update(timestep)
 
     def render(self, dmx_univ):
-        """Render this Comet into a DMX universe."""
+        """Render the Venus into a DMX universe."""
         dmx_addr = self.dmx_addr
 
         base_dir, base_val = bipolar_to_dir_and_val(self.base_rotation.current)
