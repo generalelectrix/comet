@@ -36,9 +36,15 @@ class Venus(object):
         dmx_addr = self.dmx_addr
 
         base_dir, base_val = bipolar_to_dir_and_val(self.base_rotation.current)
+
         cradle_val = unit_float_to_range(0, 255, self.cradle_motion.current)
+
         head_dir, head_val = bipolar_to_dir_and_val(self.head_rotation.current)
-        col_dir, col_val = bipolar_to_dir_and_val(self.color_rotation.current)
+
+        # limit color wheel speed to 50% for the time being
+        col_dir, col_val = bipolar_to_dir_and_val(
+            0.5 * self.color_rotation.current)
+
         lamp_val = 255 if self.lamp_on else 0
 
         vals = (
