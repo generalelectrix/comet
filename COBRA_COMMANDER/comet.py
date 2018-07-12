@@ -64,12 +64,11 @@ class Comet(object):
     def _render_mspeed(self):
         return unit_float_to_range(0, 255, self.mirror_speed)
 
-# clever Python enum trick
 # Idle isn't a great name, as the comet could be in music trig or auto trig
 # the point here is that the Idle state is any state that implies a DMX
 # value outside the take a step ranges
-Idle, StepForwards, StepBackwards = range(3)
-Forwards, Backwards = range(2)
+Idle, StepForwards, StepBackwards = object(), object(), object()
+Forwards, Backwards = object(), object()
 
 class TriggerState(object):
     """Helper object to contain Comet trigger state.
@@ -133,7 +132,7 @@ class TriggerState(object):
             targ_state = StepForwards if self._direction is Forwards else StepBackwards
 
             # if our last state was a different state, no problem
-            if last_state != targ_state:
+            if last_state is not targ_state:
                 self._take_a_step = False
                 self._busy = False
 
