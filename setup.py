@@ -5,7 +5,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-requires = ['show_loop', 'pyOSC', 'pyyaml']
+requires = ['show_loop', 'pyOSC', 'pyyaml', 'argparse']
 
 setup(
     name='COBRA_COMMANDER',

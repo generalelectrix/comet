@@ -1,0 +1,8 @@
+receive_host: 0.0.0.0
+receive_port: 8001
+send_host: 10.1.10.29
+send_port: 9001
+dmx_addr: 1
+debug: False
+update_interval: 20
+fixture: venus

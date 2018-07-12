@@ -1,5 +1,6 @@
 """Abstraction layer on top of the DMX interface to a Coemar Comet."""
 from utils import unit_float_to_range, ignore_all_but_1, quadratic_fader
+import logging as log
 
 class Comet(object):
     """Better control abstraction for the Coemar Comet.
@@ -46,6 +47,8 @@ class Comet(object):
         dmx_univ[self.dmx_addr + 3] = self.trigger_state.render_trigger()
         # reset
         dmx_univ[self.dmx_addr + 4] = 255 if self.reset else 0
+
+        log.info(dmx_univ[self.dmx_addr:self.dmx_addr+5])
 
     def _render_shutter(self):
         """Render the shutter state into DMX."""

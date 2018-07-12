@@ -1,5 +1,5 @@
 """...WHO COMMANDS THE COMMANDER???"""
-
+import argparse
 import logging as log
 from show_loop import run_show, ControlError
 from comet import (
@@ -19,7 +19,7 @@ import threading
 import socket
 import yaml
 
-def main():
+def main(config_file):
 
     log.basicConfig(level=log.DEBUG)
 
@@ -34,7 +34,7 @@ def main():
     control_queue = Queue()
 
     # initialize control streams
-    with open('config.yaml') as config_file:
+    with open(config_file) as config_file:
         config = yaml.safe_load(config_file)
 
     config["receive host"] = socket.gethostbyname(socket.gethostname())
@@ -102,7 +102,12 @@ def main():
         log.info("Done.")
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cfg', default='config.yaml')
+
+    args = parser.parse_args()
+
     # fire it up!
-    main()
+    main(args.cfg)
 
 
