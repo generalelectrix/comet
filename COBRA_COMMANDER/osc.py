@@ -25,7 +25,8 @@ class OSCController(object):
         else:
             def callback(_, payload):
                 processed = preprocessor(payload)
-                self.send_control(control, processed)
+                if processed is not None:
+                    self.send_control(control, processed)
 
         self.control_groups[group][name] = callback
 

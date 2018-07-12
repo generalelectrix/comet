@@ -1,4 +1,5 @@
 """Abstraction layer on top of the DMX interface to a Coemar Comet."""
+from collections import deque
 from utils import unit_float_to_range, ignore_all_but_1, quadratic_fader
 import logging as log
 
@@ -35,7 +36,7 @@ class Comet(object):
         self.reset = False
 
     def update(self, timestep):
-        pass
+        self.trigger_state.update(timestep)
 
     def render(self, dmx_univ):
         """Render this Comet into a DMX universe."""
@@ -44,7 +45,7 @@ class Comet(object):
         dmx_univ[self.dmx_addr] = self._render_shutter()
         dmx_univ[self.dmx_addr + 1] = self._game_dmx_vals[self.macro_pattern]
         dmx_univ[self.dmx_addr + 2] = self._render_mspeed()
-        dmx_univ[self.dmx_addr + 3] = self.trigger_state.render_trigger()
+        dmx_univ[self.dmx_addr + 3] = self.trigger_state.render()
         # reset
         dmx_univ[self.dmx_addr + 4] = 255 if self.reset else 0
 
@@ -67,21 +68,19 @@ class Comet(object):
 # Idle isn't a great name, as the comet could be in music trig or auto trig
 # the point here is that the Idle state is any state that implies a DMX
 # value outside the take a step ranges
-Idle, StepForwards, StepBackwards = object(), object(), object()
-Forwards, Backwards = object(), object()
+Idle, SteppingForwards, SteppingBackwards = "I", "SF", "SB"
+Forward, Backward = "F", "B"
 
 class TriggerState(object):
-    """Helper object to contain Comet trigger state.
+    """Helper object to contain Comet trigger state."""
+    # rendering to the enttec is asynchronous and frame tearing is a problem
+    # how many updates should we hold the current output before processing another?
+    _updates_to_hold = 3
 
-    This is tricky, as the trigger interface cannot be stateless.
-    """
-
-    _n_frames_for_man_step = 1
-    _step_f_dmx_val = 108
-    _step_b_dmx_val = 142
+    _step_forward_dmx_val = 108
+    _step_backward_dmx_val = 142
     _stop_dmx_val = 124
     _music_dmx_val = 50
-
 
     def __init__(self):
 
@@ -90,29 +89,34 @@ class TriggerState(object):
         self.auto_step_rate = 0.0
         self.auto_step = False
 
-        # should the state machine take a step?
-        # if so, which direction?
-        self._take_a_step = False
-        self._direction = None
+        # queue of step actions to process
+        self.steps_to_take = deque()
 
-        # is the state machine busy processing an operation?
-        # if so, UI events may be dropped
-        self._busy = False
+        # what state was this machine in on the last update?
+        self.prior_state = Idle
 
-        self._state = Idle
+        # how many frames should we hold current output before re-updating?
+        self.updates_to_hold = 0
+
+        self.current_output_value = self._stop_dmx_val
 
     def step_forwards(self):
-        if not self._busy:
-            self._take_a_step = True
-            self._direction = Forwards
+        self.steps_to_take.appendleft(Forward)
 
     def step_backwards(self):
-        if not self._busy:
-            self._take_a_step = True
-            self._direction = Backwards
+        self.steps_to_take.appendleft(Backward)
 
-    def render_trigger(self):
-        """Render the trigger state to DMX.
+    def render(self):
+        return self.current_output_value
+
+    def update(self, _):
+        if self.updates_to_hold > 0:
+            self.updates_to_hold -= 1
+        else:
+            self.current_output_value = self._update()
+
+    def _update(self):
+        """Update the DMX trigger state value.
 
         This is a fairly complex action, as the step interface at the DMX level
         is kinda hokey.
@@ -125,30 +129,34 @@ class TriggerState(object):
         # what needs to happen to take a step:
         # the dmx value needs to go from its current state to the step value
         # if the current value is the step value, we need to leave and come back again
-        # yikes!
-        # first check to see if we need to take a step:
-        last_state = self._state
-        if self._take_a_step:
-            targ_state = StepForwards if self._direction is Forwards else StepBackwards
+        if self.steps_to_take:
 
-            # if our last state was a different state, no problem
-            if last_state is not targ_state:
-                self._take_a_step = False
-                self._busy = False
+            next_step = self.steps_to_take[-1]
+            # hold this output for a minimum frame count before processing next
+            self.updates_to_hold += self._updates_to_hold - 1
 
-                if self._direction is Forwards:
-                    self._state = StepForwards
-                    return self._step_f_dmx_val
-                else:
-                    self._state = StepBackwards
-                    return self._step_b_dmx_val
-            # otherwise, we need to take an intermediate step to the "stopped"
-            # state and THEN to the step state
-            self._busy = True
-            self._state = Idle
-            return self._stop_dmx_val
+            if next_step == Forward and self.prior_state != SteppingForwards:
+                # can take this step, transition to forward
+                self.prior_state = SteppingForwards
+                self.steps_to_take.pop()
+                return self._step_forward_dmx_val
+            elif next_step == Backward and self.prior_state != SteppingBackwards:
+                # can take this step, transition to backward
+                self.prior_state = SteppingBackwards
+                self.steps_to_take.pop()
+                return self._step_backward_dmx_val
+
+            else:
+                # we're in the same state as the step we need to take
+                # transition to Idle, then take the step on the next update
+                self.prior_state = Idle
+                return self._stop_dmx_val
+
+        # nothing in the step queue so the state machine is idle
+        self.prior_state = Idle
+
         # if we're not taking a step, easy sauce
-        elif self.music_trigger:
+        if self.music_trigger:
             return self._music_dmx_val
         elif self.auto_step:
             return unit_float_to_range(151, 255, self.auto_step_rate)
