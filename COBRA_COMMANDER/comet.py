@@ -49,7 +49,7 @@ class Comet(object):
         # reset
         dmx_univ[self.dmx_addr + 4] = 255 if self.reset else 0
 
-        log.info(dmx_univ[self.dmx_addr:self.dmx_addr+5])
+        log.debug(dmx_univ[self.dmx_addr:self.dmx_addr+5])
 
     def _render_shutter(self):
         """Render the shutter state into DMX."""

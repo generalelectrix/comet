@@ -21,7 +21,13 @@ import yaml
 
 def main(config_file):
 
-    log.basicConfig(level=log.DEBUG)
+    # initialize control streams
+    with open(config_file) as config_file:
+        config = yaml.safe_load(config_file)
+
+    log_level = log.DEBUG if config['debug'] else log.INFO
+
+    log.basicConfig(level=log_level)
 
     log.info("Opening DMX port.")
     try:
@@ -32,10 +38,6 @@ def main(config_file):
     log.info("Opened DMX port.")
 
     control_queue = Queue()
-
-    # initialize control streams
-    with open(config_file) as config_file:
-        config = yaml.safe_load(config_file)
 
     config["receive host"] = socket.gethostbyname(socket.gethostname())
     log.info("Using local IP address {}".format(config["receive host"]))
