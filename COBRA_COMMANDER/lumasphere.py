@@ -12,6 +12,9 @@ def _render_strobe(state, intensity, rate):
     else:
         return (0, 0)
 
+# DMX 255 is too fast; restrict to a reasonable value.
+MAX_ROTATION_SPEED = 200
+
 class Lumasphere (object):
     """Control abstraction for the lumapshere.
 
@@ -72,7 +75,7 @@ class Lumasphere (object):
         direction = val >= 0.0
         if self.ball_start and speed < 0.2:
             speed = 0.2
-        dmx_speed = unit_float_to_range(0, 255, speed)
+        dmx_speed = unit_float_to_range(0, MAX_ROTATION_SPEED, speed)
         dmx_direction = 0 if direction else 255
         return dmx_speed, dmx_direction
 
