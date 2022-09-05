@@ -1,14 +1,19 @@
-import OSC
+from pythonosc.dispatcher import Dispatcher
+from pythonosc.osc_server import BlockingOSCUDPServer
+from pythonosc.udp_client import SimpleUDPClient
 import logging
+
 
 class OSCController(object):
     """Class to manage oversight of an external OSC control surface."""
-    def __init__(self, config, control_queue):
-        self.receiver = OSC.OSCServer((config['receive_host'], config['receive_port']))
-        self.receiver.addMsgHandler('default', self.handle_osc_message)
 
-        self.sender = OSC.OSCClient()
-        self.sender.connect((config['send_host'], config['send_port']))
+    def __init__(self, config, control_queue):
+        dispatcher = Dispatcher()
+        dispatcher.set_default_handler(self.handle_osc_message)
+        self.receiver = BlockingOSCUDPServer(
+            (config['receive_host'], config['receive_port']), dispatcher)
+
+        self.sender = SimpleUDPClient(config['send_host'], config['send_port'])
         self.control_groups = {}
 
         self.control_queue = control_queue
@@ -42,8 +47,8 @@ class OSCController(object):
             base_addr = '/' + group_name + '/' + control_name + '/{}/{}'
             x = int(elements[3])
             y = int(elements[4])
-            for x_but in xrange(shape[0]):
-                for y_but in xrange(shape[1]):
+            for x_but in range(shape[0]):
+                for y_but in range(shape[1]):
                     this_addr = base_addr.format(x_but+1, y_but+1)
                     if x_but+1 == x and y_but+1 == y:
                         self.send_button_on(this_addr)
@@ -52,8 +57,8 @@ class OSCController(object):
             self.send_control(control, x-1)
         self.control_groups[group][name] = callback
 
-    def handle_osc_message(self, addr, type_tags, payload, source_addr):
-        #logging.debug("Receive from {}".format(addr))
+    def handle_osc_message(self, addr, payload):
+        logging.debug("Receive from {}".format(addr))
         elements = addr.split('/')
         if len(elements) < 3:
             return
@@ -69,19 +74,13 @@ class OSCController(object):
         except KeyError:
             logging.error(
                 "Unknown control {} in group {}".format(control_name, group_name))
-        control(addr, payload[0])
+        control(addr, payload)
 
     def send_control(self, control, value):
         self.control_queue.put((control, value))
 
     def send_button_on(self, addr):
-        msg = OSC.OSCMessage()
-        msg.setAddress(addr)
-        msg.append(1.0)
-        self.sender.send(msg)
+        self.sender.send_message(addr, 1.0)
 
     def send_button_off(self, addr):
-        msg = OSC.OSCMessage()
-        msg.setAddress(addr)
-        msg.append(0.0)
-        self.sender.send(msg)
+        self.sender.send_message(addr, 0.0)

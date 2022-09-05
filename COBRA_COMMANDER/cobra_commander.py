@@ -13,11 +13,12 @@ from venus import (
 from lumasphere import Lumasphere, build_lumasphere_controls
 from osc import OSCController
 import pyenttec as dmx
-from multiprocessing import Queue
-from Queue import Empty
+from multiprocess import Queue
+from queue import Empty
 import threading
 import socket
 import yaml
+
 
 def main(config_file):
 
@@ -98,10 +99,11 @@ def main(config_file):
         )
     finally:
         log.info("Closing OSCServer.")
-        osc_controller.receiver.close()
+        osc_controller.receiver.server_close()
         log.info("Waiting for server thread to finish.")
         osc_thread.join()
         log.info("Done.")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -111,5 +113,3 @@ if __name__ == '__main__':
 
     # fire it up!
     main(args.cfg)
-
-
