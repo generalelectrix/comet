@@ -12,6 +12,8 @@ use std::fs::File;
 use std::io::Read;
 use std::time::Duration;
 
+mod comet;
+mod dmx;
 mod osc;
 
 fn main() -> Result<(), Box<dyn Error>> {

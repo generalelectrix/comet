@@ -1,15 +1,28 @@
 use crossbeam_channel::{Receiver, Sender};
 use log::{debug, error, warn};
 use rosc::{OscMessage, OscPacket, OscType};
+use std::collections::HashMap;
 use std::error::Error;
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 use std::thread;
+
+struct ControlMessage;
+
+type ControlMessageCreator = Box<dyn Fn(OscMessage) -> ControlMessage>;
+
+pub struct ControlMap(HashMap<(String, String), ControlMessageCreator>);
+
+impl ControlMap {
+    fn new() -> Self {
+        Self(HashMap::new())
+    }
+}
 
 type ControlEvent = OscMessage;
 
 /// Forward OSC messages to the provided sender.
 /// Spawns a new thread to handle listening for messages.
-pub fn start_listener<A: ToSocketAddrs>(
+fn start_listener<A: ToSocketAddrs>(
     addr: A,
     send: Sender<ControlEvent>,
 ) -> Result<(), Box<dyn Error>> {
