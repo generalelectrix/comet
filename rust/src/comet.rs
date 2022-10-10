@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, error};
 use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
@@ -62,6 +62,36 @@ impl Comet {
     fn render_mspeed(&self) -> u8 {
         unit_float_to_range(0, 255, self.mirror_speed)
     }
+
+    pub fn control(&mut self, msg: ControlMessage) {
+        use ControlMessage::*;
+        match msg {
+            Set(sc) => self.handle_state_change(sc),
+            Step(direction) => self.trigger_state.enqueue_step(direction),
+        }
+    }
+
+    fn handle_state_change(&mut self, sc: StateChange) {
+        use StateChange::*;
+        match sc {
+            Shutter(v) => self.shutter_open = v,
+            Strobe(v) => self.strobing = v,
+            StrobeRate(v) => self.strobe_rate = v,
+            ShutterSoundActive(v) => self.shutter_sound_active = v,
+            SelectMacro(v) => {
+                if v >= Self::GAME_DMX_VALS.len() {
+                    error!("Macro index {} out of range.", v);
+                    return;
+                }
+                self.macro_pattern = v;
+            }
+            MirrorSpeed(v) => self.mirror_speed = v,
+            TrigSoundActive(v) => self.trigger_state.music_trigger = v,
+            AutoStep(v) => self.trigger_state.auto_step = v,
+            AutoStepRate(v) => self.trigger_state.auto_step_rate = v,
+            Reset(v) => self.reset = v,
+        };
+    }
 }
 
 /// Manage Comet trigger state.
@@ -100,12 +130,8 @@ impl TriggerState {
         }
     }
 
-    fn step_forwards(&mut self) {
-        self.steps_to_take.push_back(Step::Forward);
-    }
-
-    fn step_backwards(&mut self) {
-        self.steps_to_take.push_back(Step::Backward);
+    fn enqueue_step(&mut self, direction: Step) {
+        self.steps_to_take.push_back(direction);
     }
 
     fn render(&self) -> u8 {
@@ -176,7 +202,25 @@ enum Stepping {
 }
 
 #[derive(PartialEq)]
-enum Step {
+pub enum Step {
     Forward,
     Backward,
+}
+
+pub enum ControlMessage {
+    Set(StateChange),
+    Step(Step),
+}
+
+pub enum StateChange {
+    Shutter(bool),
+    Strobe(bool),
+    StrobeRate(UnipolarFloat),
+    ShutterSoundActive(bool),
+    SelectMacro(usize),
+    MirrorSpeed(UnipolarFloat),
+    TrigSoundActive(bool),
+    AutoStep(bool),
+    AutoStepRate(UnipolarFloat),
+    Reset(bool),
 }
