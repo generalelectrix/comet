@@ -182,3 +182,32 @@ fn get_bool(v: OscMessage) -> Result<bool, OscError> {
     };
     Ok(bval)
 }
+
+/// Get a index from a collection of radio buttons, mapped to numeric addresses.
+/// This implements the TouchOSC model for a button grid.
+fn radio_button(v: OscMessage) -> Result<(usize, usize), OscError> {
+    let parsed = v
+        .addr
+        .split("/")
+        .skip(3)
+        .map(str::parse::<usize>)
+        .take(2)
+        .collect::<Result<(Vec<_>), _>>();
+
+    let parsed = match parsed {
+        Err(e) => {
+            return Err(OscError {
+                addr: v.addr,
+                msg: format!("failed to parse radio button index: {}", e),
+            })
+        }
+        Ok(v) => v,
+    };
+    if parsed.len() != 2 {
+        return Err(OscError {
+            addr: v.addr,
+            msg: format!("expected two radio button indexes, got {:?}", parsed),
+        });
+    }
+    Ok((parsed[0], parsed[1]))
+}
