@@ -3,6 +3,7 @@ use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
 use crate::dmx::DmxAddr;
+use crate::util::unit_float_to_range;
 
 pub struct Comet {
     dmx_addr: DmxAddr,
@@ -194,24 +195,26 @@ impl TriggerState {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 enum Stepping {
     Idle,
     Forwards,
     Backwards,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum Step {
     Forward,
     Backward,
 }
 
+#[derive(Clone, Copy)]
 pub enum ControlMessage {
     Set(StateChange),
     Step(Step),
 }
 
+#[derive(Clone, Copy)]
 pub enum StateChange {
     Shutter(bool),
     Strobe(bool),

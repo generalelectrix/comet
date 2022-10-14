@@ -15,6 +15,7 @@ use std::time::Duration;
 mod comet;
 mod dmx;
 mod osc;
+mod util;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let config_path = env::args()
