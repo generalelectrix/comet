@@ -1,6 +1,6 @@
 use crossbeam_channel::{Receiver, Sender};
 use log::{debug, error, warn};
-use number::UnipolarFloat;
+use number::{BipolarFloat, UnipolarFloat};
 use rosc::{OscMessage, OscPacket, OscType};
 use simple_error::{bail, SimpleError};
 use std::collections::hash_map::Entry;
@@ -24,43 +24,68 @@ impl<C> ControlMap<C> {
         Self(HashMap::new())
     }
 
-    pub fn add<F>(&mut self, group: &str, control: &str, handler: F)
+    pub fn add<F, Group, Control>(&mut self, group: Group, control: Control, handler: F)
     where
         F: Fn(OscMessage) -> Result<Option<C>, Box<dyn Error>> + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
     {
-        match self.0.entry((group.to_string(), control.to_string())) {
-            Entry::Occupied(_) => {
-                panic!("Duplicate control definition for ({}, {}).", group, control)
+        match self.0.entry((group.into(), control.into())) {
+            Entry::Occupied(e) => {
+                let key = e.key();
+                panic!("Duplicate control definition for ({}, {}).", key.0, key.1)
             }
             Entry::Vacant(v) => v.insert(Box::new(handler)),
         };
     }
 
-    pub fn add_fetch_process<F, T, P>(&mut self, group: &str, control: &str, fetch: F, process: P)
-    where
+    pub fn add_fetch_process<F, T, P, Group, Control>(
+        &mut self,
+        group: Group,
+        control: Control,
+        fetch: F,
+        process: P,
+    ) where
         F: Fn(OscMessage) -> Result<T, OscError> + 'static,
         P: Fn(T) -> Option<C> + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
     {
         self.add(group, control, move |v| Ok(process(fetch(v)?)))
     }
 
-    pub fn add_unipolar<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_unipolar<F, Group, Control>(&mut self, group: Group, control: Control, process: F)
     where
         F: Fn(UnipolarFloat) -> C + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
     {
         self.add_fetch_process(group, control, get_unipolar, move |v| Some(process(v)))
     }
 
-    pub fn add_bool<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_bipolar<F, Group, Control>(&mut self, group: Group, control: Control, process: F)
+    where
+        F: Fn(BipolarFloat) -> C + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
+    {
+        self.add_fetch_process(group, control, get_bipolar, move |v| Some(process(v)))
+    }
+
+    pub fn add_bool<F, Group, Control>(&mut self, group: Group, control: Control, process: F)
     where
         F: Fn(bool) -> C + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
     {
         self.add_fetch_process(group, control, get_bool, move |v| Some(process(v)))
     }
 
-    pub fn add_trigger(&mut self, group: &str, control: &str, event: C)
+    pub fn add_trigger<Group, Control>(&mut self, group: Group, control: Control, event: C)
     where
         C: Copy + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
     {
         self.add_fetch_process(
             group,
@@ -76,9 +101,15 @@ impl<C> ControlMap<C> {
         )
     }
 
-    pub fn add_1d_radio_button_array<F>(&mut self, group: &str, control: &str, process: F)
-    where
+    pub fn add_1d_radio_button_array<F, Group, Control>(
+        &mut self,
+        group: Group,
+        control: Control,
+        process: F,
+    ) where
         F: Fn(usize) -> C + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
     {
         self.add_fetch_process(group, control, radio_button, move |(x, _)| Some(process(x)))
     }
@@ -152,20 +183,27 @@ fn get_single_arg(mut v: OscMessage) -> Result<(String, OscType), OscError> {
     Ok((v.addr, v.args.pop().unwrap()))
 }
 
+/// Get a single float argument from the provided OSC message.
+fn get_float(v: OscMessage) -> Result<f64, OscError> {
+    let (addr, arg) = get_single_arg(v)?;
+    match arg {
+        OscType::Float(v) => Ok(v as f64),
+        OscType::Double(v) => Ok(v),
+        other => Err(OscError {
+            addr,
+            msg: format!("expected a single float argument but found {:?}", other),
+        }),
+    }
+}
+
 /// Get a single unipolar float argument from the provided OSC message.
 fn get_unipolar(v: OscMessage) -> Result<UnipolarFloat, OscError> {
-    let (addr, arg) = get_single_arg(v)?;
-    let fval = match arg {
-        OscType::Float(v) => v as f64,
-        OscType::Double(v) => v,
-        other => {
-            return Err(OscError {
-                addr,
-                msg: format!("expected a single float argument but found {:?}", other),
-            })
-        }
-    };
-    Ok(UnipolarFloat::new(fval))
+    Ok(UnipolarFloat::new(get_float(v)?))
+}
+
+/// Get a single bipolar float argument from the provided OSC message.
+fn get_bipolar(v: OscMessage) -> Result<BipolarFloat, OscError> {
+    Ok(BipolarFloat::new(get_float(v)?))
 }
 
 fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
