@@ -18,10 +18,14 @@ pub fn map_comet_controls(map: &mut ControlMap<ControlMessage>) {
     map.add_unipolar(CONTROLS, "Mspeed", |v| Set(MirrorSpeed(v)));
     map.add_bool(CONTROLS, "AutoStep", |v| Set(AutoStep(v)));
     map.add_unipolar(CONTROLS, "AutoStepRate", |v| Set(AutoStepRate(v)));
+
     map.add_trigger(CONTROLS, "StepBackwards", Step(Direction::Backward));
     map.add_trigger(CONTROLS, "StepForwards", Step(Direction::Forward));
 
+    map.add_1d_radio_button_array(CONTROLS, "SelectMacro", |v| Set(SelectMacro(v)));
+
     map.add_bool(MUSIC, "ShutterSoundActive", |v| Set(ShutterSoundActive(v)));
     map.add_bool(MUSIC, "TrigSoundActive", |v| Set(TrigSoundActive(v)));
+
     map.add_bool(DEBUG, "Reset", |v| Set(Reset(v)));
 }

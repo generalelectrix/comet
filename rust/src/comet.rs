@@ -64,15 +64,30 @@ impl Comet {
         unit_float_to_range(0, 255, self.mirror_speed)
     }
 
-    pub fn control(&mut self, msg: ControlMessage) {
+    /// Emit the current value of all controllable state.
+    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
+        use StateChange::*;
+        emitter.emit_comet_state_change(Shutter(self.shutter_open));
+        emitter.emit_comet_state_change(Strobe(self.strobing));
+        emitter.emit_comet_state_change(StrobeRate(self.strobe_rate));
+        emitter.emit_comet_state_change(ShutterSoundActive(self.shutter_sound_active));
+        emitter.emit_comet_state_change(SelectMacro(self.macro_pattern));
+        emitter.emit_comet_state_change(MirrorSpeed(self.mirror_speed));
+        emitter.emit_comet_state_change(TrigSoundActive(self.trigger_state.music_trigger));
+        emitter.emit_comet_state_change(AutoStep(self.trigger_state.auto_step));
+        emitter.emit_comet_state_change(AutoStepRate(self.trigger_state.auto_step_rate));
+        emitter.emit_comet_state_change(Reset(self.reset));
+    }
+
+    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
         use ControlMessage::*;
         match msg {
-            Set(sc) => self.handle_state_change(sc),
+            Set(sc) => self.handle_state_change(sc, emitter),
             Step(direction) => self.trigger_state.enqueue_step(direction),
         }
     }
 
-    fn handle_state_change(&mut self, sc: StateChange) {
+    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,
@@ -92,6 +107,7 @@ impl Comet {
             AutoStepRate(v) => self.trigger_state.auto_step_rate = v,
             Reset(v) => self.reset = v,
         };
+        emitter.emit_comet_state_change(sc);
     }
 }
 
@@ -226,4 +242,8 @@ pub enum StateChange {
     AutoStep(bool),
     AutoStepRate(UnipolarFloat),
     Reset(bool),
+}
+
+pub trait EmitStateChange {
+    fn emit_comet_state_change(&mut self, sc: StateChange);
 }

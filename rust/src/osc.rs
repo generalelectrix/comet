@@ -74,6 +74,13 @@ impl<C> ControlMap<C> {
             },
         )
     }
+
+    pub fn add_1d_radio_button_array<F>(&mut self, group: &str, control: &str, process: F)
+    where
+        F: Fn(usize) -> C + 'static,
+    {
+        self.add_fetch_process(group, control, radio_button, move |(x, _)| Some(process(x)))
+    }
 }
 
 /// Forward OSC messages to the provided sender.

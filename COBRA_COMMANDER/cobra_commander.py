@@ -22,26 +22,6 @@ import yaml
 
 def main(config_file):
 
-    # initialize control streams
-    with open(config_file) as config_file:
-        config = yaml.safe_load(config_file)
-
-    log_level = log.DEBUG if config['debug'] else log.INFO
-
-    log.basicConfig(level=log_level)
-
-    log.info("Opening DMX port.")
-    try:
-        dmx_port = dmx.select_port()
-    except dmx.EnttecPortOpenError as err:
-        log.error(err)
-        quit()
-    log.info("Opened DMX port.")
-
-    control_queue = Queue()
-
-    config["receive host"] = socket.gethostbyname(socket.gethostname())
-    log.info("Using local IP address {}".format(config["receive host"]))
     osc_controller = OSCController(config, control_queue)
 
     # which italian hot rod you like?
