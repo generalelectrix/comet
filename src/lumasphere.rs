@@ -126,13 +126,10 @@ impl Lumasphere {
             BallRotation(v) => self.ball_rotation.target = v,
             BallStart(v) => self.ball_start = v,
             ColorRotation(v) => self.color_rotation = v,
-            ColorStart(v) => self.color_start,
-            Strobe1(sc) => {
-                return self.strobe1.handle_state_change(sc, emitter, Strobe1);
-            }
-            Strobe2(sc) => {
-                return self.strobe2.handle_state_change(sc, emitter, Strobe2);
-            }
+            ColorStart(v) => self.color_start = v,
+            Strobe1(sc) => self.strobe_1.handle_state_change(sc),
+
+            Strobe2(sc) => self.strobe_2.handle_state_change(sc),
         };
         emitter.emit_lumasphere_state_change(sc);
     }
@@ -168,7 +165,7 @@ impl Strobe {
         dmx_slice[1] = rate;
     }
 
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E, wrap: F)
+    fn emit_state<E: EmitStateChange, F>(&self, emitter: &mut E, wrap: F)
     where
         F: Fn(StrobeStateChange) -> StateChange + 'static,
     {
@@ -176,6 +173,15 @@ impl Strobe {
         emitter.emit_lumasphere_state_change(wrap(On(self.on)));
         emitter.emit_lumasphere_state_change(wrap(Intensity(self.intensity)));
         emitter.emit_lumasphere_state_change(wrap(Rate(self.rate)));
+    }
+
+    fn handle_state_change(&mut self, sc: StrobeStateChange) {
+        use StrobeStateChange::*;
+        match sc {
+            On(v) => self.on = v,
+            Intensity(v) => self.intensity = v,
+            Rate(v) => self.rate = v,
+        }
     }
 }
 
@@ -199,7 +205,7 @@ pub enum StateChange {
 }
 
 // Lumasphere has no controls that are not represented as state changes.
-type ControlMessage = StateChange;
+pub type ControlMessage = StateChange;
 
 pub trait EmitStateChange {
     fn emit_lumasphere_state_change(&mut self, sc: StateChange);
