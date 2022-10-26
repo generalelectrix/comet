@@ -14,6 +14,7 @@ use std::time::Duration;
 
 mod comet;
 mod dmx;
+mod lumasphere;
 mod osc;
 mod util;
 

@@ -38,13 +38,13 @@ pub fn bipolar_fader_with_detent(v: BipolarFloat) -> BipolarFloat {
 
 /// A fixture parameter that ramps to its setpoint at a finite rate.
 pub struct RampingParameter<P> {
-    target: P,
+    pub target: P,
     current: P,
     /// Units / sec for the parameter to ramp.
     ramp_rate: P,
 }
 
-impl<P: Copy + Sub<Output = f64> + Into<f64> + AddAssign<f64>> RampingParameter<P> {
+impl<P: Copy + Sub<Output = P> + Into<f64> + AddAssign<f64>> RampingParameter<P> {
     pub fn new(initial_value: P, ramp_rate: P) -> Self {
         Self {
             target: initial_value,
@@ -55,7 +55,7 @@ impl<P: Copy + Sub<Output = f64> + Into<f64> + AddAssign<f64>> RampingParameter<
 
     pub fn update(&mut self, delta_t: Duration) {
         let (target, current) = (self.target, self.current);
-        let delta = target - current;
+        let delta: f64 = (target - current).into();
         let ramp_rate: f64 = self.ramp_rate.into();
         let step = (ramp_rate * delta_t.as_secs_f64()).copysign(delta.into());
         if step.abs() > delta.abs() {
@@ -63,5 +63,9 @@ impl<P: Copy + Sub<Output = f64> + Into<f64> + AddAssign<f64>> RampingParameter<
         } else {
             self.current += step;
         }
+    }
+
+    pub fn current(&self) -> P {
+        self.current
     }
 }

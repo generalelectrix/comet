@@ -13,6 +13,7 @@ use std::thread;
 use crate::comet::ControlMessage;
 
 mod comet;
+mod lumasphere;
 
 type ControlMessageCreator<C> = Box<dyn Fn(OscMessage) -> Result<Option<C>, Box<dyn Error>>>;
 
