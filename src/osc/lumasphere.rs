@@ -1,4 +1,7 @@
+use rosc::OscMessage;
+
 use super::ControlMap;
+use crate::fixture::ControlMessage::{self as ShowControlMessage, Lumasphere};
 use crate::lumasphere::StateChange;
 use crate::lumasphere::StrobeStateChange;
 use crate::util::bipolar_fader_with_detent;
@@ -7,31 +10,31 @@ use crate::{lumasphere::ControlMessage, osc::quadratic};
 
 const GROUP: &str = "Lumasphere";
 
-pub fn map_lumasphere_controls(map: &mut ControlMap<ControlMessage>) {
+pub fn map_lumasphere_controls(map: &mut ControlMap<ShowControlMessage>) {
     use StateChange::*;
     map.add_unipolar(GROUP, "lamp_1_intensity", |v| {
-        Lamp1Intensity(unipolar_fader_with_detent(v))
+        Lumasphere(Lamp1Intensity(unipolar_fader_with_detent(v)))
     });
     map.add_unipolar(GROUP, "lamp_2_intensity", |v| {
-        Lamp2Intensity(unipolar_fader_with_detent(v))
+        Lumasphere(Lamp2Intensity(unipolar_fader_with_detent(v)))
     });
 
     map.add_bipolar(GROUP, "ball_rotation", |v| {
-        BallRotation(bipolar_fader_with_detent(v))
+        Lumasphere(BallRotation(bipolar_fader_with_detent(v)))
     });
-    map.add_bool(GROUP, "ball_start", BallStart);
+    map.add_bool(GROUP, "ball_start", |v| Lumasphere(BallStart(v)));
 
     map.add_unipolar(GROUP, "color_rotation", |v| {
-        ColorRotation(unipolar_fader_with_detent(v))
+        Lumasphere(ColorRotation(unipolar_fader_with_detent(v)))
     });
-    map.add_bool(GROUP, "color_start", ColorStart);
-    map_strobe(map, 1, Strobe1);
-    map_strobe(map, 2, Strobe2);
+    map.add_bool(GROUP, "color_start", |v| Lumasphere(ColorStart(v)));
+    map_strobe(map, 1, |inner| Lumasphere(Strobe1(inner)));
+    map_strobe(map, 2, |inner| Lumasphere(Strobe1(inner)));
 }
 
-fn map_strobe<W>(map: &mut ControlMap<ControlMessage>, index: u8, wrap: W)
+fn map_strobe<W>(map: &mut ControlMap<ShowControlMessage>, index: u8, wrap: W)
 where
-    W: Fn(StrobeStateChange) -> StateChange + 'static + Copy,
+    W: Fn(StrobeStateChange) -> ShowControlMessage + 'static + Copy,
 {
     use StrobeStateChange::*;
     map.add_bool(GROUP, format!("strobe_{}_state", index), move |v| {
@@ -43,4 +46,11 @@ where
     map.add_unipolar(GROUP, format!("strobe_{}_rate", index), move |v| {
         wrap(Rate(v))
     });
+}
+
+pub fn handle_lumasphere_state_change<S>(_: StateChange, _: &mut S)
+where
+    S: FnMut(OscMessage),
+{
+    // No lumasphere OSC controls use talkback.
 }

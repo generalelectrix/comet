@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, time::Duration};
 
 use crate::{comet::Comet, lumasphere::Lumasphere, Config};
 use simple_error::bail;
@@ -28,5 +28,9 @@ impl Show {
         };
 
         Ok(Self { comet, lumasphere })
+    }
+
+    fn control(&mut self, timeout: Duration) -> Result<(), Box<dyn Error>> {
+        unimplemented!()
     }
 }

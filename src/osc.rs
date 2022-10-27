@@ -1,19 +1,40 @@
-use crossbeam_channel::{Receiver, Sender};
-use log::{debug, error, warn};
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use log::{debug, error, info, warn};
 use number::{BipolarFloat, UnipolarFloat};
-use rosc::{OscMessage, OscPacket, OscType};
+use rosc::{encoder, OscMessage, OscPacket, OscType};
 use simple_error::{bail, SimpleError};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+use std::str::FromStr;
 use std::thread;
 
-use crate::comet::ControlMessage;
+use crate::fixture::ControlMessage;
 
 mod comet;
 mod lumasphere;
+
+pub struct OscController {
+    control_map: ControlMap<ControlMessage>,
+    recv: Receiver<OscMessage>,
+    send: Sender<OscMessage>,
+}
+
+impl OscController {
+    pub fn new(receive_port: u16, send_host: &str, send_port: u16) -> Result<Self, Box<dyn Error>> {
+        let recv_addr = SocketAddr::from_str(&format!("127.0.0.1:{}", receive_port))?;
+        let send_adr = SocketAddr::from_str(&format!("{}:{}", send_host, send_port))?;
+        let control_recv = start_listener(recv_addr)?;
+        let response_send = start_sender(send_adr)?;
+        Ok(Self {
+            control_map: ControlMap::new(),
+            recv: control_recv,
+            send: response_send,
+        })
+    }
+}
 
 type ControlMessageCreator<C> = Box<dyn Fn(OscMessage) -> Result<Option<C>, Box<dyn Error>>>;
 
@@ -101,38 +122,35 @@ impl<C> ControlMap<C> {
         )
     }
 
-    pub fn add_1d_radio_button_array<F, Group, Control>(
-        &mut self,
-        group: Group,
-        control: Control,
-        process: F,
-    ) where
+    pub fn add_radio_button_array<F>(&mut self, rb: RadioButton, process: F)
+    where
         F: Fn(usize) -> C + 'static,
-        Group: Into<String> + Display,
-        Control: Into<String> + Display,
     {
-        self.add_fetch_process(group, control, radio_button, move |(x, _)| Some(process(x)))
+        self.add_fetch_process(
+            rb.group,
+            rb.control,
+            move |m| rb.parse(m),
+            move |x| Some(process(x)),
+        )
     }
 }
 
 /// Forward OSC messages to the provided sender.
 /// Spawns a new thread to handle listening for messages.
-fn start_listener<A: ToSocketAddrs>(
-    addr: A,
-    send: Sender<OscMessage>,
-) -> Result<(), Box<dyn Error>> {
+fn start_listener(addr: SocketAddr) -> Result<Receiver<OscMessage>, Box<dyn Error>> {
+    let (send, recv) = unbounded();
     let socket = UdpSocket::bind(addr)?;
 
     let mut buf = [0u8; rosc::decoder::MTU];
 
-    let mut recv = move || -> Result<OscPacket, Box<dyn Error>> {
+    let mut recv_packet = move || -> Result<OscPacket, Box<dyn Error>> {
         let size = socket.recv(&mut buf)?;
         let (_, packet) = rosc::decoder::decode_udp(&buf[..size])?;
         Ok(packet)
     };
 
     thread::spawn(move || loop {
-        match recv() {
+        match recv_packet() {
             Ok(packet) => {
                 forward_packet(packet, &send);
             }
@@ -141,7 +159,34 @@ fn start_listener<A: ToSocketAddrs>(
             }
         }
     });
-    Ok(())
+    Ok(recv)
+}
+
+/// Drain a control channel of OSC messages and send them.
+/// Assumes we only have one controller.
+fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>, Box<dyn Error>> {
+    let (send, recv) = unbounded();
+    let socket = UdpSocket::bind("127.0.0.1:0")?;
+
+    let mut send_packet = move |msg| -> Result<(), Box<dyn Error>> {
+        let msg_buf = encoder::encode(&OscPacket::Message(msg))?;
+        socket.send_to(&msg_buf, addr)?;
+        Ok(())
+    };
+
+    thread::spawn(move || loop {
+        let msg = match recv.recv() {
+            Err(_) => {
+                info!("OSC sender channel hung up, terminating sender thread.");
+                return;
+            }
+            Ok(m) => m,
+        };
+        if let Err(e) = send_packet(msg) {
+            error!("OSC send error: {}.", e);
+        }
+    });
+    Ok(send)
 }
 
 /// Recursively unpack OSC packets and send all the inner messages as control events.
@@ -229,31 +274,76 @@ fn get_bool(v: OscMessage) -> Result<bool, OscError> {
     Ok(bval)
 }
 
-/// Get a index from a collection of radio buttons, mapped to numeric addresses.
+/// Model a 1D button grid with radio-select behavior.
 /// This implements the TouchOSC model for a button grid.
-fn radio_button(v: OscMessage) -> Result<(usize, usize), OscError> {
-    let parsed = v
-        .addr
-        .split("/")
-        .skip(3)
-        .map(str::parse::<usize>)
-        .take(2)
-        .collect::<Result<(Vec<_>), _>>();
+/// Special-cased to handle only 1D grids.
+#[derive(Clone)]
+pub struct RadioButton {
+    group: &'static str,
+    control: &'static str,
+    n: usize,
+}
 
-    let parsed = match parsed {
-        Err(e) => {
+impl RadioButton {
+    /// Get a index from a collection of radio buttons, mapped to numeric addresses.
+    pub fn parse(&self, v: OscMessage) -> Result<usize, OscError> {
+        let parsed = v
+            .addr
+            .split("/")
+            .skip(3)
+            .map(str::parse::<usize>)
+            .take(2)
+            .collect::<Result<(Vec<_>), _>>();
+
+        let parsed = match parsed {
+            Err(e) => {
+                return Err(OscError {
+                    addr: v.addr,
+                    msg: format!("failed to parse radio button index: {}", e),
+                })
+            }
+            Ok(v) => v,
+        };
+        if parsed.len() != 2 {
             return Err(OscError {
                 addr: v.addr,
-                msg: format!("failed to parse radio button index: {}", e),
+                msg: format!("expected two radio button indexes, got {:?}", parsed),
+            });
+        }
+        if parsed[0] >= self.n {
+            return Err(OscError {
+                addr: v.addr,
+                msg: format!("radio button x index out of range: {}", parsed[0]),
+            });
+        }
+        if parsed[1] > 0 {
+            return Err(OscError {
+                addr: v.addr,
+                msg: format!("radio button y index out of range: {}", parsed[1]),
+            });
+        }
+        Ok(parsed[0])
+    }
+
+    pub fn set<S>(&self, n: usize, send: &mut S) -> Result<(), Box<dyn Error>>
+    where
+        S: FnMut(OscMessage),
+    {
+        if n >= self.n {
+            bail!(
+                "radio button index {} out of range for {}/{}",
+                n,
+                self.group,
+                self.control
+            );
+        }
+        for i in 0..self.n {
+            let val = if i == n { 1.0 } else { 0.0 };
+            send(OscMessage {
+                addr: format!("{}/{}/{}/0", self.group, self.control, i),
+                args: vec![OscType::Float(val)],
             })
         }
-        Ok(v) => v,
-    };
-    if parsed.len() != 2 {
-        return Err(OscError {
-            addr: v.addr,
-            msg: format!("expected two radio button indexes, got {:?}", parsed),
-        });
+        Ok(())
     }
-    Ok((parsed[0], parsed[1]))
 }
