@@ -24,26 +24,6 @@ def main(config_file):
 
     osc_controller = OSCController(config, control_queue)
 
-    # which italian hot rod you like?
-    fixture_choice = config['fixture']
-    if fixture_choice == 'comet':
-        fixture = Comet(int(config['dmx_addr']))
-        setup_controls = setup_comet_controls
-        control_map = comet_control_map
-        log.info("Controlling a Comet.")
-    elif fixture_choice == 'venus':
-        fixture = Venus(int(config['dmx_addr']))
-        setup_controls = setup_venus_controls
-        control_map = venus_control_map
-        log.info("Controlling the Venus.")
-    elif fixture_choice == 'lumasphere':
-        fixture = Lumasphere(int(config['dmx_addr']))
-        control_map, setup_controls = build_lumasphere_controls()
-        log.info("Controlling the Lumasphere.")
-    else:
-        log.error("Unknown fixture type: {}".format(fixture_choice))
-        return
-
     setup_controls(osc_controller)
 
     def process_control_event(timeout):

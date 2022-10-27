@@ -1,8 +1,9 @@
 use crossbeam_channel::unbounded;
+use dmx::DmxAddr;
 use local_ip_address::local_ip;
 use log::info;
 use log::LevelFilter;
-use rust_dmx::available_ports;
+use rust_dmx::select_port;
 use serde::{Deserialize, Serialize};
 use simplelog::{Config as LogConfig, SimpleLogger};
 use std::cmp;
@@ -12,10 +13,15 @@ use std::fs::File;
 use std::io::Read;
 use std::time::Duration;
 
+use crate::show::Show;
+
 mod comet;
 mod dmx;
+mod event;
+mod fixture;
 mod lumasphere;
 mod osc;
+mod show;
 mod util;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -30,25 +36,25 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     SimpleLogger::init(log_level, LogConfig::default())?;
 
-    info!("Opening DMX port.");
-    let mut available_ports = available_ports()?;
-    // TODO: actually select a port. May require a patch to rust-dmx.
-    let dmx_port = available_ports.pop();
+    let mut dmx_port = select_port()?;
 
     let (send_ctrl, recv_ctrl) = unbounded::<()>();
 
     let ip = local_ip()?;
     info!("Listening at {}", ip);
+
+    let show = Show::new(&cfg)?;
+
     println!("{:?}", cfg);
     Ok(())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Config {
+pub struct Config {
     receive_port: u16,
     send_host: String,
     send_port: u16,
-    dmx_addr: u16,
+    dmx_addr: DmxAddr,
     debug: bool,
     update_interval: i64,
     fixture: String,

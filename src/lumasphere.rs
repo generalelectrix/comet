@@ -3,6 +3,7 @@ use std::time::Duration;
 use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
+use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
 use crate::{
     dmx::{self, DmxAddr},
     util::{unit_float_to_range, RampingParameter},
@@ -104,12 +105,12 @@ impl Lumasphere {
     /// Emit the current value of all controllable state.
     pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
         use StateChange::*;
-        emitter.emit_lumasphere_state_change(Lamp1Intensity(self.lamp_1_intensity));
-        emitter.emit_lumasphere_state_change(Lamp2Intensity(self.lamp_2_intensity));
-        emitter.emit_lumasphere_state_change(BallRotation(self.ball_rotation.current()));
-        emitter.emit_lumasphere_state_change(BallStart(self.ball_start));
-        emitter.emit_lumasphere_state_change(ColorRotation(self.color_rotation));
-        emitter.emit_lumasphere_state_change(ColorStart(self.color_start));
+        emitter.emit(Lamp1Intensity(self.lamp_1_intensity));
+        emitter.emit(Lamp2Intensity(self.lamp_2_intensity));
+        emitter.emit(BallRotation(self.ball_rotation.current()));
+        emitter.emit(BallStart(self.ball_start));
+        emitter.emit(ColorRotation(self.color_rotation));
+        emitter.emit(ColorStart(self.color_start));
         self.strobe_1.emit_state(emitter, Strobe1);
         self.strobe_2.emit_state(emitter, Strobe2);
     }
@@ -131,7 +132,7 @@ impl Lumasphere {
 
             Strobe2(sc) => self.strobe_2.handle_state_change(sc),
         };
-        emitter.emit_lumasphere_state_change(sc);
+        emitter.emit(sc);
     }
 }
 
@@ -170,9 +171,9 @@ impl Strobe {
         F: Fn(StrobeStateChange) -> StateChange + 'static,
     {
         use StrobeStateChange::*;
-        emitter.emit_lumasphere_state_change(wrap(On(self.on)));
-        emitter.emit_lumasphere_state_change(wrap(Intensity(self.intensity)));
-        emitter.emit_lumasphere_state_change(wrap(Rate(self.rate)));
+        emitter.emit(wrap(On(self.on)));
+        emitter.emit(wrap(Intensity(self.intensity)));
+        emitter.emit(wrap(Rate(self.rate)));
     }
 
     fn handle_state_change(&mut self, sc: StrobeStateChange) {
@@ -208,5 +209,11 @@ pub enum StateChange {
 pub type ControlMessage = StateChange;
 
 pub trait EmitStateChange {
-    fn emit_lumasphere_state_change(&mut self, sc: StateChange);
+    fn emit(&mut self, sc: StateChange);
+}
+
+impl<T: EmitShowStateChange> EmitStateChange for T {
+    fn emit(&mut self, sc: StateChange) {
+        self.emit(ShowStateChange::Lumasphere(sc));
+    }
 }

@@ -375,9 +375,9 @@ dependencies = [
 
 [[package]]
 name = "rust_dmx"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57bfbaa654f290a8412759eb05adfe689b91c32f62415415842eda45381d5f8f"
+checksum = "b9edc41823529002d639e8a072da65224c9ee2248415c28e402c869b2769593e"
 dependencies = [
  "derive_more",
  "serde",

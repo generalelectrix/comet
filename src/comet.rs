@@ -3,6 +3,7 @@ use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
 use crate::dmx::DmxAddr;
+use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
 use crate::util::unit_float_to_range;
 
 pub struct Comet {
@@ -67,16 +68,16 @@ impl Comet {
     /// Emit the current value of all controllable state.
     pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
         use StateChange::*;
-        emitter.emit_comet_state_change(Shutter(self.shutter_open));
-        emitter.emit_comet_state_change(Strobe(self.strobing));
-        emitter.emit_comet_state_change(StrobeRate(self.strobe_rate));
-        emitter.emit_comet_state_change(ShutterSoundActive(self.shutter_sound_active));
-        emitter.emit_comet_state_change(SelectMacro(self.macro_pattern));
-        emitter.emit_comet_state_change(MirrorSpeed(self.mirror_speed));
-        emitter.emit_comet_state_change(TrigSoundActive(self.trigger_state.music_trigger));
-        emitter.emit_comet_state_change(AutoStep(self.trigger_state.auto_step));
-        emitter.emit_comet_state_change(AutoStepRate(self.trigger_state.auto_step_rate));
-        emitter.emit_comet_state_change(Reset(self.reset));
+        emitter.emit(Shutter(self.shutter_open));
+        emitter.emit(Strobe(self.strobing));
+        emitter.emit(StrobeRate(self.strobe_rate));
+        emitter.emit(ShutterSoundActive(self.shutter_sound_active));
+        emitter.emit(SelectMacro(self.macro_pattern));
+        emitter.emit(MirrorSpeed(self.mirror_speed));
+        emitter.emit(TrigSoundActive(self.trigger_state.music_trigger));
+        emitter.emit(AutoStep(self.trigger_state.auto_step));
+        emitter.emit(AutoStepRate(self.trigger_state.auto_step_rate));
+        emitter.emit(Reset(self.reset));
     }
 
     pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
@@ -107,7 +108,7 @@ impl Comet {
             AutoStepRate(v) => self.trigger_state.auto_step_rate = v,
             Reset(v) => self.reset = v,
         };
-        emitter.emit_comet_state_change(sc);
+        emitter.emit(sc);
     }
 }
 
@@ -245,5 +246,11 @@ pub enum StateChange {
 }
 
 pub trait EmitStateChange {
-    fn emit_comet_state_change(&mut self, sc: StateChange);
+    fn emit(&mut self, sc: StateChange);
+}
+
+impl<T: EmitShowStateChange> EmitStateChange for T {
+    fn emit(&mut self, sc: StateChange) {
+        self.emit(ShowStateChange::Comet(sc));
+    }
 }
