@@ -17,7 +17,6 @@ use crate::show::Show;
 
 mod comet;
 mod dmx;
-mod event;
 mod fixture;
 mod lumasphere;
 mod osc;
@@ -41,7 +40,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ip = local_ip()?;
     info!("Listening at {}", ip);
 
-    let show = Show::new(&cfg)?;
+    let mut show = Show::new(&cfg)?;
+
+    show.run(dmx_port);
 
     Ok(())
 }
