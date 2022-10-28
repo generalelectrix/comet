@@ -6,7 +6,7 @@ use number::{BipolarFloat, UnipolarFloat};
 use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
 use crate::{
     dmx::DmxAddr,
-    util::{unit_float_to_range, RampingParameter},
+    util::{unipolar_float_to_range, RampingParameter},
 };
 
 /// DMX 255 is too fast; restrict to a reasonable value.
@@ -74,7 +74,7 @@ impl Lumasphere {
         if self.ball_start && speed < 0.2 {
             speed = 0.2;
         }
-        let dmx_speed = unit_float_to_range(0, MAX_ROTATION_SPEED, UnipolarFloat::new(speed));
+        let dmx_speed = unipolar_float_to_range(0, MAX_ROTATION_SPEED, UnipolarFloat::new(speed));
         let dmx_direction = if direction { 0 } else { 255 };
         dmx_slice[0] = dmx_speed;
         dmx_slice[1] = dmx_direction;
@@ -86,7 +86,7 @@ impl Lumasphere {
         } else {
             self.color_rotation
         };
-        unit_float_to_range(0, 255, speed)
+        unipolar_float_to_range(0, 255, speed)
     }
 
     /// Render into the provided DMX universe.
@@ -97,8 +97,8 @@ impl Lumasphere {
             .render(&mut dmx_univ[self.dmx_index + 3..self.dmx_index + 5]);
         self.strobe_2
             .render(&mut dmx_univ[self.dmx_index + 5..self.dmx_index + 7]);
-        dmx_univ[self.dmx_index + 7] = unit_float_to_range(0, 255, self.lamp_1_intensity);
-        dmx_univ[self.dmx_index + 8] = unit_float_to_range(0, 255, self.lamp_2_intensity);
+        dmx_univ[self.dmx_index + 7] = unipolar_float_to_range(0, 255, self.lamp_1_intensity);
+        dmx_univ[self.dmx_index + 8] = unipolar_float_to_range(0, 255, self.lamp_2_intensity);
         debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 9]);
     }
 
@@ -156,8 +156,8 @@ impl Strobe {
     fn render(&self, dmx_slice: &mut [u8]) {
         let (intensity, rate) = if self.on {
             (
-                unit_float_to_range(0, 255, self.intensity),
-                unit_float_to_range(0, 255, self.rate),
+                unipolar_float_to_range(0, 255, self.intensity),
+                unipolar_float_to_range(0, 255, self.rate),
             )
         } else {
             (0, 0)

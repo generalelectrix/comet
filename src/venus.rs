@@ -8,7 +8,7 @@ use number::{BipolarFloat, UnipolarFloat};
 use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
 use crate::{
     dmx::DmxAddr,
-    util::{unit_float_to_range, RampingParameter},
+    util::{unipolar_float_to_range, RampingParameter},
 };
 
 /// Control abstraction for the RA venus.
@@ -64,7 +64,8 @@ impl Venus {
             self.base_rotation.current(),
             &mut dmx_univ[self.dmx_index..self.dmx_index + 2],
         );
-        dmx_univ[self.dmx_index + 2] = unit_float_to_range(0, 255, self.cradle_motion.current());
+        dmx_univ[self.dmx_index + 2] =
+            unipolar_float_to_range(0, 255, self.cradle_motion.current());
         render_bipolar_to_dir_and_val(
             self.head_rotation.current(),
             &mut dmx_univ[self.dmx_index + 3..self.dmx_index + 5],
@@ -107,7 +108,7 @@ impl Venus {
 }
 
 fn render_bipolar_to_dir_and_val(v: BipolarFloat, out: &mut [u8]) {
-    out[1] = unit_float_to_range(0, 255, v.abs());
+    out[1] = unipolar_float_to_range(0, 255, v.abs());
     out[0] = if v.val() < 0.0 { 0 } else { 255 };
 }
 

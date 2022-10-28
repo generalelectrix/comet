@@ -4,7 +4,7 @@ use std::{collections::VecDeque, time::Duration};
 
 use crate::dmx::DmxAddr;
 use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
-use crate::util::unit_float_to_range;
+use crate::util::unipolar_float_to_range;
 
 pub struct Comet {
     dmx_index: usize,
@@ -55,14 +55,14 @@ impl Comet {
         } else if self.shutter_sound_active {
             125
         } else if self.strobing {
-            unit_float_to_range(151, 255, self.strobe_rate)
+            unipolar_float_to_range(151, 255, self.strobe_rate)
         } else {
             75
         }
     }
 
     fn render_mspeed(&self) -> u8 {
-        unit_float_to_range(0, 255, self.mirror_speed)
+        unipolar_float_to_range(0, 255, self.mirror_speed)
     }
 
     /// Emit the current value of all controllable state.
@@ -205,7 +205,7 @@ impl TriggerState {
         if self.music_trigger {
             return Self::DMX_VAL_MUSIC_TRIG;
         } else if self.auto_step {
-            return unit_float_to_range(151, 255, self.auto_step_rate);
+            return unipolar_float_to_range(151, 255, self.auto_step_rate);
         } else {
             return Self::DMX_VAL_STOP;
         }

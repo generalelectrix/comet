@@ -14,6 +14,7 @@ use crate::show::Show;
 mod comet;
 mod dmx;
 mod fixture;
+mod h2o;
 mod lumasphere;
 mod osc;
 mod show;
