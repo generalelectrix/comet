@@ -17,7 +17,7 @@ const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
     n: 10,
 };
 
-pub fn map_comet_controls(map: &mut ControlMap<ShowControlMessage>) {
+pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {
     use ControlMessage::*;
     use StateChange::*;
     map.add_bool(CONTROLS, "Shutter", |v| Comet(Set(Shutter(v))));
@@ -42,7 +42,7 @@ pub fn map_comet_controls(map: &mut ControlMap<ShowControlMessage>) {
     map.add_bool(DEBUG, "Reset", |v| Comet(Set(Reset(v))));
 }
 
-pub fn handle_comet_state_change<S>(sc: StateChange, send: &mut S)
+pub fn handle_state_change<S>(sc: StateChange, send: &mut S)
 where
     S: FnMut(OscMessage),
 {

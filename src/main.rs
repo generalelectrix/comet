@@ -38,8 +38,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut dmx_port = select_port()?;
 
-    let (send_ctrl, recv_ctrl) = unbounded::<()>();
-
     let ip = local_ip()?;
     info!("Listening at {}", ip);
 

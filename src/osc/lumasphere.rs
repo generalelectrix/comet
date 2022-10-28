@@ -10,7 +10,7 @@ use crate::{lumasphere::ControlMessage, osc::quadratic};
 
 const GROUP: &str = "Lumasphere";
 
-pub fn map_lumasphere_controls(map: &mut ControlMap<ShowControlMessage>) {
+pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {
     use StateChange::*;
     map.add_unipolar(GROUP, "lamp_1_intensity", |v| {
         Lumasphere(Lamp1Intensity(unipolar_fader_with_detent(v)))
@@ -48,7 +48,7 @@ where
     });
 }
 
-pub fn handle_lumasphere_state_change<S>(_: StateChange, _: &mut S)
+pub fn handle_state_change<S>(_: StateChange, _: &mut S)
 where
     S: FnMut(OscMessage),
 {

@@ -1,8 +1,9 @@
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
+use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use number::{BipolarFloat, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
-use simple_error::{bail, SimpleError};
+use simple_error::{bail, simple_error, SimpleError};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
@@ -10,8 +11,9 @@ use std::fmt::Display;
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 use std::str::FromStr;
 use std::thread;
+use std::time::Duration;
 
-use crate::fixture::ControlMessage;
+use crate::fixture::{ControlMessage, EmitStateChange, StateChange};
 
 mod comet;
 mod lumasphere;
@@ -34,6 +36,56 @@ impl OscController {
             send: response_send,
         })
     }
+
+    pub fn map_comet_controls(&mut self) {
+        comet::map_controls(&mut self.control_map);
+    }
+
+    pub fn map_lumasphere_controls(&mut self) {
+        lumasphere::map_controls(&mut self.control_map);
+    }
+
+    pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
+        let msg = match self.recv.recv_timeout(timeout) {
+            Ok(msg) => msg,
+            Err(RecvTimeoutError::Timeout) => {
+                return Ok(None);
+            }
+            Err(RecvTimeoutError::Disconnected) => {
+                bail!("OSC receiver disconnected");
+            }
+        };
+        self.control_map.handle(msg)
+    }
+}
+
+impl EmitStateChange for OscController {
+    fn emit(&mut self, sc: StateChange) {
+        match sc {
+            StateChange::Comet(sc) => comet::handle_state_change(sc, &mut |msg| {
+                let _ = self.send.send(msg);
+            }),
+            StateChange::Lumasphere(sc) => lumasphere::handle_state_change(sc, &mut |msg| {
+                let _ = self.send.send(msg);
+            }),
+        }
+    }
+}
+
+/// Unpack the group and control from the provided address.
+/// FIXME: refactor how we key the control map to avoid the need to key with
+/// owned strings.
+fn get_group_control(addr: &str) -> Result<(String, String), OscError> {
+    let mut pieces_iter = addr.split("/").skip(1);
+    let group = pieces_iter.next().ok_or_else(|| OscError {
+        addr: addr.to_string(),
+        msg: "group is missing".to_string(),
+    })?;
+    let control = pieces_iter.next().ok_or_else(|| OscError {
+        addr: addr.to_string(),
+        msg: "control is missing".to_string(),
+    })?;
+    Ok((group.to_string(), control.to_string()))
 }
 
 type ControlMessageCreator<C> = Box<dyn Fn(OscMessage) -> Result<Option<C>, Box<dyn Error>>>;
@@ -43,6 +95,17 @@ pub struct ControlMap<C>(HashMap<(String, String), ControlMessageCreator<C>>);
 impl<C> ControlMap<C> {
     pub fn new() -> Self {
         Self(HashMap::new())
+    }
+
+    pub fn handle(&self, msg: OscMessage) -> Result<Option<C>, Box<dyn Error>> {
+        let key = get_group_control(&msg.addr)?;
+        match self.0.get(&key) {
+            None => {
+                warn!("No control handler matched address \"{}\".", msg.addr);
+                Ok(None)
+            }
+            Some(handler) => handler(msg),
+        }
     }
 
     pub fn add<F, Group, Control>(&mut self, group: Group, control: Control, handler: F)
@@ -273,7 +336,6 @@ fn get_bool(v: OscMessage) -> Result<bool, OscError> {
     };
     Ok(bval)
 }
-
 /// Model a 1D button grid with radio-select behavior.
 /// This implements the TouchOSC model for a button grid.
 /// Special-cased to handle only 1D grids.
@@ -287,42 +349,28 @@ pub struct RadioButton {
 impl RadioButton {
     /// Get a index from a collection of radio buttons, mapped to numeric addresses.
     pub fn parse(&self, v: OscMessage) -> Result<usize, OscError> {
-        let parsed = v
-            .addr
-            .split("/")
-            .skip(3)
-            .map(str::parse::<usize>)
-            .take(2)
-            .collect::<Result<(Vec<_>), _>>();
-
-        let parsed = match parsed {
-            Err(e) => {
+        let (x, y) = match parse_radio_button_indices(&v.addr) {
+            Ok(indices) => indices,
+            Err(err) => {
                 return Err(OscError {
                     addr: v.addr,
-                    msg: format!("failed to parse radio button index: {}", e),
-                })
+                    msg: err,
+                });
             }
-            Ok(v) => v,
         };
-        if parsed.len() != 2 {
+        if x >= self.n {
             return Err(OscError {
                 addr: v.addr,
-                msg: format!("expected two radio button indexes, got {:?}", parsed),
+                msg: format!("radio button x index out of range: {}", x),
             });
         }
-        if parsed[0] >= self.n {
+        if y > 0 {
             return Err(OscError {
                 addr: v.addr,
-                msg: format!("radio button x index out of range: {}", parsed[0]),
+                msg: format!("radio button y index out of range: {}", y),
             });
         }
-        if parsed[1] > 0 {
-            return Err(OscError {
-                addr: v.addr,
-                msg: format!("radio button y index out of range: {}", parsed[1]),
-            });
-        }
-        Ok(parsed[0])
+        Ok(x)
     }
 
     pub fn set<S>(&self, n: usize, send: &mut S) -> Result<(), Box<dyn Error>>
@@ -346,4 +394,17 @@ impl RadioButton {
         }
         Ok(())
     }
+}
+
+fn parse_radio_button_indices(addr: &str) -> Result<(usize, usize), String> {
+    let mut pieces_iter = addr.split("/").skip(3).take(2).map(str::parse::<usize>);
+    let x = pieces_iter
+        .next()
+        .ok_or_else(|| "x radio button index missing".to_string())?
+        .map_err(|err| format!("failed to parse radio button x index: {}", err))?;
+    let y = pieces_iter
+        .next()
+        .ok_or_else(|| "y radio button index missing".to_string())?
+        .map_err(|err| format!("failed to parse radio button y index: {}", err))?;
+    Ok((x, y))
 }
