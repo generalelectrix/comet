@@ -18,6 +18,7 @@ mod lumasphere;
 mod osc;
 mod show;
 mod util;
+mod venus;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let config_path = env::args()

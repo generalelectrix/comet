@@ -16,6 +16,7 @@ use crate::fixture::{ControlMessage, EmitStateChange, StateChange};
 
 mod comet;
 mod lumasphere;
+mod venus;
 
 pub struct OscController {
     control_map: ControlMap<ControlMessage>,
@@ -44,6 +45,10 @@ impl OscController {
         lumasphere::map_controls(&mut self.control_map);
     }
 
+    pub fn map_venus_controls(&mut self) {
+        venus::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -60,13 +65,13 @@ impl OscController {
 
 impl EmitStateChange for OscController {
     fn emit(&mut self, sc: StateChange) {
+        let send = &mut |msg| {
+            let _ = self.send.send(msg);
+        };
         match sc {
-            StateChange::Comet(sc) => comet::handle_state_change(sc, &mut |msg| {
-                let _ = self.send.send(msg);
-            }),
-            StateChange::Lumasphere(sc) => lumasphere::handle_state_change(sc, &mut |msg| {
-                let _ = self.send.send(msg);
-            }),
+            StateChange::Comet(sc) => comet::handle_state_change(sc, send),
+            StateChange::Lumasphere(sc) => lumasphere::handle_state_change(sc, send),
+            StateChange::Venus(sc) => venus::handle_state_change(sc, send),
         }
     }
 }

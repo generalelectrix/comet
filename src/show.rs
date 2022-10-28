@@ -4,7 +4,8 @@ use std::{
 };
 
 use crate::{
-    comet::Comet, fixture::ControlMessage, lumasphere::Lumasphere, osc::OscController, Config,
+    comet::Comet, fixture::ControlMessage, lumasphere::Lumasphere, osc::OscController,
+    venus::Venus, Config,
 };
 use log::error;
 use rust_dmx::DmxPort;
@@ -14,6 +15,7 @@ pub struct Show {
     osc_controller: OscController,
     comet: Option<Comet>,
     lumasphere: Option<Lumasphere>,
+    venus: Option<Venus>,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
@@ -23,6 +25,7 @@ impl Show {
     pub fn new(cfg: &Config) -> Result<Self, Box<dyn Error>> {
         let mut comet = None;
         let mut lumasphere = None;
+        let mut venus = None;
 
         let mut osc_controller =
             OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
@@ -42,6 +45,13 @@ impl Show {
                 lumasphere = Some(fixture);
                 println!("Controlling the Lumasphere.");
             }
+            "venus" => {
+                let fixture = Venus::new(cfg.dmx_addr);
+                osc_controller.map_venus_controls();
+                fixture.emit_state(&mut osc_controller);
+                venus = Some(fixture);
+                println!("Controlling the Venus.");
+            }
             unknown => {
                 bail!("Unknown fixture type \"{}\".", unknown);
             }
@@ -50,6 +60,7 @@ impl Show {
         Ok(Self {
             comet,
             lumasphere,
+            venus,
             osc_controller,
         })
     }
@@ -105,6 +116,11 @@ impl Show {
                 self.lumasphere
                     .as_mut()
                     .map(|lumasphere| lumasphere.control(c, &mut self.osc_controller));
+            }
+            ControlMessage::Venus(c) => {
+                self.venus
+                    .as_mut()
+                    .map(|venus| venus.control(c, &mut self.osc_controller));
             }
         }
         Ok(())
