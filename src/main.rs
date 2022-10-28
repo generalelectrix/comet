@@ -43,7 +43,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let show = Show::new(&cfg)?;
 
-    println!("{:?}", cfg);
     Ok(())
 }
 
