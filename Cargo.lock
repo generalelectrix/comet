@@ -57,6 +57,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cobra_commander"
+version = "0.1.0"
+dependencies = [
+ "crossbeam-channel",
+ "derive_more",
+ "lazy_static",
+ "local-ip-address",
+ "log",
+ "number",
+ "rosc",
+ "rust_dmx",
+ "serde",
+ "serde_yaml",
+ "simple-error",
+ "simplelog",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -353,24 +371,6 @@ checksum = "10b751c26b740b6e8c37df88d2aa04dd4ea0f5a592ddd15ab21707ff925575dd"
 dependencies = [
  "byteorder",
  "nom",
-]
-
-[[package]]
-name = "rust"
-version = "0.1.0"
-dependencies = [
- "crossbeam-channel",
- "derive_more",
- "lazy_static",
- "local-ip-address",
- "log",
- "number",
- "rosc",
- "rust_dmx",
- "serde",
- "serde_yaml",
- "simple-error",
- "simplelog",
 ]
 
 [[package]]

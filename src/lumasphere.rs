@@ -36,7 +36,7 @@ const MAX_ROTATION_SPEED: u8 = 100;
 /// 8: lamp 1 dimmer
 /// 9: lamp 2 dimmer
 pub struct Lumasphere {
-    dmx_addr: DmxAddr,
+    dmx_index: usize,
     lamp_1_intensity: UnipolarFloat,
     lamp_2_intensity: UnipolarFloat,
     ball_rotation: RampingParameter<BipolarFloat>,
@@ -50,7 +50,7 @@ pub struct Lumasphere {
 impl Lumasphere {
     pub fn new(dmx_addr: DmxAddr) -> Self {
         Self {
-            dmx_addr,
+            dmx_index: dmx_addr - 1,
             lamp_1_intensity: UnipolarFloat::ZERO,
             lamp_2_intensity: UnipolarFloat::ZERO,
             // Ramp ball rotation no faster than unit range in one second.
@@ -91,15 +91,15 @@ impl Lumasphere {
 
     /// Render into the provided DMX universe.
     pub fn render(&self, dmx_univ: &mut [u8]) {
-        self.render_ball_rotation(&mut dmx_univ[self.dmx_addr..self.dmx_addr + 2]);
-        dmx_univ[self.dmx_addr + 2] = self.render_color_rotation();
+        self.render_ball_rotation(&mut dmx_univ[self.dmx_index..self.dmx_index + 2]);
+        dmx_univ[self.dmx_index + 2] = self.render_color_rotation();
         self.strobe_1
-            .render(&mut dmx_univ[self.dmx_addr + 3..self.dmx_addr + 5]);
+            .render(&mut dmx_univ[self.dmx_index + 3..self.dmx_index + 5]);
         self.strobe_2
-            .render(&mut dmx_univ[self.dmx_addr + 5..self.dmx_addr + 7]);
-        dmx_univ[self.dmx_addr + 7] = unit_float_to_range(0, 255, self.lamp_1_intensity);
-        dmx_univ[self.dmx_addr + 8] = unit_float_to_range(0, 255, self.lamp_2_intensity);
-        debug!("{:?}", &dmx_univ[self.dmx_addr..self.dmx_addr + 9]);
+            .render(&mut dmx_univ[self.dmx_index + 5..self.dmx_index + 7]);
+        dmx_univ[self.dmx_index + 7] = unit_float_to_range(0, 255, self.lamp_1_intensity);
+        dmx_univ[self.dmx_index + 8] = unit_float_to_range(0, 255, self.lamp_2_intensity);
+        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 9]);
     }
 
     /// Emit the current value of all controllable state.

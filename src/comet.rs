@@ -7,7 +7,7 @@ use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as Show
 use crate::util::unit_float_to_range;
 
 pub struct Comet {
-    dmx_addr: DmxAddr,
+    dmx_index: usize,
     shutter_open: bool,
     strobing: bool,
     strobe_rate: UnipolarFloat,
@@ -23,7 +23,7 @@ impl Comet {
 
     pub fn new(dmx_addr: DmxAddr) -> Self {
         Self {
-            dmx_addr,
+            dmx_index: dmx_addr - 1,
             shutter_open: false,
             strobing: false,
             strobe_rate: UnipolarFloat::ZERO,
@@ -41,12 +41,12 @@ impl Comet {
 
     /// Render into the provided DMX universe.
     pub fn render(&self, dmx_univ: &mut [u8]) {
-        dmx_univ[self.dmx_addr] = self.render_shutter();
-        dmx_univ[self.dmx_addr + 1] = Self::GAME_DMX_VALS[self.macro_pattern];
-        dmx_univ[self.dmx_addr + 2] = self.render_mspeed();
-        dmx_univ[self.dmx_addr + 3] = self.trigger_state.render();
-        dmx_univ[self.dmx_addr + 4] = if self.reset { 255 } else { 0 };
-        debug!("{:?}", &dmx_univ[self.dmx_addr..self.dmx_addr + 5]);
+        dmx_univ[self.dmx_index] = self.render_shutter();
+        dmx_univ[self.dmx_index + 1] = Self::GAME_DMX_VALS[self.macro_pattern];
+        dmx_univ[self.dmx_index + 2] = self.render_mspeed();
+        dmx_univ[self.dmx_index + 3] = self.trigger_state.render();
+        dmx_univ[self.dmx_index + 4] = if self.reset { 255 } else { 0 };
+        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 5]);
     }
 
     fn render_shutter(&self) -> u8 {
