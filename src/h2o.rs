@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
 use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
@@ -44,6 +45,7 @@ impl H2O {
             } else {
                 dmx_slice[2] = self.fixed_color.as_dmx();
             }
+            debug!("{:?}", dmx_slice);
         }
     }
 

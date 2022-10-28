@@ -146,6 +146,8 @@ impl Show {
     fn update(&mut self, delta_t: Duration) {
         self.comet.as_mut().map(|c| c.update(delta_t));
         self.lumasphere.as_mut().map(|l| l.update(delta_t));
+        self.venus.as_mut().map(|v| v.update(delta_t));
+        self.h2o.as_mut().map(|h| h.update(delta_t));
     }
 
     fn render(&mut self, dmx_buffer: &mut [u8]) {
@@ -153,5 +155,7 @@ impl Show {
         // overwrite all previously-rendered state.
         self.comet.as_ref().map(|c| c.render(dmx_buffer));
         self.lumasphere.as_ref().map(|l| l.render(dmx_buffer));
+        self.venus.as_ref().map(|v| v.render(dmx_buffer));
+        self.h2o.as_ref().map(|h| h.render(dmx_buffer));
     }
 }
