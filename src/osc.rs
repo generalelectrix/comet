@@ -15,6 +15,7 @@ use std::time::Duration;
 use crate::fixture::{ControlMessage, EmitStateChange, StateChange};
 
 mod comet;
+mod h2o;
 mod lumasphere;
 mod venus;
 
@@ -72,6 +73,7 @@ impl EmitStateChange for OscController {
             StateChange::Comet(sc) => comet::handle_state_change(sc, send),
             StateChange::Lumasphere(sc) => lumasphere::handle_state_change(sc, send),
             StateChange::Venus(sc) => venus::handle_state_change(sc, send),
+            StateChange::H2O(sc) => h2o::handle_state_change(sc, send),
         }
     }
 }

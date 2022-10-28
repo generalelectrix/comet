@@ -6,8 +6,12 @@ use std::{
 use number::{BipolarFloat, UnipolarFloat};
 
 /// Scale value into the provided integer range.
-pub fn unipolar_float_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
-    ((end - start) as f64 * value.val()) as u8 + start
+pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
+    if end > start {
+        ((end - start) as f64 * value.val()) as u8 + start
+    } else {
+        ((start - end) as f64 * value.invert().val()) as u8 + end
+    }
 }
 
 /// Coerce the bottom 5% of the fader range to be a hard 0, and rescale the rest.
@@ -67,5 +71,20 @@ impl<P: Copy + Sub<Output = P> + Into<f64> + AddAssign<f64>> RampingParameter<P>
 
     pub fn current(&self) -> P {
         self.current
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::unipolar_to_range;
+    use number::UnipolarFloat;
+    #[test]
+    fn test_unipolar_to_range() {
+        assert_eq!(0, unipolar_to_range(0, 255, UnipolarFloat::ZERO));
+        assert_eq!(255, unipolar_to_range(0, 255, UnipolarFloat::ONE));
+        assert_eq!(50, unipolar_to_range(0, 100, UnipolarFloat::new(0.5)));
+        assert_eq!(255, unipolar_to_range(255, 0, UnipolarFloat::ZERO));
+        assert_eq!(0, unipolar_to_range(255, 0, UnipolarFloat::ONE));
+        assert_eq!(50, unipolar_to_range(100, 0, UnipolarFloat::new(0.5)));
     }
 }
