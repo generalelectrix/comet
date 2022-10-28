@@ -5,7 +5,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
 use crate::{
-    dmx::{self, DmxAddr},
+    dmx::DmxAddr,
     util::{unit_float_to_range, RampingParameter},
 };
 

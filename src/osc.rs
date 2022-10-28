@@ -1,14 +1,13 @@
 use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
-use lazy_static::lazy_static;
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use number::{BipolarFloat, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
-use simple_error::{bail, simple_error, SimpleError};
+use simple_error::bail;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
-use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
@@ -26,7 +25,7 @@ pub struct OscController {
 
 impl OscController {
     pub fn new(receive_port: u16, send_host: &str, send_port: u16) -> Result<Self, Box<dyn Error>> {
-        let recv_addr = SocketAddr::from_str(&format!("127.0.0.1:{}", receive_port))?;
+        let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
         let send_adr = SocketAddr::from_str(&format!("{}:{}", send_host, send_port))?;
         let control_recv = start_listener(recv_addr)?;
         let response_send = start_sender(send_adr)?;
@@ -229,9 +228,9 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscMessage>, Box<dyn Erro
 /// Assumes we only have one controller.
 fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>, Box<dyn Error>> {
     let (send, recv) = unbounded();
-    let socket = UdpSocket::bind("127.0.0.1:0")?;
+    let socket = UdpSocket::bind("0.0.0.0:0")?;
 
-    let mut send_packet = move |msg| -> Result<(), Box<dyn Error>> {
+    let send_packet = move |msg| -> Result<(), Box<dyn Error>> {
         let msg_buf = encoder::encode(&OscPacket::Message(msg))?;
         socket.send_to(&msg_buf, addr)?;
         Ok(())
@@ -388,7 +387,7 @@ impl RadioButton {
         for i in 0..self.n {
             let val = if i == n { 1.0 } else { 0.0 };
             send(OscMessage {
-                addr: format!("{}/{}/{}/0", self.group, self.control, i),
+                addr: format!("{}/{}/{}/1", self.group, self.control, i + 1),
                 args: vec![OscType::Float(val)],
             })
         }
@@ -396,6 +395,7 @@ impl RadioButton {
     }
 }
 
+/// Parse radio button indices from a TouchOSC button grid.
 fn parse_radio_button_indices(addr: &str) -> Result<(usize, usize), String> {
     let mut pieces_iter = addr.split("/").skip(3).take(2).map(str::parse::<usize>);
     let x = pieces_iter
@@ -406,5 +406,11 @@ fn parse_radio_button_indices(addr: &str) -> Result<(usize, usize), String> {
         .next()
         .ok_or_else(|| "y radio button index missing".to_string())?
         .map_err(|err| format!("failed to parse radio button y index: {}", err))?;
-    Ok((x, y))
+    if x == 0 {
+        return Err(format!("x index is unexpectedly 0"));
+    }
+    if y == 0 {
+        return Err(format!("y index is unexpectedly 0"));
+    }
+    Ok((x - 1, y - 1))
 }

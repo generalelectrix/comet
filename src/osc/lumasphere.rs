@@ -6,7 +6,6 @@ use crate::lumasphere::StateChange;
 use crate::lumasphere::StrobeStateChange;
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
-use crate::{lumasphere::ControlMessage, osc::quadratic};
 
 const GROUP: &str = "Lumasphere";
 

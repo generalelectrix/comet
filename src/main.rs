@@ -1,4 +1,3 @@
-use crossbeam_channel::unbounded;
 use dmx::DmxAddr;
 use local_ip_address::local_ip;
 use log::info;
@@ -6,12 +5,9 @@ use log::LevelFilter;
 use rust_dmx::select_port;
 use serde::{Deserialize, Serialize};
 use simplelog::{Config as LogConfig, SimpleLogger};
-use std::cmp;
 use std::env;
 use std::error::Error;
 use std::fs::File;
-use std::io::Read;
-use std::time::Duration;
 
 use crate::show::Show;
 
@@ -27,18 +23,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let config_path = env::args()
         .nth(1)
         .expect("Provide config path as first arg.");
-    let mut cfg = Config::load(&config_path)?;
+    let cfg = Config::load(&config_path)?;
     let log_level = if cfg.debug {
         LevelFilter::Debug
     } else {
-        LevelFilter::Error
+        LevelFilter::Info
     };
     SimpleLogger::init(log_level, LogConfig::default())?;
 
-    let mut dmx_port = select_port()?;
-
     let ip = local_ip()?;
-    info!("Listening at {}", ip);
+    info!("Listening for OSC at {}:{}", ip, cfg.receive_port);
+
+    let dmx_port = select_port()?;
 
     let mut show = Show::new(&cfg)?;
 
@@ -54,7 +50,6 @@ pub struct Config {
     send_port: u16,
     dmx_addr: DmxAddr,
     debug: bool,
-    update_interval: i64,
     fixture: String,
 }
 
