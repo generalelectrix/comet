@@ -6,6 +6,7 @@ use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
 use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
+use crate::util::bipolar_to_split_range;
 use crate::{dmx::DmxAddr, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -73,23 +74,6 @@ impl H2O {
             ColorRotation(v) => self.color_rotation = v,
         };
         emitter.emit(sc);
-    }
-}
-
-fn bipolar_to_split_range(
-    v: BipolarFloat,
-    cw_slow: u8,
-    cw_fast: u8,
-    ccw_slow: u8,
-    ccw_fast: u8,
-    stop: u8,
-) -> u8 {
-    if v == BipolarFloat::ZERO {
-        stop
-    } else if v.val() > 0.0 {
-        unipolar_to_range(cw_slow, cw_fast, v.abs())
-    } else {
-        unipolar_to_range(ccw_slow, ccw_fast, v.abs())
     }
 }
 

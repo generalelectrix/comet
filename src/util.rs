@@ -14,6 +14,24 @@ pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
     }
 }
 
+/// Scale a bipolar value into an American DJ-style split range.
+pub fn bipolar_to_split_range(
+    v: BipolarFloat,
+    cw_slow: u8,
+    cw_fast: u8,
+    ccw_slow: u8,
+    ccw_fast: u8,
+    stop: u8,
+) -> u8 {
+    if v == BipolarFloat::ZERO {
+        stop
+    } else if v.val() > 0.0 {
+        unipolar_to_range(cw_slow, cw_fast, v.abs())
+    } else {
+        unipolar_to_range(ccw_slow, ccw_fast, v.abs())
+    }
+}
+
 /// Coerce the bottom 5% of the fader range to be a hard 0, and rescale the rest.
 pub fn unipolar_fader_with_detent(v: UnipolarFloat) -> UnipolarFloat {
     if v.val() < 0.05 {

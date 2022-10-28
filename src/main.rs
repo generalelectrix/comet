@@ -12,6 +12,7 @@ use std::fs::File;
 
 use crate::show::Show;
 
+mod aquarius;
 mod comet;
 mod dmx;
 mod fixture;

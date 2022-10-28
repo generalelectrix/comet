@@ -1,3 +1,6 @@
+use crate::aquarius::{
+    ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
+};
 use crate::comet::{ControlMessage as CometControlMessage, StateChange as CometStateChange};
 use crate::h2o::{ControlMessage as H2OControlMessage, StateChange as H2OStateChange};
 use crate::lumasphere::{
@@ -15,6 +18,7 @@ pub enum StateChange {
     Lumasphere(LumasphereStateChange),
     Venus(VenusStateChange),
     H2O(H2OStateChange),
+    Aquarius(AquariusStateChange),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -23,4 +27,5 @@ pub enum ControlMessage {
     Lumasphere(LumasphereControlMessage),
     Venus(VenusControlMessage),
     H2O(H2OControlMessage),
+    Aquarius(AquariusControlMessage),
 }

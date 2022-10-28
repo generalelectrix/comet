@@ -5,3 +5,5 @@ debug: True
 fixtures:
   h2o:
     - 1
+  aquarius:
+    - 4

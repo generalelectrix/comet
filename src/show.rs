@@ -4,8 +4,8 @@ use std::{
 };
 
 use crate::{
-    comet::Comet, fixture::ControlMessage, h2o::H2O, lumasphere::Lumasphere, osc::OscController,
-    venus::Venus, Config,
+    aquarius::Aquarius, comet::Comet, fixture::ControlMessage, h2o::H2O, lumasphere::Lumasphere,
+    osc::OscController, venus::Venus, Config,
 };
 use log::error;
 use rust_dmx::DmxPort;
@@ -17,6 +17,7 @@ pub struct Show {
     lumasphere: Option<Lumasphere>,
     venus: Option<Venus>,
     h2o: Option<H2O>,
+    aquarius: Option<Aquarius>,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
@@ -28,6 +29,7 @@ impl Show {
         let mut lumasphere = None;
         let mut venus = None;
         let mut h2o = None;
+        let mut aquarius = None;
 
         let mut osc_controller =
             OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
@@ -62,6 +64,14 @@ impl Show {
                     h2o = Some(fixture);
                     println!("Controlling H2Os.");
                 }
+                "aquarius" => {
+                    let fixture = Aquarius::new(addrs);
+                    osc_controller.map_aquarius_controls();
+                    fixture.emit_state(&mut osc_controller);
+                    aquarius = Some(fixture);
+                    println!("Controlling Aquarii.");
+                }
+
                 unknown => {
                     bail!("Unknown fixture type \"{}\".", unknown);
                 }
@@ -73,6 +83,7 @@ impl Show {
             lumasphere,
             venus,
             h2o,
+            aquarius,
             osc_controller,
         })
     }
@@ -139,6 +150,11 @@ impl Show {
                     .as_mut()
                     .map(|h2o| h2o.control(c, &mut self.osc_controller));
             }
+            ControlMessage::Aquarius(c) => {
+                self.aquarius
+                    .as_mut()
+                    .map(|aquarius| aquarius.control(c, &mut self.osc_controller));
+            }
         }
         Ok(())
     }
@@ -148,6 +164,7 @@ impl Show {
         self.lumasphere.as_mut().map(|l| l.update(delta_t));
         self.venus.as_mut().map(|v| v.update(delta_t));
         self.h2o.as_mut().map(|h| h.update(delta_t));
+        self.aquarius.as_mut().map(|a| a.update(delta_t));
     }
 
     fn render(&mut self, dmx_buffer: &mut [u8]) {
@@ -157,5 +174,6 @@ impl Show {
         self.lumasphere.as_ref().map(|l| l.render(dmx_buffer));
         self.venus.as_ref().map(|v| v.render(dmx_buffer));
         self.h2o.as_ref().map(|h| h.render(dmx_buffer));
+        self.aquarius.as_ref().map(|a| a.render(dmx_buffer));
     }
 }

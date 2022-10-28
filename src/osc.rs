@@ -14,6 +14,7 @@ use std::time::Duration;
 
 use crate::fixture::{ControlMessage, EmitStateChange, StateChange};
 
+mod aquarius;
 mod comet;
 mod h2o;
 mod lumasphere;
@@ -54,6 +55,10 @@ impl OscController {
         h2o::map_controls(&mut self.control_map);
     }
 
+    pub fn map_aquarius_controls(&mut self) {
+        aquarius::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -78,6 +83,7 @@ impl EmitStateChange for OscController {
             StateChange::Lumasphere(sc) => lumasphere::handle_state_change(sc, send),
             StateChange::Venus(sc) => venus::handle_state_change(sc, send),
             StateChange::H2O(sc) => h2o::handle_state_change(sc, send),
+            StateChange::Aquarius(sc) => aquarius::handle_state_change(sc, send),
         }
     }
 }
