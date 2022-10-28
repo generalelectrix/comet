@@ -186,14 +186,14 @@ impl Strobe {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum StrobeStateChange {
     On(bool),
     Intensity(UnipolarFloat),
     Rate(UnipolarFloat),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     Lamp1Intensity(UnipolarFloat),
     Lamp2Intensity(UnipolarFloat),

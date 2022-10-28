@@ -387,7 +387,7 @@ impl RadioButton {
         for i in 0..self.n {
             let val = if i == n { 1.0 } else { 0.0 };
             send(OscMessage {
-                addr: format!("{}/{}/{}/1", self.group, self.control, i + 1),
+                addr: format!("/{}/{}/{}/1", self.group, self.control, i + 1),
                 args: vec![OscType::Float(val)],
             })
         }

@@ -7,13 +7,13 @@ pub trait EmitStateChange {
     fn emit(&mut self, sc: StateChange);
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     Comet(CometStateChange),
     Lumasphere(LumasphereStateChange),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ControlMessage {
     Comet(CometControlMessage),
     Lumasphere(LumasphereControlMessage),

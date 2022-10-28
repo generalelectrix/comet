@@ -219,19 +219,19 @@ enum Stepping {
     Backwards,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Step {
     Forward,
     Backward,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ControlMessage {
     Set(StateChange),
     Step(Step),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     Shutter(bool),
     Strobe(bool),
