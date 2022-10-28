@@ -3,7 +3,7 @@ use std::time::Duration;
 use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
+use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
 use crate::{
     dmx::DmxAddr,
     util::{unipolar_to_range, RampingParameter},
@@ -63,10 +63,6 @@ impl Lumasphere {
         }
     }
 
-    pub fn update(&mut self, delta_t: Duration) {
-        self.ball_rotation.update(delta_t);
-    }
-
     fn render_ball_rotation(&self, dmx_slice: &mut [u8]) {
         let val = self.ball_rotation.current().val();
         let mut speed = val.abs();
@@ -89,37 +85,7 @@ impl Lumasphere {
         unipolar_to_range(0, 255, speed)
     }
 
-    /// Render into the provided DMX universe.
-    pub fn render(&self, dmx_univ: &mut [u8]) {
-        self.render_ball_rotation(&mut dmx_univ[self.dmx_index..self.dmx_index + 2]);
-        dmx_univ[self.dmx_index + 2] = self.render_color_rotation();
-        self.strobe_1
-            .render(&mut dmx_univ[self.dmx_index + 3..self.dmx_index + 5]);
-        self.strobe_2
-            .render(&mut dmx_univ[self.dmx_index + 5..self.dmx_index + 7]);
-        dmx_univ[self.dmx_index + 7] = unipolar_to_range(0, 255, self.lamp_1_intensity);
-        dmx_univ[self.dmx_index + 8] = unipolar_to_range(0, 255, self.lamp_2_intensity);
-        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 9]);
-    }
-
-    /// Emit the current value of all controllable state.
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
-        use StateChange::*;
-        emitter.emit(Lamp1Intensity(self.lamp_1_intensity));
-        emitter.emit(Lamp2Intensity(self.lamp_2_intensity));
-        emitter.emit(BallRotation(self.ball_rotation.current()));
-        emitter.emit(BallStart(self.ball_start));
-        emitter.emit(ColorRotation(self.color_rotation));
-        emitter.emit(ColorStart(self.color_start));
-        self.strobe_1.emit_state(emitter, Strobe1);
-        self.strobe_2.emit_state(emitter, Strobe2);
-    }
-
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
-        self.handle_state_change(msg, emitter);
-    }
-
-    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
         use StateChange::*;
         match sc {
             Lamp1Intensity(v) => self.lamp_1_intensity = v,
@@ -132,7 +98,51 @@ impl Lumasphere {
 
             Strobe2(sc) => self.strobe_2.handle_state_change(sc),
         };
-        emitter.emit(sc);
+        emitter.emit_lumasphere(sc);
+    }
+}
+
+impl Fixture for Lumasphere {
+    fn update(&mut self, delta_t: Duration) {
+        self.ball_rotation.update(delta_t);
+    }
+
+    fn render(&self, dmx_univ: &mut [u8]) {
+        self.render_ball_rotation(&mut dmx_univ[self.dmx_index..self.dmx_index + 2]);
+        dmx_univ[self.dmx_index + 2] = self.render_color_rotation();
+        self.strobe_1
+            .render(&mut dmx_univ[self.dmx_index + 3..self.dmx_index + 5]);
+        self.strobe_2
+            .render(&mut dmx_univ[self.dmx_index + 5..self.dmx_index + 7]);
+        dmx_univ[self.dmx_index + 7] = unipolar_to_range(0, 255, self.lamp_1_intensity);
+        dmx_univ[self.dmx_index + 8] = unipolar_to_range(0, 255, self.lamp_2_intensity);
+        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 9]);
+    }
+
+    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+        use StateChange::*;
+        emitter.emit_lumasphere(Lamp1Intensity(self.lamp_1_intensity));
+        emitter.emit_lumasphere(Lamp2Intensity(self.lamp_2_intensity));
+        emitter.emit_lumasphere(BallRotation(self.ball_rotation.current()));
+        emitter.emit_lumasphere(BallStart(self.ball_start));
+        emitter.emit_lumasphere(ColorRotation(self.color_rotation));
+        emitter.emit_lumasphere(ColorStart(self.color_start));
+        self.strobe_1.emit_state(emitter, Strobe1);
+        self.strobe_2.emit_state(emitter, Strobe2);
+    }
+
+    fn control(
+        &mut self,
+        msg: ShowControlMessage,
+        emitter: &mut dyn EmitStateChange,
+    ) -> Option<ShowControlMessage> {
+        match msg {
+            ShowControlMessage::Lumasphere(msg) => {
+                self.handle_state_change(msg, emitter);
+                None
+            }
+            other => Some(other),
+        }
     }
 }
 
@@ -166,14 +176,14 @@ impl Strobe {
         dmx_slice[1] = rate;
     }
 
-    fn emit_state<E: EmitStateChange, F>(&self, emitter: &mut E, wrap: F)
+    fn emit_state<F>(&self, emitter: &mut dyn EmitStateChange, wrap: F)
     where
         F: Fn(StrobeStateChange) -> StateChange + 'static,
     {
         use StrobeStateChange::*;
-        emitter.emit(wrap(On(self.on)));
-        emitter.emit(wrap(Intensity(self.intensity)));
-        emitter.emit(wrap(Rate(self.rate)));
+        emitter.emit_lumasphere(wrap(On(self.on)));
+        emitter.emit_lumasphere(wrap(Intensity(self.intensity)));
+        emitter.emit_lumasphere(wrap(Rate(self.rate)));
     }
 
     fn handle_state_change(&mut self, sc: StrobeStateChange) {
@@ -207,13 +217,3 @@ pub enum StateChange {
 
 // Lumasphere has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-impl<T: EmitShowStateChange> EmitStateChange for T {
-    fn emit(&mut self, sc: StateChange) {
-        self.emit(ShowStateChange::Lumasphere(sc));
-    }
-}

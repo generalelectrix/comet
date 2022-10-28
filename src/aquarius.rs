@@ -1,12 +1,10 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
 
-use std::time::Duration;
-
 use log::debug;
 use number::BipolarFloat;
 
 use crate::dmx::DmxAddr;
-use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
+use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
 use crate::util::bipolar_to_split_range;
 
 /// Aggregate and control one or more Aquariuses.
@@ -26,10 +24,18 @@ impl Aquarius {
         }
     }
 
-    pub fn update(&mut self, _: Duration) {}
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+        use StateChange::*;
+        match sc {
+            LampOn(v) => self.lamp_on = v,
+            Rotation(v) => self.rotation = v,
+        };
+        emitter.emit_aquarius(sc);
+    }
+}
 
-    /// Render into the provided DMX universe.
-    pub fn render(&self, dmx_univ: &mut [u8]) {
+impl Fixture for Aquarius {
+    fn render(&self, dmx_univ: &mut [u8]) {
         for dmx_index in self.dmx_indices.iter() {
             dmx_univ[*dmx_index] = bipolar_to_split_range(self.rotation, 130, 8, 132, 255, 0);
             dmx_univ[*dmx_index + 1] = if self.lamp_on { 255 } else { 0 };
@@ -37,24 +43,24 @@ impl Aquarius {
         }
     }
 
-    /// Emit the current value of all controllable state.
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
+    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
         use StateChange::*;
-        emitter.emit(LampOn(self.lamp_on));
-        emitter.emit(Rotation(self.rotation));
+        emitter.emit_aquarius(LampOn(self.lamp_on));
+        emitter.emit_aquarius(Rotation(self.rotation));
     }
 
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
-        self.handle_state_change(msg, emitter);
-    }
-
-    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
-        use StateChange::*;
-        match sc {
-            LampOn(v) => self.lamp_on = v,
-            Rotation(v) => self.rotation = v,
-        };
-        emitter.emit(sc);
+    fn control(
+        &mut self,
+        msg: ShowControlMessage,
+        emitter: &mut dyn EmitStateChange,
+    ) -> Option<ShowControlMessage> {
+        match msg {
+            ShowControlMessage::Aquarius(msg) => {
+                self.handle_state_change(msg, emitter);
+                None
+            }
+            other => Some(other),
+        }
     }
 }
 
@@ -66,13 +72,3 @@ pub enum StateChange {
 
 // Aquarius has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-impl<T: EmitShowStateChange> EmitStateChange for T {
-    fn emit(&mut self, sc: StateChange) {
-        self.emit(ShowStateChange::Aquarius(sc));
-    }
-}

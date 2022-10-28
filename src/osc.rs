@@ -183,22 +183,17 @@ impl<C> ControlMap<C> {
 
     pub fn add_trigger<Group, Control>(&mut self, group: Group, control: Control, event: C)
     where
-        C: Copy + 'static,
+        C: Clone + 'static,
         Group: Into<String> + Display,
         Control: Into<String> + Display,
     {
-        self.add_fetch_process(
-            group,
-            control,
-            get_bool,
-            move |v| {
-                if v {
-                    Some(event)
-                } else {
-                    None
-                }
-            },
-        )
+        self.add_fetch_process(group, control, get_bool, move |v| {
+            if v {
+                Some(event.clone())
+            } else {
+                None
+            }
+        })
     }
 
     pub fn add_radio_button_array<F>(&mut self, rb: RadioButton, process: F)

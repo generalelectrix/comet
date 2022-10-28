@@ -3,9 +3,10 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::fixture::Fixture;
 use crate::{
-    aquarius::Aquarius, comet::Comet, fixture::ControlMessage, h2o::H2O, lumasphere::Lumasphere,
-    osc::OscController, venus::Venus, Config,
+    aquarius::Aquarius, comet::Comet, h2o::H2O, lumasphere::Lumasphere, osc::OscController,
+    venus::Venus, Config,
 };
 use log::error;
 use rust_dmx::DmxPort;
@@ -13,11 +14,7 @@ use simple_error::bail;
 
 pub struct Show {
     osc_controller: OscController,
-    comet: Option<Comet>,
-    lumasphere: Option<Lumasphere>,
-    venus: Option<Venus>,
-    h2o: Option<H2O>,
-    aquarius: Option<Aquarius>,
+    fixtures: Vec<Box<dyn Fixture>>,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
@@ -25,11 +22,7 @@ const UPDATE_INTERVAL: Duration = Duration::from_millis(10);
 
 impl Show {
     pub fn new(mut cfg: Config) -> Result<Self, Box<dyn Error>> {
-        let mut comet = None;
-        let mut lumasphere = None;
-        let mut venus = None;
-        let mut h2o = None;
-        let mut aquarius = None;
+        let mut fixtures: Vec<Box<dyn Fixture>> = Vec::new();
 
         let mut osc_controller =
             OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
@@ -39,36 +32,31 @@ impl Show {
                 "comet" => {
                     let fixture = Comet::new(addrs[0]);
                     osc_controller.map_comet_controls();
-                    fixture.emit_state(&mut osc_controller);
-                    comet = Some(fixture);
+                    fixtures.push(Box::new(fixture));
                     println!("Controlling the Comet.");
                 }
                 "lumasphere" => {
                     let fixture = Lumasphere::new(addrs[0]);
                     osc_controller.map_lumasphere_controls();
-                    fixture.emit_state(&mut osc_controller);
-                    lumasphere = Some(fixture);
+                    fixtures.push(Box::new(fixture));
                     println!("Controlling the Lumasphere.");
                 }
                 "venus" => {
                     let fixture = Venus::new(addrs[0]);
                     osc_controller.map_venus_controls();
-                    fixture.emit_state(&mut osc_controller);
-                    venus = Some(fixture);
+                    fixtures.push(Box::new(fixture));
                     println!("Controlling the Venus.");
                 }
                 "h2o" => {
                     let fixture = H2O::new(addrs);
                     osc_controller.map_h2o_controls();
-                    fixture.emit_state(&mut osc_controller);
-                    h2o = Some(fixture);
+                    fixtures.push(Box::new(fixture));
                     println!("Controlling H2Os.");
                 }
                 "aquarius" => {
                     let fixture = Aquarius::new(addrs);
                     osc_controller.map_aquarius_controls();
-                    fixture.emit_state(&mut osc_controller);
-                    aquarius = Some(fixture);
+                    fixtures.push(Box::new(fixture));
                     println!("Controlling Aquarii.");
                 }
 
@@ -78,12 +66,12 @@ impl Show {
             }
         }
 
+        for fixture in fixtures.iter() {
+            fixture.emit_state(&mut osc_controller);
+        }
+
         Ok(Self {
-            comet,
-            lumasphere,
-            venus,
-            h2o,
-            aquarius,
+            fixtures,
             osc_controller,
         })
     }
@@ -123,57 +111,36 @@ impl Show {
     }
 
     fn control(&mut self, timeout: Duration) -> Result<(), Box<dyn Error>> {
-        let msg = match self.osc_controller.recv(timeout)? {
+        let mut msg = Some(match self.osc_controller.recv(timeout)? {
             Some(m) => m,
             None => {
                 return Ok(());
             }
-        };
-        match msg {
-            ControlMessage::Comet(c) => {
-                self.comet
-                    .as_mut()
-                    .map(|comet| comet.control(c, &mut self.osc_controller));
-            }
-            ControlMessage::Lumasphere(c) => {
-                self.lumasphere
-                    .as_mut()
-                    .map(|lumasphere| lumasphere.control(c, &mut self.osc_controller));
-            }
-            ControlMessage::Venus(c) => {
-                self.venus
-                    .as_mut()
-                    .map(|venus| venus.control(c, &mut self.osc_controller));
-            }
-            ControlMessage::H2O(c) => {
-                self.h2o
-                    .as_mut()
-                    .map(|h2o| h2o.control(c, &mut self.osc_controller));
-            }
-            ControlMessage::Aquarius(c) => {
-                self.aquarius
-                    .as_mut()
-                    .map(|aquarius| aquarius.control(c, &mut self.osc_controller));
+        });
+        for fixture in self.fixtures.iter_mut() {
+            match msg.take() {
+                Some(m) => {
+                    msg = fixture.control(m, &mut self.osc_controller);
+                }
+                None => {
+                    break;
+                }
             }
         }
         Ok(())
     }
 
     fn update(&mut self, delta_t: Duration) {
-        self.comet.as_mut().map(|c| c.update(delta_t));
-        self.lumasphere.as_mut().map(|l| l.update(delta_t));
-        self.venus.as_mut().map(|v| v.update(delta_t));
-        self.h2o.as_mut().map(|h| h.update(delta_t));
-        self.aquarius.as_mut().map(|a| a.update(delta_t));
+        for fixture in self.fixtures.iter_mut() {
+            fixture.update(delta_t);
+        }
     }
 
     fn render(&mut self, dmx_buffer: &mut [u8]) {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
-        self.comet.as_ref().map(|c| c.render(dmx_buffer));
-        self.lumasphere.as_ref().map(|l| l.render(dmx_buffer));
-        self.venus.as_ref().map(|v| v.render(dmx_buffer));
-        self.h2o.as_ref().map(|h| h.render(dmx_buffer));
-        self.aquarius.as_ref().map(|a| a.render(dmx_buffer));
+        for fixture in self.fixtures.iter() {
+            fixture.render(dmx_buffer);
+        }
     }
 }

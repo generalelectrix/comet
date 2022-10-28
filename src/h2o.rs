@@ -1,11 +1,11 @@
 //! Intuitive control profile for the American DJ H2O DMX Pro.
 
-use std::time::Duration;
-
 use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
+use crate::fixture::{
+    ControlMessage as ShowControlMessage, EmitStateChange as EmitShowStateChange, Fixture,
+};
 use crate::util::bipolar_to_split_range;
 use crate::{dmx::DmxAddr, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -33,10 +33,21 @@ impl H2O {
         }
     }
 
-    pub fn update(&mut self, _: Duration) {}
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitShowStateChange) {
+        use StateChange::*;
+        match sc {
+            Dimmer(v) => self.dimmer = v,
+            Rotation(v) => self.rotation = v,
+            FixedColor(v) => self.fixed_color = v,
+            ColorRotate(v) => self.color_rotate = v,
+            ColorRotation(v) => self.color_rotation = v,
+        };
+        emitter.emit_h2o(sc);
+    }
+}
 
-    /// Render into the provided DMX universe.
-    pub fn render(&self, dmx_univ: &mut [u8]) {
+impl Fixture for H2O {
+    fn render(&self, dmx_univ: &mut [u8]) {
         for dmx_index in self.dmx_indices.iter() {
             let dmx_slice = &mut dmx_univ[*dmx_index..*dmx_index + 3];
             dmx_slice[0] = unipolar_to_range(0, 255, self.dimmer);
@@ -50,30 +61,27 @@ impl H2O {
         }
     }
 
-    /// Emit the current value of all controllable state.
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
-        use StateChange::*;
-        emitter.emit(Dimmer(self.dimmer));
-        emitter.emit(Rotation(self.rotation));
-        emitter.emit(FixedColor(self.fixed_color));
-        emitter.emit(ColorRotate(self.color_rotate));
-        emitter.emit(ColorRotation(self.color_rotation));
+    fn control(
+        &mut self,
+        msg: ShowControlMessage,
+        emitter: &mut dyn EmitShowStateChange,
+    ) -> Option<ShowControlMessage> {
+        match msg {
+            ShowControlMessage::H2O(msg) => {
+                self.handle_state_change(msg, emitter);
+                None
+            }
+            other => Some(other),
+        }
     }
 
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
-        self.handle_state_change(msg, emitter);
-    }
-
-    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
+    fn emit_state(&self, emitter: &mut dyn EmitShowStateChange) {
         use StateChange::*;
-        match sc {
-            Dimmer(v) => self.dimmer = v,
-            Rotation(v) => self.rotation = v,
-            FixedColor(v) => self.fixed_color = v,
-            ColorRotate(v) => self.color_rotate = v,
-            ColorRotation(v) => self.color_rotation = v,
-        };
-        emitter.emit(sc);
+        emitter.emit_h2o(Dimmer(self.dimmer));
+        emitter.emit_h2o(Rotation(self.rotation));
+        emitter.emit_h2o(FixedColor(self.fixed_color));
+        emitter.emit_h2o(ColorRotate(self.color_rotate));
+        emitter.emit_h2o(ColorRotation(self.color_rotation));
     }
 }
 
@@ -124,13 +132,3 @@ pub enum StateChange {
 
 // H2O has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-impl<T: EmitShowStateChange> EmitStateChange for T {
-    fn emit(&mut self, sc: StateChange) {
-        self.emit(ShowStateChange::H2O(sc));
-    }
-}

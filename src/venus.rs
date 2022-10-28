@@ -5,7 +5,7 @@ use std::time::Duration;
 use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
+use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
 use crate::{
     dmx::DmxAddr,
     util::{unipolar_to_range, RampingParameter},
@@ -51,15 +51,28 @@ impl Venus {
         }
     }
 
-    pub fn update(&mut self, delta_t: Duration) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+        use StateChange::*;
+        match sc {
+            BaseRotation(v) => self.base_rotation.target = v,
+            CradleMotion(v) => self.cradle_motion.target = v,
+            HeadRotation(v) => self.head_rotation.target = v,
+            ColorRotation(v) => self.color_rotation.target = v,
+            LampOn(v) => self.lamp_on = v,
+        };
+        emitter.emit_venus(sc);
+    }
+}
+
+impl Fixture for Venus {
+    fn update(&mut self, delta_t: Duration) {
         self.base_rotation.update(delta_t);
         self.cradle_motion.update(delta_t);
         self.head_rotation.update(delta_t);
         self.color_rotation.update(delta_t);
     }
 
-    /// Render into the provided DMX universe.
-    pub fn render(&self, dmx_univ: &mut [u8]) {
+    fn render(&self, dmx_univ: &mut [u8]) {
         render_bipolar_to_dir_and_val(
             self.base_rotation.current(),
             &mut dmx_univ[self.dmx_index..self.dmx_index + 2],
@@ -79,30 +92,27 @@ impl Venus {
         debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 8]);
     }
 
-    /// Emit the current value of all controllable state.
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
+    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
         use StateChange::*;
-        emitter.emit(BaseRotation(self.base_rotation.target));
-        emitter.emit(CradleMotion(self.cradle_motion.target));
-        emitter.emit(HeadRotation(self.head_rotation.target));
-        emitter.emit(ColorRotation(self.color_rotation.target));
-        emitter.emit(LampOn(self.lamp_on));
+        emitter.emit_venus(BaseRotation(self.base_rotation.target));
+        emitter.emit_venus(CradleMotion(self.cradle_motion.target));
+        emitter.emit_venus(HeadRotation(self.head_rotation.target));
+        emitter.emit_venus(ColorRotation(self.color_rotation.target));
+        emitter.emit_venus(LampOn(self.lamp_on));
     }
 
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
-        self.handle_state_change(msg, emitter);
-    }
-
-    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
-        use StateChange::*;
-        match sc {
-            BaseRotation(v) => self.base_rotation.target = v,
-            CradleMotion(v) => self.cradle_motion.target = v,
-            HeadRotation(v) => self.head_rotation.target = v,
-            ColorRotation(v) => self.color_rotation.target = v,
-            LampOn(v) => self.lamp_on = v,
-        };
-        emitter.emit(sc);
+    fn control(
+        &mut self,
+        msg: ShowControlMessage,
+        emitter: &mut dyn EmitStateChange,
+    ) -> Option<ShowControlMessage> {
+        match msg {
+            ShowControlMessage::Venus(msg) => {
+                self.handle_state_change(msg, emitter);
+                None
+            }
+            other => Some(other),
+        }
     }
 }
 
@@ -122,13 +132,3 @@ pub enum StateChange {
 
 // Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-impl<T: EmitShowStateChange> EmitStateChange for T {
-    fn emit(&mut self, sc: StateChange) {
-        self.emit(ShowStateChange::Venus(sc));
-    }
-}

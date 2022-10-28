@@ -3,7 +3,7 @@ use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
 use crate::dmx::DmxAddr;
-use crate::fixture::{EmitStateChange as EmitShowStateChange, StateChange as ShowStateChange};
+use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
 use crate::util::unipolar_to_range;
 
 pub struct Comet {
@@ -35,20 +35,6 @@ impl Comet {
         }
     }
 
-    pub fn update(&mut self, delta_t: Duration) {
-        self.trigger_state.update(delta_t);
-    }
-
-    /// Render into the provided DMX universe.
-    pub fn render(&self, dmx_univ: &mut [u8]) {
-        dmx_univ[self.dmx_index] = self.render_shutter();
-        dmx_univ[self.dmx_index + 1] = Self::GAME_DMX_VALS[self.macro_pattern];
-        dmx_univ[self.dmx_index + 2] = self.render_mspeed();
-        dmx_univ[self.dmx_index + 3] = self.trigger_state.render();
-        dmx_univ[self.dmx_index + 4] = if self.reset { 255 } else { 0 };
-        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 5]);
-    }
-
     fn render_shutter(&self) -> u8 {
         if !self.shutter_open {
             0
@@ -65,22 +51,7 @@ impl Comet {
         unipolar_to_range(0, 255, self.mirror_speed)
     }
 
-    /// Emit the current value of all controllable state.
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
-        use StateChange::*;
-        emitter.emit(Shutter(self.shutter_open));
-        emitter.emit(Strobe(self.strobing));
-        emitter.emit(StrobeRate(self.strobe_rate));
-        emitter.emit(ShutterSoundActive(self.shutter_sound_active));
-        emitter.emit(SelectMacro(self.macro_pattern));
-        emitter.emit(MirrorSpeed(self.mirror_speed));
-        emitter.emit(TrigSoundActive(self.trigger_state.music_trigger));
-        emitter.emit(AutoStep(self.trigger_state.auto_step));
-        emitter.emit(AutoStepRate(self.trigger_state.auto_step_rate));
-        emitter.emit(Reset(self.reset));
-    }
-
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
+    fn control(&mut self, msg: ControlMessage, emitter: &mut dyn EmitStateChange) {
         use ControlMessage::*;
         match msg {
             Set(sc) => self.handle_state_change(sc, emitter),
@@ -88,7 +59,7 @@ impl Comet {
         }
     }
 
-    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,
@@ -108,7 +79,50 @@ impl Comet {
             AutoStepRate(v) => self.trigger_state.auto_step_rate = v,
             Reset(v) => self.reset = v,
         };
-        emitter.emit(sc);
+        emitter.emit_comet(sc);
+    }
+}
+
+impl Fixture for Comet {
+    fn update(&mut self, delta_t: Duration) {
+        self.trigger_state.update(delta_t);
+    }
+
+    fn render(&self, dmx_univ: &mut [u8]) {
+        dmx_univ[self.dmx_index] = self.render_shutter();
+        dmx_univ[self.dmx_index + 1] = Self::GAME_DMX_VALS[self.macro_pattern];
+        dmx_univ[self.dmx_index + 2] = self.render_mspeed();
+        dmx_univ[self.dmx_index + 3] = self.trigger_state.render();
+        dmx_univ[self.dmx_index + 4] = if self.reset { 255 } else { 0 };
+        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 5]);
+    }
+
+    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+        use StateChange::*;
+        emitter.emit_comet(Shutter(self.shutter_open));
+        emitter.emit_comet(Strobe(self.strobing));
+        emitter.emit_comet(StrobeRate(self.strobe_rate));
+        emitter.emit_comet(ShutterSoundActive(self.shutter_sound_active));
+        emitter.emit_comet(SelectMacro(self.macro_pattern));
+        emitter.emit_comet(MirrorSpeed(self.mirror_speed));
+        emitter.emit_comet(TrigSoundActive(self.trigger_state.music_trigger));
+        emitter.emit_comet(AutoStep(self.trigger_state.auto_step));
+        emitter.emit_comet(AutoStepRate(self.trigger_state.auto_step_rate));
+        emitter.emit_comet(Reset(self.reset));
+    }
+
+    fn control(
+        &mut self,
+        msg: ShowControlMessage,
+        emitter: &mut dyn EmitStateChange,
+    ) -> Option<ShowControlMessage> {
+        match msg {
+            ShowControlMessage::Comet(msg) => {
+                self.control(msg, emitter);
+                None
+            }
+            other => Some(other),
+        }
     }
 }
 
@@ -243,14 +257,4 @@ pub enum StateChange {
     AutoStep(bool),
     AutoStepRate(UnipolarFloat),
     Reset(bool),
-}
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-impl<T: EmitShowStateChange> EmitStateChange for T {
-    fn emit(&mut self, sc: StateChange) {
-        self.emit(ShowStateChange::Comet(sc));
-    }
 }
