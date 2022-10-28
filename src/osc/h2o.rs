@@ -8,7 +8,6 @@ use super::ControlMap;
 use crate::fixture::ControlMessage::{self as ShowControlMessage, H2O};
 use crate::h2o::{FixedColor, StateChange};
 use crate::util::bipolar_fader_with_detent;
-use crate::util::unipolar_fader_with_detent;
 use strum::IntoEnumIterator;
 
 const GROUP: &str = "H2O";
