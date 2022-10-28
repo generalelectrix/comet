@@ -19,6 +19,7 @@ mod fixture;
 mod h2o;
 mod lumasphere;
 mod osc;
+mod radiance;
 mod show;
 mod util;
 mod venus;

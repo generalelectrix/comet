@@ -18,6 +18,7 @@ mod aquarius;
 mod comet;
 mod h2o;
 mod lumasphere;
+mod radiance;
 mod venus;
 
 pub struct OscController {
@@ -59,6 +60,10 @@ impl OscController {
         aquarius::map_controls(&mut self.control_map);
     }
 
+    pub fn map_radiance_controls(&mut self) {
+        radiance::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -84,6 +89,7 @@ impl EmitStateChange for OscController {
             StateChange::Venus(sc) => venus::handle_state_change(sc, send),
             StateChange::H2O(sc) => h2o::handle_state_change(sc, send),
             StateChange::Aquarius(sc) => aquarius::handle_state_change(sc, send),
+            StateChange::Radiance(sc) => radiance::handle_state_change(sc, send),
         }
     }
 }

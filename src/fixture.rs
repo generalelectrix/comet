@@ -8,6 +8,9 @@ use crate::h2o::{ControlMessage as H2OControlMessage, StateChange as H2OStateCha
 use crate::lumasphere::{
     ControlMessage as LumasphereControlMessage, StateChange as LumasphereStateChange,
 };
+use crate::radiance::{
+    ControlMessage as RadianceControlMessage, StateChange as RadianceStateChange,
+};
 use crate::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange};
 
 pub trait EmitStateChange {
@@ -32,6 +35,10 @@ pub trait EmitStateChange {
     fn emit_aquarius(&mut self, sc: AquariusStateChange) {
         self.emit(StateChange::Aquarius(sc));
     }
+
+    fn emit_radiance(&mut self, sc: RadianceStateChange) {
+        self.emit(StateChange::Radiance(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -41,6 +48,7 @@ pub enum StateChange {
     Venus(VenusStateChange),
     H2O(H2OStateChange),
     Aquarius(AquariusStateChange),
+    Radiance(RadianceStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -50,6 +58,7 @@ pub enum ControlMessage {
     Venus(VenusControlMessage),
     H2O(H2OControlMessage),
     Aquarius(AquariusControlMessage),
+    Radiance(RadianceControlMessage),
 }
 
 pub trait Fixture {

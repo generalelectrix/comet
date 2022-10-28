@@ -7,3 +7,5 @@ fixtures:
     - 1
   aquarius:
     - 4
+  radiance:
+    - 500

@@ -3,11 +3,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::fixture::Fixture;
 use crate::{
     aquarius::Aquarius, comet::Comet, h2o::H2O, lumasphere::Lumasphere, osc::OscController,
     venus::Venus, Config,
 };
+use crate::{fixture::Fixture, radiance::Radiance};
 use log::error;
 use rust_dmx::DmxPort;
 use simple_error::bail;
@@ -59,7 +59,12 @@ impl Show {
                     fixtures.push(Box::new(fixture));
                     println!("Controlling Aquarii.");
                 }
-
+                "radiance" => {
+                    let fixture = Radiance::new(addrs[0]);
+                    osc_controller.map_radiance_controls();
+                    fixtures.push(Box::new(fixture));
+                    println!("Controlling a Radiance.");
+                }
                 unknown => {
                     bail!("Unknown fixture type \"{}\".", unknown);
                 }
