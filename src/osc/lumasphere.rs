@@ -28,7 +28,7 @@ pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {
     });
     map.add_bool(GROUP, "color_start", |v| Lumasphere(ColorStart(v)));
     map_strobe(map, 1, |inner| Lumasphere(Strobe1(inner)));
-    map_strobe(map, 2, |inner| Lumasphere(Strobe1(inner)));
+    map_strobe(map, 2, |inner| Lumasphere(Strobe2(inner)));
 }
 
 fn map_strobe<W>(map: &mut ControlMap<ShowControlMessage>, index: u8, wrap: W)
