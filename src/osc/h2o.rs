@@ -16,7 +16,15 @@ const FIXED_COLOR: &str = "FixedColor";
 
 pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {
     use StateChange::*;
+    map.add_unipolar(GROUP, "Dimmer", |v| H2O(Dimmer(v)));
+    map.add_bipolar(GROUP, "Rotation", |v| {
+        H2O(Rotation(bipolar_fader_with_detent(v)))
+    });
     map.add(GROUP, FIXED_COLOR, parse_fixed_color);
+    map.add_bool(GROUP, "ColorRotate", |v| H2O(ColorRotate(v)));
+    map.add_bipolar(GROUP, "ColorRotation", |v| {
+        H2O(ColorRotation(bipolar_fader_with_detent(v)))
+    });
 }
 
 fn parse_fixed_color(m: OscMessage) -> Result<Option<ShowControlMessage>, Box<dyn Error>> {
