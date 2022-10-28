@@ -5,6 +5,7 @@ use log::LevelFilter;
 use rust_dmx::select_port;
 use serde::{Deserialize, Serialize};
 use simplelog::{Config as LogConfig, SimpleLogger};
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::fs::File;
@@ -38,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let dmx_port = select_port()?;
 
-    let mut show = Show::new(&cfg)?;
+    let mut show = Show::new(cfg)?;
 
     show.run(dmx_port);
 
@@ -50,9 +51,8 @@ pub struct Config {
     receive_port: u16,
     send_host: String,
     send_port: u16,
-    dmx_addr: DmxAddr,
     debug: bool,
-    fixture: String,
+    fixtures: HashMap<String, Vec<DmxAddr>>,
 }
 
 impl Config {

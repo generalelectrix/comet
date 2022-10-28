@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    comet::Comet, fixture::ControlMessage, lumasphere::Lumasphere, osc::OscController,
+    comet::Comet, fixture::ControlMessage, h2o::H2O, lumasphere::Lumasphere, osc::OscController,
     venus::Venus, Config,
 };
 use log::error;
@@ -16,51 +16,63 @@ pub struct Show {
     comet: Option<Comet>,
     lumasphere: Option<Lumasphere>,
     venus: Option<Venus>,
+    h2o: Option<H2O>,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
 const UPDATE_INTERVAL: Duration = Duration::from_millis(10);
 
 impl Show {
-    pub fn new(cfg: &Config) -> Result<Self, Box<dyn Error>> {
+    pub fn new(mut cfg: Config) -> Result<Self, Box<dyn Error>> {
         let mut comet = None;
         let mut lumasphere = None;
         let mut venus = None;
+        let mut h2o = None;
 
         let mut osc_controller =
             OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
 
-        match cfg.fixture.as_str() {
-            "comet" => {
-                let fixture = Comet::new(cfg.dmx_addr);
-                osc_controller.map_comet_controls();
-                fixture.emit_state(&mut osc_controller);
-                comet = Some(fixture);
-                println!("Controlling the Comet.");
+        for (fixture, addrs) in cfg.fixtures.drain() {
+            match fixture.as_str() {
+                "comet" => {
+                    let fixture = Comet::new(addrs[0]);
+                    osc_controller.map_comet_controls();
+                    fixture.emit_state(&mut osc_controller);
+                    comet = Some(fixture);
+                    println!("Controlling the Comet.");
+                }
+                "lumasphere" => {
+                    let fixture = Lumasphere::new(addrs[0]);
+                    osc_controller.map_lumasphere_controls();
+                    fixture.emit_state(&mut osc_controller);
+                    lumasphere = Some(fixture);
+                    println!("Controlling the Lumasphere.");
+                }
+                "venus" => {
+                    let fixture = Venus::new(addrs[0]);
+                    osc_controller.map_venus_controls();
+                    fixture.emit_state(&mut osc_controller);
+                    venus = Some(fixture);
+                    println!("Controlling the Venus.");
+                }
+                "h2o" => {
+                    let fixture = H2O::new(addrs);
+                    osc_controller.map_h2o_controls();
+                    fixture.emit_state(&mut osc_controller);
+                    h2o = Some(fixture);
+                    println!("Controlling H2Os.");
+                }
+                unknown => {
+                    bail!("Unknown fixture type \"{}\".", unknown);
+                }
             }
-            "lumasphere" => {
-                let fixture = Lumasphere::new(cfg.dmx_addr);
-                osc_controller.map_lumasphere_controls();
-                fixture.emit_state(&mut osc_controller);
-                lumasphere = Some(fixture);
-                println!("Controlling the Lumasphere.");
-            }
-            "venus" => {
-                let fixture = Venus::new(cfg.dmx_addr);
-                osc_controller.map_venus_controls();
-                fixture.emit_state(&mut osc_controller);
-                venus = Some(fixture);
-                println!("Controlling the Venus.");
-            }
-            unknown => {
-                bail!("Unknown fixture type \"{}\".", unknown);
-            }
-        };
+        }
 
         Ok(Self {
             comet,
             lumasphere,
             venus,
+            h2o,
             osc_controller,
         })
     }
@@ -121,6 +133,11 @@ impl Show {
                 self.venus
                     .as_mut()
                     .map(|venus| venus.control(c, &mut self.osc_controller));
+            }
+            ControlMessage::H2O(c) => {
+                self.h2o
+                    .as_mut()
+                    .map(|h2o| h2o.control(c, &mut self.osc_controller));
             }
         }
         Ok(())

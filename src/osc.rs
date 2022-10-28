@@ -50,6 +50,10 @@ impl OscController {
         venus::map_controls(&mut self.control_map);
     }
 
+    pub fn map_h2o_controls(&mut self) {
+        h2o::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,

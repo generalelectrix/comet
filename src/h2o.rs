@@ -35,8 +35,8 @@ impl H2O {
 
     /// Render into the provided DMX universe.
     pub fn render(&self, dmx_univ: &mut [u8]) {
-        for dmx_index in self.dmx_indices {
-            let dmx_slice = &mut dmx_univ[dmx_index..dmx_index + 3];
+        for dmx_index in self.dmx_indices.iter() {
+            let dmx_slice = &mut dmx_univ[*dmx_index..*dmx_index + 3];
             dmx_slice[0] = unipolar_to_range(0, 255, self.dimmer);
             dmx_slice[1] = bipolar_to_split_range(self.rotation, 120, 10, 135, 245, 0);
             if self.color_rotate {
@@ -109,6 +109,7 @@ pub enum FixedColor {
 
 impl FixedColor {
     fn as_dmx(self) -> u8 {
+        use FixedColor::*;
         match self {
             White => 0,
             WhiteOrange => 11,
