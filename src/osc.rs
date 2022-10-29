@@ -64,6 +64,10 @@ impl OscController {
         radiance::map_controls(&mut self.control_map);
     }
 
+    pub fn map_swarmolon_controls(&mut self) {
+        swarmolon::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -90,6 +94,7 @@ impl EmitStateChange for OscController {
             StateChange::H2O(sc) => h2o::handle_state_change(sc, send),
             StateChange::Aquarius(sc) => aquarius::handle_state_change(sc, send),
             StateChange::Radiance(sc) => radiance::handle_state_change(sc, send),
+            StateChange::Swarmolon(sc) => swarmolon::handle_state_change(sc, send),
         }
     }
 }

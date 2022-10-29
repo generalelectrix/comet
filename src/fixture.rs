@@ -11,6 +11,9 @@ use crate::lumasphere::{
 use crate::radiance::{
     ControlMessage as RadianceControlMessage, StateChange as RadianceStateChange,
 };
+use crate::swarmolon::{
+    ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange,
+};
 use crate::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange};
 
 pub trait EmitStateChange {
@@ -39,6 +42,10 @@ pub trait EmitStateChange {
     fn emit_radiance(&mut self, sc: RadianceStateChange) {
         self.emit(StateChange::Radiance(sc));
     }
+
+    fn emit_swarmolon(&mut self, sc: SwarmolonStateChange) {
+        self.emit(StateChange::Swarmolon(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -49,6 +56,7 @@ pub enum StateChange {
     H2O(H2OStateChange),
     Aquarius(AquariusStateChange),
     Radiance(RadianceStateChange),
+    Swarmolon(SwarmolonStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -59,6 +67,7 @@ pub enum ControlMessage {
     H2O(H2OControlMessage),
     Aquarius(AquariusControlMessage),
     Radiance(RadianceControlMessage),
+    Swarmolon(SwarmolonControlMessage),
 }
 
 pub trait Fixture {

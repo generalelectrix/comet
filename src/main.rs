@@ -21,6 +21,7 @@ mod lumasphere;
 mod osc;
 mod radiance;
 mod show;
+mod swarmolon;
 mod util;
 mod venus;
 
