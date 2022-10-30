@@ -1,5 +1,7 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 
+use std::ops::Index;
+
 use log::debug;
 use number::UnipolarFloat;
 
@@ -62,3 +64,7 @@ pub enum DerbyColor {
     Amber,
     White,
 }
+
+pub struct DerbyColorState(Vec<bool>);
+
+impl Index<Vec<
