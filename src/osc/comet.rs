@@ -15,6 +15,7 @@ const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
     group: CONTROLS,
     control: "SelectMacro",
     n: 10,
+    x_primary_coordinate: true,
 };
 
 pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {

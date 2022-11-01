@@ -395,6 +395,11 @@ pub struct RadioButton {
     group: &'static str,
     control: &'static str,
     n: usize,
+    /// If true, use the 0th coordinate as the index.  If false, use the 1st coordinate.
+    /// FIXME: this forces us to encode the orientation of the TouchOSC layout into
+    /// the control profile.  We might want to replace the button grids with individual
+    /// buttons in the future to fix this.
+    x_primary_coordinate: bool,
 }
 
 impl RadioButton {
@@ -409,19 +414,24 @@ impl RadioButton {
                 });
             }
         };
-        if x >= self.n {
+        let (primary, secondary) = if self.x_primary_coordinate {
+            (x, y)
+        } else {
+            (y, x)
+        };
+        if primary >= self.n {
             return Err(OscError {
                 addr: v.addr,
-                msg: format!("radio button x index out of range: {}", x),
+                msg: format!("radio button primary index out of range: {}", primary),
             });
         }
-        if y > 0 {
+        if secondary > 0 {
             return Err(OscError {
                 addr: v.addr,
-                msg: format!("radio button y index out of range: {}", y),
+                msg: format!("radio button secondary index out of range: {}", secondary),
             });
         }
-        Ok(x)
+        Ok(primary)
     }
 
     pub fn set<S>(&self, n: usize, send: &mut S) -> Result<(), Box<dyn Error>>

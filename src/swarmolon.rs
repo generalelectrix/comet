@@ -18,6 +18,7 @@ pub struct Swarmolon {
     white_strobe: WhiteStrobe,
     red_laser_on: bool,
     green_laser_on: bool,
+    laser_strobe: GenericStrobe,
     laser_rotation: BipolarFloat,
     /// If true, invert rotation direction for every other fixture.
     mirror_rotation_parameters: bool,
@@ -34,6 +35,7 @@ impl Swarmolon {
             white_strobe: WhiteStrobe::default(),
             red_laser_on: false,
             green_laser_on: false,
+            laser_strobe: GenericStrobe::default(),
             laser_rotation: BipolarFloat::ZERO,
             mirror_rotation_parameters,
         }
@@ -55,6 +57,7 @@ impl Swarmolon {
             }
             RedLaserOn(v) => self.red_laser_on = v,
             GreenLaserOn(v) => self.green_laser_on = v,
+            LaserStrobe(sc) => self.laser_strobe.handle_state_change(sc),
             LaserRotation(v) => self.laser_rotation = v,
         };
         emitter.emit_swarmolon(sc);
@@ -81,7 +84,11 @@ impl Fixture for Swarmolon {
                 (false, true) => 50,
                 (true, true) => 255, // TODO: verify this is actually correct.
             };
-            dmx_slice[6] = 0; // No laser strobing for now.
+            dmx_slice[6] = if self.laser_strobe.on() {
+                unipolar_to_range(254, 5, self.laser_strobe.rate())
+            } else {
+                0
+            };
             dmx_slice[7] =
                 bipolar_to_split_range(self.derby_rotation.invert_if(mirror), 5, 127, 134, 255, 0);
             dmx_slice[8] =
@@ -104,6 +111,10 @@ impl Fixture for Swarmolon {
         self.white_strobe.emit_state(&mut emit_white_strobe);
         emitter.emit_swarmolon(RedLaserOn(self.red_laser_on));
         emitter.emit_swarmolon(GreenLaserOn(self.green_laser_on));
+        let mut emit_laser_strobe = |ssc| {
+            emitter.emit_swarmolon(LaserStrobe(ssc));
+        };
+        self.laser_strobe.emit_state(&mut emit_laser_strobe);
         emitter.emit_swarmolon(LaserRotation(self.laser_rotation));
     }
 
@@ -114,7 +125,28 @@ impl Fixture for Swarmolon {
     ) -> Option<ShowControlMessage> {
         match msg {
             ShowControlMessage::Swarmolon(msg) => {
-                self.handle_state_change(msg, emitter);
+                match msg {
+                    ControlMessage::Set(sc) => {
+                        self.handle_state_change(sc, emitter);
+                    }
+                    ControlMessage::StrobeRate(v) => {
+                        self.handle_state_change(
+                            StateChange::DerbyStrobe(GenericStrobeStateChange::Rate(v)),
+                            emitter,
+                        );
+                        self.handle_state_change(
+                            StateChange::WhiteStrobe(WhiteStrobeStateChange::State(
+                                GenericStrobeStateChange::Rate(v),
+                            )),
+                            emitter,
+                        );
+                        self.handle_state_change(
+                            StateChange::LaserStrobe(GenericStrobeStateChange::Rate(v)),
+                            emitter,
+                        );
+                    }
+                }
+
                 None
             }
             other => Some(other),
@@ -130,11 +162,16 @@ pub enum StateChange {
     WhiteStrobe(WhiteStrobeStateChange),
     RedLaserOn(bool),
     GreenLaserOn(bool),
+    LaserStrobe(GenericStrobeStateChange),
     LaserRotation(BipolarFloat),
 }
 
-// No controls that are not represented as state changes.
-pub type ControlMessage = StateChange;
+#[derive(Clone, Copy, Debug)]
+pub enum ControlMessage {
+    Set(StateChange),
+    /// Command to set the state of all of the fixture's strobe rates.
+    StrobeRate(UnipolarFloat),
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, EnumString, EnumIter, EnumDisplay, PartialOrd, Ord)]
 pub enum DerbyColor {
