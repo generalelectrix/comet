@@ -1,7 +1,11 @@
 receive_port: 8000
 send_host: 192.168.1.213
 send_port: 9000
-debug: False
+debug: True
 fixtures:
-  comet:
+  h2o:
     - 1
+  aquarius:
+    - 4
+  radiance:
+    - 500
