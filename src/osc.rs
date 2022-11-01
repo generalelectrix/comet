@@ -1,3 +1,4 @@
+use crate::fixture::{ControlMessage, EmitStateChange, StateChange};
 use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info, warn};
 use number::{BipolarFloat, UnipolarFloat};
@@ -12,13 +13,12 @@ use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
-use crate::fixture::{ControlMessage, EmitStateChange, StateChange};
-
 mod aquarius;
 mod comet;
 mod h2o;
 mod lumasphere;
 mod radiance;
+mod swarmolon;
 mod venus;
 
 pub struct OscController {
@@ -192,6 +192,28 @@ impl<C> ControlMap<C> {
         self.add_fetch_process(group, control, get_bool, move |v| Some(process(v)))
     }
 
+    /// Add a collection of control actions for each variant of the specified enum type.
+    pub fn add_enum_handler<EnumType, Parse, Process, ParseResult, Group, Control>(
+        &mut self,
+        group: Group,
+        control: Control,
+        parse: Parse,
+        process: Process,
+    ) where
+        EnumType: FromStr,
+        <EnumType as FromStr>::Err: std::fmt::Display,
+        Parse: Fn(OscMessage) -> Result<ParseResult, OscError> + 'static,
+        Process: Fn(EnumType, ParseResult) -> C + 'static,
+        Group: Into<String> + Display,
+        Control: Into<String> + Display,
+    {
+        self.add(group, control, move |m| {
+            let variant: EnumType = parse_enum(&m)?;
+            let val = parse(m)?;
+            Ok(Some(process(variant, val)))
+        })
+    }
+
     pub fn add_trigger<Group, Control>(&mut self, group: Group, control: Control, event: C)
     where
         C: Clone + 'static,
@@ -358,6 +380,12 @@ fn get_bool(v: OscMessage) -> Result<bool, OscError> {
     };
     Ok(bval)
 }
+
+/// A OSC message processor that ignores the message payload, returning unit.
+fn ignore_payload(_: OscMessage) -> Result<(), OscError> {
+    Ok(())
+}
+
 /// Model a 1D button grid with radio-select behavior.
 /// This implements the TouchOSC model for a button grid.
 /// Special-cased to handle only 1D grids.
@@ -436,4 +464,24 @@ fn parse_radio_button_indices(addr: &str) -> Result<(usize, usize), String> {
         return Err(format!("y index is unexpectedly 0"));
     }
     Ok((x - 1, y - 1))
+}
+
+/// Parse a enum variant of the specified type from the third argument of the address.
+fn parse_enum<T: FromStr>(m: &OscMessage) -> Result<T, OscError>
+where
+    <T as FromStr>::Err: Display,
+{
+    let name = match m.addr.split("/").skip(3).next() {
+        Some(c) => c,
+        None => {
+            return Err(OscError {
+                addr: m.addr.clone(),
+                msg: "command is missing variant specifier".to_string(),
+            });
+        }
+    };
+    T::from_str(name).map_err(|e| OscError {
+        addr: m.addr.clone(),
+        msg: format!("failed to parse variant specifier: {}", e),
+    })
 }
