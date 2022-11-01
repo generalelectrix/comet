@@ -16,7 +16,7 @@ rosc = "^0.9"
 rust_dmx = "0.4"
 serde_yaml = "0.9"
 crossbeam-channel = "0.5.6"
-local-ip-address = "0.4.8"
+local-ip-address = "0.3.0"
 number = { git = "https://github.com/generalelectrix/number", branch = "main" }
 strum = "0.24"
 strum_macros = "0.24"

@@ -77,6 +77,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-sha1"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb58b6451e8c2a812ad979ed1d83378caa5e927eef2622017a45f251457c2c9d"
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -216,14 +222,14 @@ dependencies = [
 
 [[package]]
 name = "local-ip-address"
-version = "0.4.9"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9eab7f092fb08006040e656c2adce6670e6a516bea831a8b2b3d0fb24d4488f5"
+checksum = "325dc12399c17522af61962bd214a91dd5dd88d972ffdcfc3ca2a3ec32d70269"
 dependencies = [
  "libc",
- "neli",
+ "memalloc",
  "thiserror",
- "windows-sys",
+ "windows",
 ]
 
 [[package]]
@@ -254,6 +260,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "memalloc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df39d232f5c40b0891c10216992c2f250c054105cb1e56f0fc9032db6203ecc1"
+
+[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -264,16 +276,6 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
-
-[[package]]
-name = "neli"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9053554eb5dcb7e10d9cdab1206965bde870eed5d0d341532ca035e3ba221508"
-dependencies = [
- "byteorder",
- "libc",
-]
 
 [[package]]
 name = "nix"
@@ -317,7 +319,7 @@ dependencies = [
 [[package]]
 name = "number"
 version = "0.1.0"
-source = "git+https://github.com/generalelectrix/number?branch=main#44f01bb045b7ccffc129958acda06f40e6b9a476"
+source = "git+https://github.com/generalelectrix/number?branch=main#d8404d248f673dced926b85ce081716a6a00a1de"
 dependencies = [
  "derive_more",
  "num-traits",
@@ -326,9 +328,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.15.0"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e82dad04139b71a90c080c8463fe0dc7902db5192d939bd0950f074d014339e1"
+checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
 name = "pkg-config"
@@ -643,58 +645,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
-name = "windows-sys"
-version = "0.42.0"
+name = "windows"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
+checksum = "25b270ca3fa1282aa091f122551348f8186f07888dffdfe64df17206ad3b56d0"
 dependencies = [
- "windows_aarch64_gnullvm",
- "windows_aarch64_msvc",
- "windows_i686_gnu",
- "windows_i686_msvc",
- "windows_x86_64_gnu",
- "windows_x86_64_gnullvm",
- "windows_x86_64_msvc",
+ "const-sha1",
+ "windows_gen",
+ "windows_macros",
 ]
 
 [[package]]
-name = "windows_aarch64_gnullvm"
-version = "0.42.0"
+name = "windows_gen"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41d2aa71f6f0cbe00ae5167d90ef3cfe66527d6f613ca78ac8024c3ccab9a19e"
+checksum = "44bd40154eb69ba3c80f11752494a2a34d1b448b06b80449238edfbd00ec7eef"
 
 [[package]]
-name = "windows_aarch64_msvc"
-version = "0.42.0"
+name = "windows_macros"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd0f252f5a35cac83d6311b2e795981f5ee6e67eb1f9a7f64eb4500fbc4dcdb4"
-
-[[package]]
-name = "windows_i686_gnu"
-version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbeae19f6716841636c28d695375df17562ca208b2b7d0dc47635a50ae6c5de7"
-
-[[package]]
-name = "windows_i686_msvc"
-version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84c12f65daa39dd2babe6e442988fc329d6243fdce47d7d2d155b8d874862246"
-
-[[package]]
-name = "windows_x86_64_gnu"
-version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf7b1b21b5362cbc318f686150e5bcea75ecedc74dd157d874d754a2ca44b0ed"
-
-[[package]]
-name = "windows_x86_64_gnullvm"
-version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09d525d2ba30eeb3297665bd434a54297e4170c7f1a44cad4ef58095b4cd2028"
-
-[[package]]
-name = "windows_x86_64_msvc"
-version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
+checksum = "bae6942e04aa5792bbf3b3cf5ded1b7590a7ffd76d53ea179210b87911b6587f"
+dependencies = [
+ "syn",
+ "windows_gen",
+]

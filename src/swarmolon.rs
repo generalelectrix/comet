@@ -12,6 +12,10 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 pub struct Swarmolon {
     dmx_indices: Vec<usize>,
     derby_color: DerbyColorState,
+    derby_strobe_on: bool,
+    derby_strobe_rate: UnipolarFloat,
+    white_strobe_program: usize, // 0 to 10; 0 is off
+    white_strobe_rate: UnipolarFloat,
 }
 
 impl Swarmolon {
@@ -20,6 +24,10 @@ impl Swarmolon {
         Self {
             dmx_indices: dmx_addrs.iter().map(|a| a - 1).collect(),
             derby_color: DerbyColorState::new(),
+            derby_strobe_on: false,
+            derby_strobe_rate: UnipolarFloat::ZERO,
+            white_strobe_program: 0,
+            white_strobe_rate: UnipolarFloat::ZERO,
         }
     }
 
@@ -29,6 +37,7 @@ impl Swarmolon {
             DerbyColor(color, state) => {
                 self.derby_color.set(color, state);
             }
+            DerbyStrobe(v) => self.derby_strobe_rate = v,
         };
         emitter.emit_swarmolon(sc);
     }
@@ -38,7 +47,13 @@ impl Fixture for Swarmolon {
     fn render(&self, dmx_univ: &mut [u8]) {
         for dmx_index in self.dmx_indices.iter() {
             let dmx_slice = &mut dmx_univ[*dmx_index..*dmx_index + Self::CHANNEL_COUNT];
+            dmx_slice[0] = 255; // always set to DMX mode
             dmx_slice[1] = self.derby_color.render();
+            dmx_slice[3] = if self.derby_strobe_on {
+                unipolar_to_range(5, 254, self.derby_strobe_rate)
+            } else {
+                0
+            };
             debug!("{:?}", dmx_slice);
         }
     }
@@ -66,6 +81,7 @@ impl Fixture for Swarmolon {
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     DerbyColor(DerbyColor, bool),
+    DerbyStrobeRate(UnipolarFloat),
 }
 
 // No controls that are not represented as state changes.
@@ -110,6 +126,11 @@ impl DerbyColorState {
         use DerbyColor::*;
         match self.0[..] {
             [] => 0,
+            [Red] => 10,
+            [Green] => 15,
+            [Blue] => 20,
+            [Amber] => 25,
+            [White] => 30,
             [Red, White] => 35,
             [Red, Green] => 40,
             [Green, Blue] => 45,
