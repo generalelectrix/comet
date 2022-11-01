@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     aquarius::Aquarius, comet::Comet, h2o::H2O, lumasphere::Lumasphere, osc::OscController,
-    venus::Venus, Config,
+    swarmolon::Swarmolon, venus::Venus, Config,
 };
 use crate::{fixture::Fixture, radiance::Radiance};
 use log::error;
@@ -64,6 +64,12 @@ impl Show {
                     osc_controller.map_radiance_controls();
                     fixtures.push(Box::new(fixture));
                     println!("Controlling a Radiance.");
+                }
+                "swarmolon" => {
+                    let fixture = Swarmolon::new(addrs, true);
+                    osc_controller.map_swarmolon_controls();
+                    fixtures.push(Box::new(fixture));
+                    println!("Controlling Swarmolons.");
                 }
                 unknown => {
                     bail!("Unknown fixture type \"{}\".", unknown);
