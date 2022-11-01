@@ -15,6 +15,7 @@ use std::time::Duration;
 
 mod aquarius;
 mod comet;
+mod generic;
 mod h2o;
 mod lumasphere;
 mod radiance;

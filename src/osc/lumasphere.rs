@@ -2,6 +2,7 @@ use rosc::OscMessage;
 
 use super::ControlMap;
 use crate::fixture::ControlMessage::{self as ShowControlMessage, Lumasphere};
+use crate::generic::GenericStrobeStateChange;
 use crate::lumasphere::StateChange;
 use crate::lumasphere::StrobeStateChange;
 use crate::util::bipolar_fader_with_detent;
@@ -35,15 +36,16 @@ fn map_strobe<W>(map: &mut ControlMap<ShowControlMessage>, index: u8, wrap: W)
 where
     W: Fn(StrobeStateChange) -> ShowControlMessage + 'static + Copy,
 {
+    use GenericStrobeStateChange::*;
     use StrobeStateChange::*;
     map.add_bool(GROUP, format!("strobe_{}_state", index), move |v| {
-        wrap(On(v))
+        wrap(State(On(v)))
+    });
+    map.add_unipolar(GROUP, format!("strobe_{}_rate", index), move |v| {
+        wrap(State(Rate(v)))
     });
     map.add_unipolar(GROUP, format!("strobe_{}_intensity", index), move |v| {
         wrap(Intensity(v))
-    });
-    map.add_unipolar(GROUP, format!("strobe_{}_rate", index), move |v| {
-        wrap(Rate(v))
     });
 }
 

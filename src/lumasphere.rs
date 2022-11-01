@@ -4,6 +4,7 @@ use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
 use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
+use crate::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::{
     dmx::DmxAddr,
     util::{unipolar_to_range, RampingParameter},
@@ -146,28 +147,18 @@ impl Fixture for Lumasphere {
     }
 }
 
+#[derive(Default)]
 pub struct Strobe {
-    on: bool,
+    state: GenericStrobe,
     intensity: UnipolarFloat,
-    rate: UnipolarFloat,
-}
-
-impl Default for Strobe {
-    fn default() -> Self {
-        Self {
-            on: false,
-            intensity: UnipolarFloat::ZERO,
-            rate: UnipolarFloat::ZERO,
-        }
-    }
 }
 
 impl Strobe {
     fn render(&self, dmx_slice: &mut [u8]) {
-        let (intensity, rate) = if self.on {
+        let (intensity, rate) = if self.state.on() {
             (
                 unipolar_to_range(0, 255, self.intensity),
-                unipolar_to_range(0, 255, self.rate),
+                unipolar_to_range(0, 255, self.state.rate()),
             )
         } else {
             (0, 0)
@@ -181,26 +172,26 @@ impl Strobe {
         F: Fn(StrobeStateChange) -> StateChange + 'static,
     {
         use StrobeStateChange::*;
-        emitter.emit_lumasphere(wrap(On(self.on)));
         emitter.emit_lumasphere(wrap(Intensity(self.intensity)));
-        emitter.emit_lumasphere(wrap(Rate(self.rate)));
+        let mut emit = |ssc| {
+            emitter.emit_lumasphere(wrap(State(ssc)));
+        };
+        self.state.emit_state(&mut emit);
     }
 
     fn handle_state_change(&mut self, sc: StrobeStateChange) {
         use StrobeStateChange::*;
         match sc {
-            On(v) => self.on = v,
+            State(v) => self.state.handle_state_change(v),
             Intensity(v) => self.intensity = v,
-            Rate(v) => self.rate = v,
         }
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum StrobeStateChange {
-    On(bool),
     Intensity(UnipolarFloat),
-    Rate(UnipolarFloat),
+    State(GenericStrobeStateChange),
 }
 
 #[derive(Clone, Copy, Debug)]

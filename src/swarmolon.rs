@@ -5,6 +5,7 @@ use number::UnipolarFloat;
 
 use crate::dmx::DmxAddr;
 use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
+use crate::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::util::unipolar_to_range;
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -12,10 +13,8 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 pub struct Swarmolon {
     dmx_indices: Vec<usize>,
     derby_color: DerbyColorState,
-    derby_strobe_on: bool,
-    derby_strobe_rate: UnipolarFloat,
-    white_strobe_program: usize, // 0 to 10; 0 is off
-    white_strobe_rate: UnipolarFloat,
+    derby_strobe: GenericStrobe,
+    white_strobe: WhiteStrobe,
 }
 
 impl Swarmolon {
@@ -24,10 +23,8 @@ impl Swarmolon {
         Self {
             dmx_indices: dmx_addrs.iter().map(|a| a - 1).collect(),
             derby_color: DerbyColorState::new(),
-            derby_strobe_on: false,
-            derby_strobe_rate: UnipolarFloat::ZERO,
-            white_strobe_program: 0,
-            white_strobe_rate: UnipolarFloat::ZERO,
+            derby_strobe: GenericStrobe::default(),
+            white_strobe: WhiteStrobe::default(),
         }
     }
 
@@ -37,7 +34,13 @@ impl Swarmolon {
             DerbyColor(color, state) => {
                 self.derby_color.set(color, state);
             }
-            DerbyStrobe(v) => self.derby_strobe_rate = v,
+            DerbyStrobe(sc) => self.derby_strobe.handle_state_change(sc),
+            WhiteStrobe(sc) => {
+                if let Err(e) = self.white_strobe.handle_state_change(sc) {
+                    error!("{}", e);
+                    return;
+                }
+            }
         };
         emitter.emit_swarmolon(sc);
     }
@@ -49,8 +52,8 @@ impl Fixture for Swarmolon {
             let dmx_slice = &mut dmx_univ[*dmx_index..*dmx_index + Self::CHANNEL_COUNT];
             dmx_slice[0] = 255; // always set to DMX mode
             dmx_slice[1] = self.derby_color.render();
-            dmx_slice[3] = if self.derby_strobe_on {
-                unipolar_to_range(5, 254, self.derby_strobe_rate)
+            dmx_slice[3] = if self.derby_strobe.on() {
+                unipolar_to_range(5, 254, self.derby_strobe.rate())
             } else {
                 0
             };
@@ -61,6 +64,14 @@ impl Fixture for Swarmolon {
     fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);
+        let mut emit_derby_strobe = |ssc| {
+            emitter.emit_swarmolon(DerbyStrobe(ssc));
+        };
+        self.derby_strobe.emit_state(&mut emit_derby_strobe);
+        let mut emit_white_strobe = |ssc| {
+            emitter.emit_swarmolon(WhiteStrobe(ssc));
+        };
+        self.white_strobe.emit_state(&mut emit_white_strobe);
     }
 
     fn control(
@@ -81,7 +92,8 @@ impl Fixture for Swarmolon {
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     DerbyColor(DerbyColor, bool),
-    DerbyStrobeRate(UnipolarFloat),
+    DerbyStrobe(GenericStrobeStateChange),
+    WhiteStrobe(WhiteStrobeStateChange),
 }
 
 // No controls that are not represented as state changes.
@@ -163,4 +175,58 @@ impl DerbyColorState {
             }
         }
     }
+}
+
+#[derive(Debug, Default)]
+struct WhiteStrobe {
+    state: GenericStrobe,
+    /// 0 to 9
+    program: usize,
+}
+
+impl WhiteStrobe {
+    pub fn emit_state<F>(&self, emit: &mut F)
+    where
+        F: FnMut(WhiteStrobeStateChange),
+    {
+        use WhiteStrobeStateChange::*;
+        emit(Program(self.program));
+        let mut emit_general = |gsc| {
+            emit(State(gsc));
+        };
+        self.state.emit_state(&mut emit_general);
+    }
+
+    pub fn handle_state_change(&mut self, sc: WhiteStrobeStateChange) -> Result<(), String> {
+        use WhiteStrobeStateChange::*;
+        match sc {
+            State(g) => self.state.handle_state_change(g),
+            Program(p) => {
+                if p > 9 {
+                    return Err(format!(
+                        "swarmolon white strobe program index out of range: {}",
+                        p
+                    ));
+                }
+                self.program = p
+            }
+        }
+        Ok(())
+    }
+
+    pub fn render(&self) -> u8 {
+        if !self.state.on() {
+            return 0;
+        }
+        let program_base = (self.program + 1) * 10;
+        let program_speed = unipolar_to_range(0, 9, self.state.rate());
+        program_base as u8 + program_speed
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum WhiteStrobeStateChange {
+    /// Valid range is 0 to 9.
+    Program(usize),
+    State(GenericStrobeStateChange),
 }
