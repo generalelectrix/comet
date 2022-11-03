@@ -6,6 +6,7 @@ use crate::fixture::ControlMessage::{self as ShowControlMessage, Swarmolon};
 use crate::generic::GenericStrobeStateChange;
 use crate::osc::generic::map_strobe;
 use crate::swarmolon::{ControlMessage, DerbyColor, StateChange, WhiteStrobeStateChange};
+use crate::util::{bipolar_fader_with_detent, unipolar_fader_with_detent};
 
 const GROUP: &str = "Swarmolon";
 
@@ -23,7 +24,9 @@ pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {
         Swarmolon(Set(DerbyColor(c, v)))
     });
     map_strobe(map, GROUP, "DerbyStrobe", &wrap_derby_strobe);
-    map.add_bipolar(GROUP, "DerbyRotation", |v| Swarmolon(Set(DerbyRotation(v))));
+    map.add_bipolar(GROUP, "DerbyRotation", |v| {
+        Swarmolon(Set(DerbyRotation(bipolar_fader_with_detent(v))))
+    });
     map_strobe(map, GROUP, "WhiteStrobe", &wrap_white_strobe);
     map.add_radio_button_array(STROBE_PROGRAM_SELECT, |v| {
         Swarmolon(Set(WhiteStrobe(WhiteStrobeStateChange::Program(v))))
@@ -32,7 +35,9 @@ pub fn map_controls(map: &mut ControlMap<ShowControlMessage>) {
     map.add_bool(GROUP, "RedLaserOn", |v| Swarmolon(Set(RedLaserOn(v))));
     map.add_bool(GROUP, "GreenLaserOn", |v| Swarmolon(Set(GreenLaserOn(v))));
     map_strobe(map, GROUP, "LaserStrobe", &wrap_laser_strobe);
-    map.add_bipolar(GROUP, "LaserRotation", |v| Swarmolon(Set(LaserRotation(v))));
+    map.add_bipolar(GROUP, "LaserRotation", |v| {
+        Swarmolon(Set(LaserRotation(bipolar_fader_with_detent(v))))
+    });
 
     // "Global" strobe rate control, for simpler one-fader control.
     // This is a bit of a hack, since it has no talkback channel.

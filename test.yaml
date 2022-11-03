@@ -3,9 +3,5 @@ send_host: 192.168.1.213
 send_port: 9000
 debug: True
 fixtures:
-  h2o:
+  swarmolon:
     - 1
-  aquarius:
-    - 4
-  radiance:
-    - 500

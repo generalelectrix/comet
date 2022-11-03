@@ -73,7 +73,7 @@ impl Fixture for Swarmolon {
             dmx_slice[1] = self.derby_color.render();
             dmx_slice[2] = 0; // Not using automatic derby programs.
             dmx_slice[3] = if self.derby_strobe.on() {
-                unipolar_to_range(5, 254, self.derby_strobe.rate())
+                unipolar_to_range(254, 10, self.derby_strobe.rate())
             } else {
                 0
             };
@@ -85,7 +85,7 @@ impl Fixture for Swarmolon {
                 (true, true) => 255, // TODO: verify this is actually correct.
             };
             dmx_slice[6] = if self.laser_strobe.on() {
-                unipolar_to_range(254, 5, self.laser_strobe.rate())
+                unipolar_to_range(5, 254, self.laser_strobe.rate())
             } else {
                 0
             };
@@ -293,7 +293,7 @@ impl WhiteStrobe {
             return 0;
         }
         let program_base = (self.program + 1) * 10;
-        let program_speed = unipolar_to_range(0, 9, self.state.rate());
+        let program_speed = unipolar_to_range(9, 0, self.state.rate());
         program_base as u8 + program_speed
     }
 }
