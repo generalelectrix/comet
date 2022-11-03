@@ -21,6 +21,7 @@ mod h2o;
 mod lumasphere;
 mod osc;
 mod radiance;
+mod rotosphere_q3;
 mod show;
 mod swarmolon;
 mod util;

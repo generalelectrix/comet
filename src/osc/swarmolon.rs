@@ -5,8 +5,8 @@ use super::{get_bool, ControlMap, RadioButton};
 use crate::fixture::ControlMessage::{self as ShowControlMessage, Swarmolon};
 use crate::generic::GenericStrobeStateChange;
 use crate::osc::generic::map_strobe;
-use crate::swarmolon::{ControlMessage, DerbyColor, StateChange, WhiteStrobeStateChange};
-use crate::util::{bipolar_fader_with_detent, unipolar_fader_with_detent};
+use crate::swarmolon::{ControlMessage, StateChange, WhiteStrobeStateChange};
+use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Swarmolon";
 

@@ -11,6 +11,9 @@ use crate::lumasphere::{
 use crate::radiance::{
     ControlMessage as RadianceControlMessage, StateChange as RadianceStateChange,
 };
+use crate::rotosphere_q3::{
+    ControlMessage as RotosphereQ3ControlMessage, StateChange as RotosphereQ3StateChange,
+};
 use crate::swarmolon::{
     ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange,
 };
@@ -46,6 +49,10 @@ pub trait EmitStateChange {
     fn emit_swarmolon(&mut self, sc: SwarmolonStateChange) {
         self.emit(StateChange::Swarmolon(sc));
     }
+
+    fn emit_rotosphere_q3(&mut self, sc: RotosphereQ3StateChange) {
+        self.emit(StateChange::RotosphereQ3(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -57,6 +64,7 @@ pub enum StateChange {
     Aquarius(AquariusStateChange),
     Radiance(RadianceStateChange),
     Swarmolon(SwarmolonStateChange),
+    RotosphereQ3(RotosphereQ3StateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -68,6 +76,7 @@ pub enum ControlMessage {
     Aquarius(AquariusControlMessage),
     Radiance(RadianceControlMessage),
     Swarmolon(SwarmolonControlMessage),
+    RotosphereQ3(RotosphereQ3ControlMessage),
 }
 
 pub trait Fixture {

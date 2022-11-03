@@ -19,6 +19,7 @@ mod generic;
 mod h2o;
 mod lumasphere;
 mod radiance;
+mod rotosphere_q3;
 mod swarmolon;
 mod venus;
 
@@ -69,6 +70,10 @@ impl OscController {
         swarmolon::map_controls(&mut self.control_map);
     }
 
+    pub fn map_rotosphere_q3_controls(&mut self) {
+        rotosphere_q3::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -96,6 +101,7 @@ impl EmitStateChange for OscController {
             StateChange::Aquarius(sc) => aquarius::handle_state_change(sc, send),
             StateChange::Radiance(sc) => radiance::handle_state_change(sc, send),
             StateChange::Swarmolon(sc) => swarmolon::handle_state_change(sc, send),
+            StateChange::RotosphereQ3(sc) => rotosphere_q3::handle_state_change(sc, send),
         }
     }
 }
