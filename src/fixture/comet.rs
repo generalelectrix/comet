@@ -1,13 +1,12 @@
-use log::{debug, error};
+use log::error;
 use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
-use crate::dmx::DmxAddr;
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::util::unipolar_to_range;
 
+#[derive(Default, Debug)]
 pub struct Comet {
-    dmx_index: usize,
     shutter_open: bool,
     strobing: bool,
     strobe_rate: UnipolarFloat,
@@ -18,22 +17,12 @@ pub struct Comet {
     reset: bool,
 }
 
+impl PatchFixture for Comet {
+    const CHANNEL_COUNT: usize = 5;
+}
+
 impl Comet {
     const GAME_DMX_VALS: [u8; 10] = [12, 35, 65, 85, 112, 140, 165, 190, 212, 240];
-
-    pub fn new(dmx_addr: DmxAddr) -> Self {
-        Self {
-            dmx_index: dmx_addr - 1,
-            shutter_open: false,
-            strobing: false,
-            strobe_rate: UnipolarFloat::ZERO,
-            shutter_sound_active: false,
-            macro_pattern: 0,
-            mirror_speed: UnipolarFloat::ZERO,
-            trigger_state: TriggerState::new(),
-            reset: false,
-        }
-    }
 
     fn render_shutter(&self) -> u8 {
         if !self.shutter_open {
@@ -51,7 +40,7 @@ impl Comet {
         unipolar_to_range(0, 255, self.mirror_speed)
     }
 
-    fn control(&mut self, msg: ControlMessage, emitter: &mut dyn EmitStateChange) {
+    fn control(&mut self, msg: ControlMessage, emitter: &mut dyn EmitFixtureStateChange) {
         use ControlMessage::*;
         match msg {
             Set(sc) => self.handle_state_change(sc, emitter),
@@ -59,7 +48,7 @@ impl Comet {
         }
     }
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,
@@ -89,15 +78,14 @@ impl Fixture for Comet {
     }
 
     fn render(&self, dmx_univ: &mut [u8]) {
-        dmx_univ[self.dmx_index] = self.render_shutter();
-        dmx_univ[self.dmx_index + 1] = Self::GAME_DMX_VALS[self.macro_pattern];
-        dmx_univ[self.dmx_index + 2] = self.render_mspeed();
-        dmx_univ[self.dmx_index + 3] = self.trigger_state.render();
-        dmx_univ[self.dmx_index + 4] = if self.reset { 255 } else { 0 };
-        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 5]);
+        dmx_univ[0] = self.render_shutter();
+        dmx_univ[1] = Self::GAME_DMX_VALS[self.macro_pattern];
+        dmx_univ[2] = self.render_mspeed();
+        dmx_univ[3] = self.trigger_state.render();
+        dmx_univ[4] = if self.reset { 255 } else { 0 };
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_comet(Shutter(self.shutter_open));
         emitter.emit_comet(Strobe(self.strobing));
@@ -113,11 +101,11 @@ impl Fixture for Comet {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::Comet(msg) => {
+            FixtureControlMessage::Comet(msg) => {
                 self.control(msg, emitter);
                 None
             }
@@ -127,6 +115,7 @@ impl Fixture for Comet {
 }
 
 /// Manage Comet trigger state.
+#[derive(Debug)]
 struct TriggerState {
     music_trigger: bool,
     auto_step_rate: UnipolarFloat,
@@ -140,17 +129,8 @@ struct TriggerState {
     current_output_value: u8,
 }
 
-impl TriggerState {
-    const DMX_VAL_STEP_FORWARD: u8 = 108;
-    const DMX_VAL_STEP_BACKWARD: u8 = 142;
-    const DMX_VAL_STOP: u8 = 124;
-    const DMX_VAL_MUSIC_TRIG: u8 = 50;
-
-    /// rendering to the enttec is asynchronous and frame tearing is a problem
-    /// how many updates should we hold the current output before processing another?
-    const UPDATES_TO_HOLD: usize = 3;
-
-    fn new() -> Self {
+impl Default for TriggerState {
+    fn default() -> Self {
         Self {
             music_trigger: false,
             auto_step_rate: UnipolarFloat::ZERO,
@@ -161,6 +141,17 @@ impl TriggerState {
             current_output_value: Self::DMX_VAL_STOP,
         }
     }
+}
+
+impl TriggerState {
+    const DMX_VAL_STEP_FORWARD: u8 = 108;
+    const DMX_VAL_STEP_BACKWARD: u8 = 142;
+    const DMX_VAL_STOP: u8 = 124;
+    const DMX_VAL_MUSIC_TRIG: u8 = 50;
+
+    /// rendering to the enttec is asynchronous and frame tearing is a problem
+    /// how many updates should we hold the current output before processing another?
+    const UPDATES_TO_HOLD: usize = 3;
 
     fn enqueue_step(&mut self, direction: Step) {
         self.steps_to_take.push_back(direction);
@@ -226,7 +217,7 @@ impl TriggerState {
     }
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum Stepping {
     Idle,
     Forwards,

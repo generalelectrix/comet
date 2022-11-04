@@ -1,17 +1,16 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 
-use log::{debug, error};
+use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::dmx::DmxAddr;
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
-use crate::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+#[derive(Default, Debug)]
 pub struct Swarmolon {
-    dmx_indices: Vec<usize>,
     derby_color: DerbyColorState,
     derby_strobe: GenericStrobe,
     derby_rotation: BipolarFloat,
@@ -20,28 +19,14 @@ pub struct Swarmolon {
     green_laser_on: bool,
     laser_strobe: GenericStrobe,
     laser_rotation: BipolarFloat,
-    /// If true, invert rotation direction for every other fixture.
-    mirror_rotation_parameters: bool,
+}
+
+impl PatchFixture for Swarmolon {
+    const CHANNEL_COUNT: usize = 9;
 }
 
 impl Swarmolon {
-    const CHANNEL_COUNT: usize = 9;
-    pub fn new(dmx_addrs: Vec<DmxAddr>, mirror_rotation_parameters: bool) -> Self {
-        Self {
-            dmx_indices: dmx_addrs.iter().map(|a| a - 1).collect(),
-            derby_color: DerbyColorState::new(),
-            derby_strobe: GenericStrobe::default(),
-            derby_rotation: BipolarFloat::ZERO,
-            white_strobe: WhiteStrobe::default(),
-            red_laser_on: false,
-            green_laser_on: false,
-            laser_strobe: GenericStrobe::default(),
-            laser_rotation: BipolarFloat::ZERO,
-            mirror_rotation_parameters,
-        }
-    }
-
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             DerbyColor(color, state) => {
@@ -65,39 +50,32 @@ impl Swarmolon {
 }
 
 impl Fixture for Swarmolon {
-    fn render(&self, dmx_univ: &mut [u8]) {
-        for (i, dmx_index) in self.dmx_indices.iter().enumerate() {
-            let mirror = self.mirror_rotation_parameters && i % 2 == 1;
-            let dmx_slice = &mut dmx_univ[*dmx_index..*dmx_index + Self::CHANNEL_COUNT];
-            dmx_slice[0] = 255; // always set to DMX mode
-            dmx_slice[1] = self.derby_color.render();
-            dmx_slice[2] = 0; // Not using automatic derby programs.
-            dmx_slice[3] = if self.derby_strobe.on() {
-                unipolar_to_range(254, 10, self.derby_strobe.rate())
-            } else {
-                0
-            };
-            dmx_slice[4] = self.white_strobe.render();
-            dmx_slice[5] = match (self.red_laser_on, self.green_laser_on) {
-                (false, false) => 0,
-                (true, false) => 10,
-                (false, true) => 50,
-                (true, true) => 255, // TODO: verify this is actually correct.
-            };
-            dmx_slice[6] = if self.laser_strobe.on() {
-                unipolar_to_range(5, 254, self.laser_strobe.rate())
-            } else {
-                0
-            };
-            dmx_slice[7] =
-                bipolar_to_split_range(self.derby_rotation.invert_if(mirror), 5, 127, 134, 255, 0);
-            dmx_slice[8] =
-                bipolar_to_split_range(self.laser_rotation.invert_if(mirror), 5, 127, 134, 255, 0);
-            debug!("{:?}", dmx_slice);
-        }
+    fn render(&self, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = 255; // always set to DMX mode
+        dmx_buf[1] = self.derby_color.render();
+        dmx_buf[2] = 0; // Not using automatic derby programs.
+        dmx_buf[3] = if self.derby_strobe.on() {
+            unipolar_to_range(254, 10, self.derby_strobe.rate())
+        } else {
+            0
+        };
+        dmx_buf[4] = self.white_strobe.render();
+        dmx_buf[5] = match (self.red_laser_on, self.green_laser_on) {
+            (false, false) => 0,
+            (true, false) => 10,
+            (false, true) => 50,
+            (true, true) => 255, // TODO: verify this is actually correct.
+        };
+        dmx_buf[6] = if self.laser_strobe.on() {
+            unipolar_to_range(5, 254, self.laser_strobe.rate())
+        } else {
+            0
+        };
+        dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
+        dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);
         let mut emit_derby_strobe = |ssc| {
@@ -120,11 +98,11 @@ impl Fixture for Swarmolon {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::Swarmolon(msg) => {
+            FixtureControlMessage::Swarmolon(msg) => {
                 match msg {
                     ControlMessage::Set(sc) => {
                         self.handle_state_change(sc, emitter);
@@ -182,13 +160,16 @@ pub enum DerbyColor {
     White,
 }
 
+#[derive(Debug)]
 struct DerbyColorState(Vec<DerbyColor>);
 
-impl DerbyColorState {
-    pub fn new() -> Self {
+impl Default for DerbyColorState {
+    fn default() -> Self {
         Self(Vec::with_capacity(5))
     }
+}
 
+impl DerbyColorState {
     pub fn set(&mut self, color: DerbyColor, add: bool) {
         if !add {
             self.0.retain(|v| *v != color);
@@ -201,7 +182,7 @@ impl DerbyColorState {
         self.0.sort();
     }
 
-    pub fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    pub fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         for color in DerbyColor::iter() {
             let state = self.0.contains(&color);
             emitter.emit_swarmolon(StateChange::DerbyColor(color, state));

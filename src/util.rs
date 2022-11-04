@@ -67,6 +67,7 @@ pub fn bipolar_fader_with_detent(v: BipolarFloat) -> BipolarFloat {
 }
 
 /// A fixture parameter that ramps to its setpoint at a finite rate.
+#[derive(Debug)]
 pub struct RampingParameter<P> {
     pub target: P,
     current: P,

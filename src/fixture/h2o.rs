@@ -1,19 +1,16 @@
 //! Intuitive control profile for the American DJ H2O DMX Pro.
 
-use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::{
-    ControlMessage as ShowControlMessage, EmitStateChange as EmitShowStateChange, Fixture,
+use super::{
+    EmitFixtureStateChange as EmitShowStateChange, Fixture, FixtureControlMessage, PatchFixture,
 };
 use crate::util::bipolar_to_split_range;
-use crate::{dmx::DmxAddr, util::unipolar_to_range};
+use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-/// Aggregate and control one or more H2Os.
+#[derive(Default, Debug)]
 pub struct H2O {
-    /// Addresses of the H2Os under control.
-    dmx_indices: Vec<usize>,
     dimmer: UnipolarFloat,
     rotation: BipolarFloat,
     fixed_color: FixedColor,
@@ -21,18 +18,11 @@ pub struct H2O {
     color_rotation: BipolarFloat,
 }
 
-impl H2O {
-    pub fn new(dmx_addrs: Vec<DmxAddr>) -> Self {
-        Self {
-            dmx_indices: dmx_addrs.iter().map(|a| a - 1).collect(),
-            dimmer: UnipolarFloat::ZERO,
-            rotation: BipolarFloat::ZERO,
-            fixed_color: FixedColor::White,
-            color_rotate: false,
-            color_rotation: BipolarFloat::ZERO,
-        }
-    }
+impl PatchFixture for H2O {
+    const CHANNEL_COUNT: usize = 3;
+}
 
+impl H2O {
     fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitShowStateChange) {
         use StateChange::*;
         match sc {
@@ -47,27 +37,23 @@ impl H2O {
 }
 
 impl Fixture for H2O {
-    fn render(&self, dmx_univ: &mut [u8]) {
-        for dmx_index in self.dmx_indices.iter() {
-            let dmx_slice = &mut dmx_univ[*dmx_index..*dmx_index + 3];
-            dmx_slice[0] = unipolar_to_range(0, 255, self.dimmer);
-            dmx_slice[1] = bipolar_to_split_range(self.rotation, 120, 10, 135, 245, 0);
-            if self.color_rotate {
-                dmx_slice[2] = bipolar_to_split_range(self.color_rotation, 186, 128, 197, 255, 187);
-            } else {
-                dmx_slice[2] = self.fixed_color.as_dmx();
-            }
-            debug!("{:?}", dmx_slice);
+    fn render(&self, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
+        dmx_buf[1] = bipolar_to_split_range(self.rotation, 120, 10, 135, 245, 0);
+        if self.color_rotate {
+            dmx_buf[2] = bipolar_to_split_range(self.color_rotation, 186, 128, 197, 255, 187);
+        } else {
+            dmx_buf[2] = self.fixed_color.as_dmx();
         }
     }
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
+        msg: FixtureControlMessage,
         emitter: &mut dyn EmitShowStateChange,
-    ) -> Option<ShowControlMessage> {
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::H2O(msg) => {
+            FixtureControlMessage::H2O(msg) => {
                 self.handle_state_change(msg, emitter);
                 None
             }
@@ -85,8 +71,9 @@ impl Fixture for H2O {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, EnumString, EnumIter, EnumDisplay)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, EnumString, EnumIter, EnumDisplay)]
 pub enum FixedColor {
+    #[default]
     White,
     WhiteOrange,
     Orange,

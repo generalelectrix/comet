@@ -66,6 +66,7 @@ dependencies = [
  "local-ip-address",
  "log",
  "number",
+ "regex",
  "rosc",
  "rust_dmx",
  "serde",

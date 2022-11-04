@@ -1,15 +1,13 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
-use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::dmx::DmxAddr;
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
-use crate::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 
+#[derive(Default, Debug)]
 pub struct RotosphereQ3 {
-    dmx_index: usize,
     red: UnipolarFloat,
     green: UnipolarFloat,
     blue: UnipolarFloat,
@@ -18,21 +16,12 @@ pub struct RotosphereQ3 {
     rotation: BipolarFloat,
 }
 
-impl RotosphereQ3 {
+impl PatchFixture for RotosphereQ3 {
     const CHANNEL_COUNT: usize = 9;
-    pub fn new(dmx_addr: DmxAddr) -> Self {
-        Self {
-            dmx_index: dmx_addr - 1,
-            red: UnipolarFloat::ZERO,
-            green: UnipolarFloat::ZERO,
-            blue: UnipolarFloat::ZERO,
-            white: UnipolarFloat::ZERO,
-            strobe: GenericStrobe::default(),
-            rotation: BipolarFloat::ZERO,
-        }
-    }
+}
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+impl RotosphereQ3 {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             Red(v) => self.red = v,
@@ -47,25 +36,23 @@ impl RotosphereQ3 {
 }
 
 impl Fixture for RotosphereQ3 {
-    fn render(&self, dmx_univ: &mut [u8]) {
-        let dmx_slice = &mut dmx_univ[self.dmx_index..self.dmx_index + Self::CHANNEL_COUNT];
-        dmx_slice[0] = unipolar_to_range(0, 255, self.red);
-        dmx_slice[1] = unipolar_to_range(0, 255, self.green);
-        dmx_slice[2] = unipolar_to_range(0, 255, self.blue);
-        dmx_slice[3] = unipolar_to_range(0, 255, self.white);
-        dmx_slice[4] = if self.strobe.on() {
+    fn render(&self, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = unipolar_to_range(0, 255, self.red);
+        dmx_buf[1] = unipolar_to_range(0, 255, self.green);
+        dmx_buf[2] = unipolar_to_range(0, 255, self.blue);
+        dmx_buf[3] = unipolar_to_range(0, 255, self.white);
+        dmx_buf[4] = if self.strobe.on() {
             unipolar_to_range(1, 250, self.strobe.rate())
         } else {
             0
         };
-        dmx_slice[5] = bipolar_to_split_range(self.rotation, 1, 127, 129, 255, 0);
-        dmx_slice[6] = 0; // TODO auto programs
-        dmx_slice[7] = 0; // TODO auto program speed
-        dmx_slice[8] = 0; // TODO wtf did they make two motor control channels
-        debug!("{:?}", dmx_slice);
+        dmx_buf[5] = bipolar_to_split_range(self.rotation, 1, 127, 129, 255, 0);
+        dmx_buf[6] = 0; // TODO auto programs
+        dmx_buf[7] = 0; // TODO auto program speed
+        dmx_buf[8] = 0; // TODO wtf did they make two motor control channels
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_rotosphere_q3(Red(self.red));
         emitter.emit_rotosphere_q3(Green(self.green));
@@ -80,11 +67,11 @@ impl Fixture for RotosphereQ3 {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::RotosphereQ3(msg) => {
+            FixtureControlMessage::RotosphereQ3(msg) => {
                 self.handle_state_change(msg, emitter);
                 None
             }

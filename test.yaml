@@ -3,5 +3,8 @@ send_host: 192.168.1.213
 send_port: 9000
 debug: True
 fixtures:
-  rush_wizard:
-    - 1
+  - name: swarmolon
+    addr: 1
+  - name: swarmolon
+    addr: 10
+    group: Test

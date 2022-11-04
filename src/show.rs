@@ -1,113 +1,47 @@
 use std::{
+    collections::HashSet,
     error::Error,
     time::{Duration, Instant},
 };
 
-use crate::{
-    aquarius::Aquarius, comet::Comet, faderboard::Faderboard, freedom_fries::FreedomFries,
-    h2o::H2O, lumasphere::Lumasphere, osc::OscController, rotosphere_q3::RotosphereQ3,
-    rush_wizard::RushWizard, swarmolon::Swarmolon, venus::Venus, Config,
-};
-use crate::{fixture::Fixture, radiance::Radiance};
-use log::error;
+use crate::{config::Config, fixture::Patch, osc::OscController};
+
+use log::{error, warn};
 use rust_dmx::DmxPort;
-use simple_error::bail;
 
 pub struct Show {
     osc_controller: OscController,
-    fixtures: Vec<Box<dyn Fixture>>,
+    patch: Patch,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
 const UPDATE_INTERVAL: Duration = Duration::from_millis(10);
 
 impl Show {
-    pub fn new(mut cfg: Config) -> Result<Self, Box<dyn Error>> {
-        let mut fixtures: Vec<Box<dyn Fixture>> = Vec::new();
+    pub fn new(cfg: &Config) -> Result<Self, Box<dyn Error>> {
+        let mut patch = Patch::new();
 
         let mut osc_controller =
             OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
 
-        for (fixture, addrs) in cfg.fixtures.drain() {
-            match fixture.as_str() {
-                "comet" => {
-                    let fixture = Comet::new(addrs[0]);
-                    osc_controller.map_comet_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling the Comet.");
-                }
-                "lumasphere" => {
-                    let fixture = Lumasphere::new(addrs[0]);
-                    osc_controller.map_lumasphere_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling the Lumasphere.");
-                }
-                "venus" => {
-                    let fixture = Venus::new(addrs[0]);
-                    osc_controller.map_venus_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling the Venus.");
-                }
-                "h2o" => {
-                    let fixture = H2O::new(addrs);
-                    osc_controller.map_h2o_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling H2Os.");
-                }
-                "aquarius" => {
-                    let fixture = Aquarius::new(addrs);
-                    osc_controller.map_aquarius_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling Aquarii.");
-                }
-                "radiance" => {
-                    let fixture = Radiance::new(addrs[0]);
-                    osc_controller.map_radiance_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling a Radiance.");
-                }
-                "swarmolon" => {
-                    let fixture = Swarmolon::new(addrs, true);
-                    osc_controller.map_swarmolon_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling Swarmolons.");
-                }
-                "rotosphere_q3" => {
-                    let fixture = RotosphereQ3::new(addrs[0]);
-                    osc_controller.map_rotosphere_q3_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling Rotosphere Q3.");
-                }
-                "freedom_fries" => {
-                    let fixture = FreedomFries::new(addrs[0]);
-                    osc_controller.map_freedom_fries_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling Freedom Fries.");
-                }
-                "faderboard" => {
-                    let fixture = Faderboard::new(16, addrs[0]);
-                    osc_controller.map_faderboard_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling 16-channel faderboard.");
-                }
-                "rush_wizard" => {
-                    let fixture = RushWizard::new(addrs[0]);
-                    osc_controller.map_rush_wizard_controls();
-                    fixtures.push(Box::new(fixture));
-                    println!("Controlling Rush Wizard.");
-                }
-                unknown => {
-                    bail!("Unknown fixture type \"{}\".", unknown);
-                }
-            }
+        for fixture in cfg.fixtures.iter() {
+            patch.patch(fixture)?;
         }
 
-        for fixture in fixtures.iter() {
+        // Only patch a fixture type's controls once.
+        let mut patched_controls = HashSet::new();
+
+        for fixture in patch.iter() {
+            if !patched_controls.contains(fixture.name()) {
+                osc_controller.map_controls(fixture);
+                patched_controls.insert(fixture.name().to_string());
+            }
+
             fixture.emit_state(&mut osc_controller);
         }
 
         Ok(Self {
-            fixtures,
+            patch,
             osc_controller,
         })
     }
@@ -153,7 +87,8 @@ impl Show {
                 return Ok(());
             }
         });
-        for fixture in self.fixtures.iter_mut() {
+
+        for fixture in self.patch.iter_mut() {
             match msg.take() {
                 Some(m) => {
                     msg = fixture.control(m, &mut self.osc_controller);
@@ -163,11 +98,14 @@ impl Show {
                 }
             }
         }
+        if let Some(m) = msg {
+            warn!("Control message was not handled by any fixture: {:?}", m);
+        }
         Ok(())
     }
 
     fn update(&mut self, delta_t: Duration) {
-        for fixture in self.fixtures.iter_mut() {
+        for fixture in self.patch.iter_mut() {
             fixture.update(delta_t);
         }
     }
@@ -175,7 +113,7 @@ impl Show {
     fn render(&mut self, dmx_buffer: &mut [u8]) {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
-        for fixture in self.fixtures.iter() {
+        for fixture in self.patch.iter() {
             fixture.render(dmx_buffer);
         }
     }

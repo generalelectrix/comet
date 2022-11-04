@@ -1,16 +1,15 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
-use log::{debug, error};
+use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::dmx::DmxAddr;
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
-use crate::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+#[derive(Default, Debug)]
 pub struct RushWizard {
-    dmx_index: usize,
     dimmer: UnipolarFloat,
     strobe: GenericStrobe,
     color: Color,
@@ -22,25 +21,14 @@ pub struct RushWizard {
     reflector_rotation: BipolarFloat,
 }
 
-impl RushWizard {
+impl PatchFixture for RushWizard {
     const CHANNEL_COUNT: usize = 10;
-    const GOBO_COUNT: usize = 16; // includes the open position
-    pub fn new(dmx_addr: DmxAddr) -> Self {
-        Self {
-            dmx_index: dmx_addr - 1,
-            dimmer: UnipolarFloat::ZERO,
-            strobe: GenericStrobe::default(),
-            color: Color::Open,
-            twinkle: false,
-            twinkle_speed: UnipolarFloat::ZERO,
-            gobo: 0,
-            drum_rotation: BipolarFloat::ZERO,
-            drum_swivel: BipolarFloat::ZERO,
-            reflector_rotation: BipolarFloat::ZERO,
-        }
-    }
+}
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+impl RushWizard {
+    const GOBO_COUNT: usize = 16; // includes the open position
+
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -64,31 +52,29 @@ impl RushWizard {
 }
 
 impl Fixture for RushWizard {
-    fn render(&self, dmx_univ: &mut [u8]) {
-        let dmx_slice = &mut dmx_univ[self.dmx_index..self.dmx_index + Self::CHANNEL_COUNT];
-        dmx_slice[0] = if self.strobe.on() {
+    fn render(&self, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = if self.strobe.on() {
             unipolar_to_range(16, 131, self.strobe.rate())
         } else {
             8
         };
-        dmx_slice[1] = unipolar_to_range(0, 255, self.dimmer);
-        dmx_slice[2] = if self.twinkle {
+        dmx_buf[1] = unipolar_to_range(0, 255, self.dimmer);
+        dmx_buf[2] = if self.twinkle {
             // WHY did you put twinkle on the color wheel...
             unipolar_to_range(221, 243, self.twinkle_speed)
         } else {
             self.color.as_dmx()
         };
-        dmx_slice[3] = (self.gobo as u8) * 2 + 160;
-        dmx_slice[4] = bipolar_to_split_range(self.drum_rotation, 128, 190, 193, 255, 191);
-        dmx_slice[5] = bipolar_to_range(0, 120, self.drum_swivel);
-        dmx_slice[6] = bipolar_to_split_range(self.reflector_rotation, 128, 190, 193, 255, 191);
-        dmx_slice[7] = 0;
-        dmx_slice[8] = 0;
-        dmx_slice[9] = 0;
-        debug!("{:?}", dmx_slice);
+        dmx_buf[3] = (self.gobo as u8) * 2 + 160;
+        dmx_buf[4] = bipolar_to_split_range(self.drum_rotation, 128, 190, 193, 255, 191);
+        dmx_buf[5] = bipolar_to_range(0, 120, self.drum_swivel);
+        dmx_buf[6] = bipolar_to_split_range(self.reflector_rotation, 128, 190, 193, 255, 191);
+        dmx_buf[7] = 0;
+        dmx_buf[8] = 0;
+        dmx_buf[9] = 0;
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_rush_wizard(Dimmer(self.dimmer));
         let mut emit_strobe = |ssc| {
@@ -106,11 +92,11 @@ impl Fixture for RushWizard {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::RushWizard(msg) => {
+            FixtureControlMessage::RushWizard(msg) => {
                 self.handle_state_change(msg, emitter);
                 None
             }
@@ -134,8 +120,9 @@ pub enum StateChange {
 
 pub type ControlMessage = StateChange;
 
-#[derive(Copy, Clone, Debug, PartialEq, EnumString, EnumIter, EnumDisplay)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, EnumString, EnumIter, EnumDisplay)]
 pub enum Color {
+    #[default]
     Open,
     Blue,
     Magenta,

@@ -3,35 +3,27 @@
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
-use log::{debug, error};
+use log::error;
 use number::UnipolarFloat;
 
-use crate::dmx::DmxAddr;
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::util::unipolar_to_range;
 
+#[derive(Default, Debug)]
 pub struct FreedomFries {
-    dmx_index: usize,
     dimmer: UnipolarFloat,
     speed: UnipolarFloat,
     program: usize,
     program_cycle_all: bool,
 }
 
-impl FreedomFries {
-    pub const CHANNEL_COUNT: usize = 8;
-    pub const PROGRAM_COUNT: usize = 27;
-    pub fn new(dmx_addr: DmxAddr) -> Self {
-        Self {
-            dmx_index: dmx_addr - 1,
-            dimmer: UnipolarFloat::ZERO,
-            speed: UnipolarFloat::ZERO,
-            program: 0,
-            program_cycle_all: false,
-        }
-    }
+impl PatchFixture for FreedomFries {
+    const CHANNEL_COUNT: usize = 8;
+}
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+impl FreedomFries {
+    pub const PROGRAM_COUNT: usize = 27;
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -50,24 +42,22 @@ impl FreedomFries {
 }
 
 impl Fixture for FreedomFries {
-    fn render(&self, dmx_univ: &mut [u8]) {
-        let dmx_slice = &mut dmx_univ[self.dmx_index..self.dmx_index + Self::CHANNEL_COUNT];
-        dmx_slice[0] = unipolar_to_range(0, 255, self.dimmer);
-        dmx_slice[1] = 0;
-        dmx_slice[2] = 0;
-        dmx_slice[3] = 0;
-        dmx_slice[4] = 0;
-        dmx_slice[5] = 0; // TODO strobing
-        dmx_slice[6] = if self.program_cycle_all {
+    fn render(&self, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
+        dmx_buf[1] = 0;
+        dmx_buf[2] = 0;
+        dmx_buf[3] = 0;
+        dmx_buf[4] = 0;
+        dmx_buf[5] = 0; // TODO strobing
+        dmx_buf[6] = if self.program_cycle_all {
             227
         } else {
             ((self.program * 8) + 11) as u8
         };
-        dmx_slice[7] = unipolar_to_range(0, 255, self.speed);
-        debug!("{:?}", dmx_slice);
+        dmx_buf[7] = unipolar_to_range(0, 255, self.speed);
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_freedom_fries(Dimmer(self.dimmer));
         emitter.emit_freedom_fries(Speed(self.speed));
@@ -77,11 +67,11 @@ impl Fixture for FreedomFries {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::FreedomFries(msg) => {
+            FixtureControlMessage::FreedomFries(msg) => {
                 self.handle_state_change(msg, emitter);
                 None
             }

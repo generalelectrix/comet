@@ -2,14 +2,10 @@
 
 use std::time::Duration;
 
-use log::debug;
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
-use crate::{
-    dmx::DmxAddr,
-    util::{unipolar_to_range, RampingParameter},
-};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use crate::util::{unipolar_to_range, RampingParameter};
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus
@@ -30,8 +26,8 @@ use crate::{
 /// 6 - Motor 4 Dir
 /// 7 - Motor 4 Speed
 /// 8 - Lamp Control
+#[derive(Debug)]
 pub struct Venus {
-    dmx_index: usize,
     base_rotation: RampingParameter<BipolarFloat>,
     cradle_motion: RampingParameter<UnipolarFloat>,
     head_rotation: RampingParameter<BipolarFloat>,
@@ -39,10 +35,13 @@ pub struct Venus {
     lamp_on: bool,
 }
 
-impl Venus {
-    pub fn new(dmx_addr: DmxAddr) -> Self {
+impl PatchFixture for Venus {
+    const CHANNEL_COUNT: usize = 8;
+}
+
+impl Default for Venus {
+    fn default() -> Self {
         Self {
-            dmx_index: dmx_addr - 1,
             base_rotation: RampingParameter::new(BipolarFloat::ZERO, BipolarFloat::ONE),
             cradle_motion: RampingParameter::new(UnipolarFloat::ZERO, UnipolarFloat::ONE),
             head_rotation: RampingParameter::new(BipolarFloat::ZERO, BipolarFloat::ONE),
@@ -50,8 +49,10 @@ impl Venus {
             lamp_on: false,
         }
     }
+}
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+impl Venus {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             BaseRotation(v) => self.base_rotation.target = v,
@@ -72,27 +73,20 @@ impl Fixture for Venus {
         self.color_rotation.update(delta_t);
     }
 
-    fn render(&self, dmx_univ: &mut [u8]) {
-        render_bipolar_to_dir_and_val(
-            self.base_rotation.current(),
-            &mut dmx_univ[self.dmx_index..self.dmx_index + 2],
-        );
-        dmx_univ[self.dmx_index + 2] = unipolar_to_range(0, 255, self.cradle_motion.current());
-        render_bipolar_to_dir_and_val(
-            self.head_rotation.current(),
-            &mut dmx_univ[self.dmx_index + 3..self.dmx_index + 5],
-        );
+    fn render(&self, dmx_buf: &mut [u8]) {
+        render_bipolar_to_dir_and_val(self.base_rotation.current(), &mut dmx_buf[0..2]);
+        dmx_buf[2] = unipolar_to_range(0, 255, self.cradle_motion.current());
+        render_bipolar_to_dir_and_val(self.head_rotation.current(), &mut dmx_buf[3..5]);
         // Limit color wheel speed to 50% (...it still chewed itself to pieces...).
         let color_wheel_scale = UnipolarFloat::new(0.5);
         render_bipolar_to_dir_and_val(
             self.color_rotation.current() * color_wheel_scale,
-            &mut dmx_univ[self.dmx_index + 5..self.dmx_index + 7],
+            &mut dmx_buf[5..7],
         );
-        dmx_univ[7] = if self.lamp_on { 255 } else { 0 };
-        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 8]);
+        dmx_buf[7] = if self.lamp_on { 255 } else { 0 };
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_venus(BaseRotation(self.base_rotation.target));
         emitter.emit_venus(CradleMotion(self.cradle_motion.target));
@@ -103,11 +97,11 @@ impl Fixture for Venus {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::Venus(msg) => {
+            FixtureControlMessage::Venus(msg) => {
                 self.handle_state_change(msg, emitter);
                 None
             }

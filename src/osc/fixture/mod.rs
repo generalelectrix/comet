@@ -1,0 +1,12 @@
+mod aquarius;
+mod comet;
+mod faderboard;
+mod freedom_fries;
+mod generic;
+mod h2o;
+mod lumasphere;
+mod radiance;
+mod rotosphere_q3;
+mod rush_wizard;
+mod swarmolon;
+mod venus;

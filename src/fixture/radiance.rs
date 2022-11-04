@@ -1,29 +1,23 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
 
-use log::debug;
 use number::UnipolarFloat;
 
-use crate::dmx::DmxAddr;
-use crate::fixture::{ControlMessage as ShowControlMessage, EmitStateChange, Fixture};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::util::unipolar_to_range;
 
+#[derive(Default, Debug)]
 pub struct Radiance {
-    dmx_index: usize,
     haze: UnipolarFloat,
     fan: UnipolarFloat,
 }
 
-impl Radiance {
-    pub fn new(dmx_addr: DmxAddr) -> Self {
-        Self {
-            dmx_index: dmx_addr - 1,
-            haze: UnipolarFloat::ZERO,
-            fan: UnipolarFloat::ZERO,
-        }
-    }
+impl PatchFixture for Radiance {
+    const CHANNEL_COUNT: usize = 2;
+}
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitStateChange) {
+impl Radiance {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         match sc {
             Haze(v) => self.haze = v,
@@ -34,13 +28,12 @@ impl Radiance {
 }
 
 impl Fixture for Radiance {
-    fn render(&self, dmx_univ: &mut [u8]) {
-        dmx_univ[self.dmx_index] = unipolar_to_range(0, 255, self.haze);
-        dmx_univ[self.dmx_index + 1] = unipolar_to_range(0, 255, self.fan);
-        debug!("{:?}", &dmx_univ[self.dmx_index..self.dmx_index + 2]);
+    fn render(&self, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = unipolar_to_range(0, 255, self.haze);
+        dmx_buf[1] = unipolar_to_range(0, 255, self.fan);
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_radiance(Haze(self.haze));
         emitter.emit_radiance(Fan(self.fan));
@@ -48,11 +41,11 @@ impl Fixture for Radiance {
 
     fn control(
         &mut self,
-        msg: ShowControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ShowControlMessage> {
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
         match msg {
-            ShowControlMessage::Radiance(msg) => {
+            FixtureControlMessage::Radiance(msg) => {
                 self.handle_state_change(msg, emitter);
                 None
             }
