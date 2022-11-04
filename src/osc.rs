@@ -15,6 +15,7 @@ use std::time::Duration;
 
 mod aquarius;
 mod comet;
+mod faderboard;
 mod freedom_fries;
 mod generic;
 mod h2o;
@@ -79,6 +80,10 @@ impl OscController {
         freedom_fries::map_controls(&mut self.control_map);
     }
 
+    pub fn map_faderboard_controls(&mut self) {
+        faderboard::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -108,6 +113,7 @@ impl EmitStateChange for OscController {
             StateChange::Swarmolon(sc) => swarmolon::handle_state_change(sc, send),
             StateChange::RotosphereQ3(sc) => rotosphere_q3::handle_state_change(sc, send),
             StateChange::FreedomFries(sc) => freedom_fries::handle_state_change(sc, send),
+            StateChange::Faderboard(sc) => faderboard::handle_state_change(sc, send),
         }
     }
 }

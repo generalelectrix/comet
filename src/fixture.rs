@@ -4,6 +4,9 @@ use crate::aquarius::{
     ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
 use crate::comet::{ControlMessage as CometControlMessage, StateChange as CometStateChange};
+use crate::faderboard::{
+    ControlMessage as FaderboardControlMessage, StateChange as FaderboardStateChange,
+};
 use crate::freedom_fries::{
     ControlMessage as FreedomFriesControlMessage, StateChange as FreedomFriesStateChange,
 };
@@ -60,6 +63,10 @@ pub trait EmitStateChange {
     fn emit_freedom_fries(&mut self, sc: FreedomFriesStateChange) {
         self.emit(StateChange::FreedomFries(sc));
     }
+
+    fn emit_faderboard(&mut self, sc: FaderboardStateChange) {
+        self.emit(StateChange::Faderboard(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -73,6 +80,7 @@ pub enum StateChange {
     Swarmolon(SwarmolonStateChange),
     RotosphereQ3(RotosphereQ3StateChange),
     FreedomFries(FreedomFriesStateChange),
+    Faderboard(FaderboardStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -86,6 +94,7 @@ pub enum ControlMessage {
     Swarmolon(SwarmolonControlMessage),
     RotosphereQ3(RotosphereQ3ControlMessage),
     FreedomFries(FreedomFriesControlMessage),
+    Faderboard(FaderboardControlMessage),
 }
 
 pub trait Fixture {

@@ -15,6 +15,7 @@ use crate::show::Show;
 mod aquarius;
 mod comet;
 mod dmx;
+mod faderboard;
 mod fixture;
 mod freedom_fries;
 mod generic;
