@@ -3,5 +3,5 @@ send_host: 192.168.1.213
 send_port: 9000
 debug: True
 fixtures:
-  rotosphere_q3:
+  freedom_fries:
     - 1

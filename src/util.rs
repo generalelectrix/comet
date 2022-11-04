@@ -6,6 +6,7 @@ use std::{
 use number::{BipolarFloat, UnipolarFloat};
 
 /// Scale value into the provided integer range.
+/// The range is inclusive at both ends.
 pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
     if end > start {
         ((end - start) as f64 * value.val()) as u8 + start

@@ -4,6 +4,9 @@ use crate::aquarius::{
     ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
 use crate::comet::{ControlMessage as CometControlMessage, StateChange as CometStateChange};
+use crate::freedom_fries::{
+    ControlMessage as FreedomFriesControlMessage, StateChange as FreedomFriesStateChange,
+};
 use crate::h2o::{ControlMessage as H2OControlMessage, StateChange as H2OStateChange};
 use crate::lumasphere::{
     ControlMessage as LumasphereControlMessage, StateChange as LumasphereStateChange,
@@ -53,6 +56,10 @@ pub trait EmitStateChange {
     fn emit_rotosphere_q3(&mut self, sc: RotosphereQ3StateChange) {
         self.emit(StateChange::RotosphereQ3(sc));
     }
+
+    fn emit_freedom_fries(&mut self, sc: FreedomFriesStateChange) {
+        self.emit(StateChange::FreedomFries(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -65,6 +72,7 @@ pub enum StateChange {
     Radiance(RadianceStateChange),
     Swarmolon(SwarmolonStateChange),
     RotosphereQ3(RotosphereQ3StateChange),
+    FreedomFries(FreedomFriesStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -77,6 +85,7 @@ pub enum ControlMessage {
     Radiance(RadianceControlMessage),
     Swarmolon(SwarmolonControlMessage),
     RotosphereQ3(RotosphereQ3ControlMessage),
+    FreedomFries(FreedomFriesControlMessage),
 }
 
 pub trait Fixture {

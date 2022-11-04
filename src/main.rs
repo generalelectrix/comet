@@ -16,6 +16,7 @@ mod aquarius;
 mod comet;
 mod dmx;
 mod fixture;
+mod freedom_fries;
 mod generic;
 mod h2o;
 mod lumasphere;
