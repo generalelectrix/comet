@@ -6,7 +6,7 @@ use std::{
 use crate::{
     aquarius::Aquarius, comet::Comet, faderboard::Faderboard, freedom_fries::FreedomFries,
     h2o::H2O, lumasphere::Lumasphere, osc::OscController, rotosphere_q3::RotosphereQ3,
-    swarmolon::Swarmolon, venus::Venus, Config,
+    rush_wizard::RushWizard, swarmolon::Swarmolon, venus::Venus, Config,
 };
 use crate::{fixture::Fixture, radiance::Radiance};
 use log::error;
@@ -89,6 +89,12 @@ impl Show {
                     osc_controller.map_faderboard_controls();
                     fixtures.push(Box::new(fixture));
                     println!("Controlling 16-channel faderboard.");
+                }
+                "rush_wizard" => {
+                    let fixture = RushWizard::new(addrs[0]);
+                    osc_controller.map_rush_wizard_controls();
+                    fixtures.push(Box::new(fixture));
+                    println!("Controlling Rush Wizard.");
                 }
                 unknown => {
                     bail!("Unknown fixture type \"{}\".", unknown);

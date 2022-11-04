@@ -12,6 +12,7 @@ use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
+use strum::IntoEnumIterator;
 
 mod aquarius;
 mod comet;
@@ -22,6 +23,7 @@ mod h2o;
 mod lumasphere;
 mod radiance;
 mod rotosphere_q3;
+mod rush_wizard;
 mod swarmolon;
 mod venus;
 
@@ -84,6 +86,10 @@ impl OscController {
         faderboard::map_controls(&mut self.control_map);
     }
 
+    pub fn map_rush_wizard_controls(&mut self) {
+        rush_wizard::map_controls(&mut self.control_map);
+    }
+
     pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
@@ -114,6 +120,7 @@ impl EmitStateChange for OscController {
             StateChange::RotosphereQ3(sc) => rotosphere_q3::handle_state_change(sc, send),
             StateChange::FreedomFries(sc) => freedom_fries::handle_state_change(sc, send),
             StateChange::Faderboard(sc) => faderboard::handle_state_change(sc, send),
+            StateChange::RushWizard(sc) => rush_wizard::handle_state_change(sc, send),
         }
     }
 }
@@ -518,4 +525,20 @@ where
         addr: m.addr.clone(),
         msg: format!("failed to parse variant specifier: {}", e),
     })
+}
+
+/// Update the state of a "radio select enum".
+/// Each enum variant is mapped to a button with the name of the address as the
+/// last piece of the address.
+fn update_enum_radio_select<T, S>(group: &str, control: &str, set: &T, send: &mut S)
+where
+    T: IntoEnumIterator + Display + PartialEq,
+    S: FnMut(OscMessage),
+{
+    for choice in T::iter() {
+        send(OscMessage {
+            addr: format!("/{}/{}/{}", group, control, choice),
+            args: vec![OscType::Float(if choice == *set { 1.0 } else { 0.0 })],
+        });
+    }
 }

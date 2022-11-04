@@ -20,6 +20,9 @@ use crate::radiance::{
 use crate::rotosphere_q3::{
     ControlMessage as RotosphereQ3ControlMessage, StateChange as RotosphereQ3StateChange,
 };
+use crate::rush_wizard::{
+    ControlMessage as RushWizardControlMessage, StateChange as RushWizardStateChange,
+};
 use crate::swarmolon::{
     ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange,
 };
@@ -67,6 +70,10 @@ pub trait EmitStateChange {
     fn emit_faderboard(&mut self, sc: FaderboardStateChange) {
         self.emit(StateChange::Faderboard(sc));
     }
+
+    fn emit_rush_wizard(&mut self, sc: RushWizardStateChange) {
+        self.emit(StateChange::RushWizard(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -81,6 +88,7 @@ pub enum StateChange {
     RotosphereQ3(RotosphereQ3StateChange),
     FreedomFries(FreedomFriesStateChange),
     Faderboard(FaderboardStateChange),
+    RushWizard(RushWizardStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -95,6 +103,7 @@ pub enum ControlMessage {
     RotosphereQ3(RotosphereQ3ControlMessage),
     FreedomFries(FreedomFriesControlMessage),
     Faderboard(FaderboardControlMessage),
+    RushWizard(RushWizardControlMessage),
 }
 
 pub trait Fixture {

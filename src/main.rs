@@ -24,6 +24,7 @@ mod lumasphere;
 mod osc;
 mod radiance;
 mod rotosphere_q3;
+mod rush_wizard;
 mod show;
 mod swarmolon;
 mod util;

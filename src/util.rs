@@ -15,6 +15,13 @@ pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
     }
 }
 
+/// Scale value into the provided integer range.
+/// The range is inclusive at both ends.
+pub fn bipolar_to_range(start: u8, end: u8, value: BipolarFloat) -> u8 {
+    let uni = UnipolarFloat::new((value.val() + 1.0) / 2.0);
+    unipolar_to_range(start, end, uni)
+}
+
 /// Scale a bipolar value into an American DJ-style split range.
 pub fn bipolar_to_split_range(
     v: BipolarFloat,
