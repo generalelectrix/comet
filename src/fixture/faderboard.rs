@@ -8,17 +8,23 @@ use crate::util::unipolar_to_range;
 
 #[derive(Debug)]
 pub struct Faderboard {
+    channel_count: usize,
     vals: Vec<UnipolarFloat>,
 }
 
 impl PatchFixture for Faderboard {
-    const CHANNEL_COUNT: usize = 16;
+    fn channel_count(&self) -> usize {
+        self.channel_count
+    }
 }
+
+const DEFAULT_CHANNEL_COUNT: usize = 16;
 
 impl Default for Faderboard {
     fn default() -> Self {
         Self {
-            vals: vec![UnipolarFloat::ZERO; Self::CHANNEL_COUNT],
+            vals: vec![UnipolarFloat::ZERO; DEFAULT_CHANNEL_COUNT],
+            channel_count: DEFAULT_CHANNEL_COUNT,
         }
     }
 }
@@ -26,7 +32,7 @@ impl Default for Faderboard {
 impl Faderboard {
     fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         let (chan, val) = sc;
-        if chan >= Self::CHANNEL_COUNT {
+        if chan >= self.channel_count {
             error!("Channel out of range: {}.", chan);
             return;
         }

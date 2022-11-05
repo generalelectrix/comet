@@ -17,7 +17,9 @@ pub struct RotosphereQ3 {
 }
 
 impl PatchFixture for RotosphereQ3 {
-    const CHANNEL_COUNT: usize = 9;
+    fn channel_count(&self) -> usize {
+        9
+    }
 }
 
 impl RotosphereQ3 {

@@ -22,7 +22,9 @@ pub struct RushWizard {
 }
 
 impl PatchFixture for RushWizard {
-    const CHANNEL_COUNT: usize = 10;
+    fn channel_count(&self) -> usize {
+        10
+    }
 }
 
 impl RushWizard {

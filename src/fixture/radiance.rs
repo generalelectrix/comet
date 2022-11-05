@@ -13,7 +13,9 @@ pub struct Radiance {
 }
 
 impl PatchFixture for Radiance {
-    const CHANNEL_COUNT: usize = 2;
+    fn channel_count(&self) -> usize {
+        2
+    }
 }
 
 impl Radiance {

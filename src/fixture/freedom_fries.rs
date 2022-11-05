@@ -18,7 +18,9 @@ pub struct FreedomFries {
 }
 
 impl PatchFixture for FreedomFries {
-    const CHANNEL_COUNT: usize = 8;
+    fn channel_count(&self) -> usize {
+        8
+    }
 }
 
 impl FreedomFries {

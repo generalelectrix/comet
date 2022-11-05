@@ -12,7 +12,9 @@ pub struct Aquarius {
 }
 
 impl PatchFixture for Aquarius {
-    const CHANNEL_COUNT: usize = 2;
+    fn channel_count(&self) -> usize {
+        2
+    }
 }
 
 impl Aquarius {

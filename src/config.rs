@@ -1,5 +1,6 @@
 use crate::dmx::DmxAddr;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 
@@ -28,4 +29,7 @@ pub struct FixtureConfig {
     /// provide a group index.  Most fixtures do not use this.
     #[serde(default)]
     pub group: Option<String>,
+    /// Additional key-value string options for configuring specific fixture types.
+    #[serde(default)]
+    pub options: HashMap<String, String>,
 }

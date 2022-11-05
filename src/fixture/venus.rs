@@ -36,7 +36,9 @@ pub struct Venus {
 }
 
 impl PatchFixture for Venus {
-    const CHANNEL_COUNT: usize = 8;
+    fn channel_count(&self) -> usize {
+        8
+    }
 }
 
 impl Default for Venus {

@@ -1,4 +1,5 @@
 mod aquarius;
+mod color;
 mod comet;
 mod faderboard;
 mod freedom_fries;

@@ -1,4 +1,5 @@
 use crate::fixture::aquarius::Aquarius;
+use crate::fixture::color::Color;
 use crate::fixture::comet::Comet;
 use crate::fixture::faderboard::Faderboard;
 use crate::fixture::freedom_fries::FreedomFries;
@@ -15,7 +16,7 @@ use crate::fixture::{
 use control_message::OscControlMessage;
 use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
-use number::{BipolarFloat, UnipolarFloat};
+use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
 use simple_error::bail;
 use std::collections::hash_map::Entry;
@@ -114,6 +115,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::FreedomFries(sc) => FreedomFries::emit_state_change(sc, send),
             FixtureStateChange::Faderboard(sc) => Faderboard::emit_state_change(sc, send),
             FixtureStateChange::RushWizard(sc) => RushWizard::emit_state_change(sc, send),
+            FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
         }
     }
 }
@@ -172,6 +174,13 @@ impl<C> ControlMap<C> {
         F: Fn(BipolarFloat) -> C + 'static,
     {
         self.add_fetch_process(group, control, get_bipolar, move |v| Some(process(v)))
+    }
+
+    pub fn add_phase<F>(&mut self, group: &str, control: &str, process: F)
+    where
+        F: Fn(Phase) -> C + 'static,
+    {
+        self.add_fetch_process(group, control, get_phase, move |v| Some(process(v)))
     }
 
     pub fn add_bool<F>(&mut self, group: &str, control: &str, process: F)
@@ -333,6 +342,11 @@ fn get_unipolar(v: &OscControlMessage) -> Result<UnipolarFloat, OscError> {
 /// Get a single bipolar float argument from the provided OSC message.
 fn get_bipolar(v: &OscControlMessage) -> Result<BipolarFloat, OscError> {
     Ok(BipolarFloat::new(get_float(v)?))
+}
+
+/// Get a single phase argument from the provided OSC message.
+fn get_phase(v: &OscControlMessage) -> Result<Phase, OscError> {
+    Ok(Phase::new(get_float(v)?))
 }
 
 fn quadratic(v: UnipolarFloat) -> UnipolarFloat {

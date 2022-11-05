@@ -10,6 +10,7 @@ use simple_error::bail;
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
+use self::color::{Color, ControlMessage as ColorControlMessage, StateChange as ColorStateChange};
 use self::comet::{Comet, ControlMessage as CometControlMessage, StateChange as CometStateChange};
 use self::faderboard::{
     ControlMessage as FaderboardControlMessage, Faderboard, StateChange as FaderboardStateChange,
@@ -40,6 +41,7 @@ use crate::config::FixtureConfig;
 use crate::osc::MapControls;
 
 pub mod aquarius;
+pub mod color;
 pub mod comet;
 pub mod faderboard;
 pub mod freedom_fries;
@@ -128,6 +130,9 @@ pub trait EmitFixtureStateChange {
     fn emit_rush_wizard(&mut self, sc: RushWizardStateChange) {
         self.emit(FixtureStateChange::RushWizard(sc));
     }
+    fn emit_color(&mut self, sc: ColorStateChange) {
+        self.emit(FixtureStateChange::Color(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -149,6 +154,7 @@ pub enum FixtureStateChange {
     FreedomFries(FreedomFriesStateChange),
     Faderboard(FaderboardStateChange),
     RushWizard(RushWizardStateChange),
+    Color(ColorStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -170,6 +176,7 @@ pub enum FixtureControlMessage {
     FreedomFries(FreedomFriesControlMessage),
     Faderboard(FaderboardControlMessage),
     RushWizard(RushWizardControlMessage),
+    Color(ColorControlMessage),
 }
 
 #[derive(Debug)]
@@ -283,10 +290,11 @@ impl Patch {
             "freedom_fries" => FreedomFries::patch(&cfg),
             "faderboard" => Faderboard::patch(&cfg),
             "rush_wizard" => RushWizard::patch(&cfg),
+            "color" => Color::patch(&cfg),
             unknown => {
                 bail!("Unknown fixture type \"{}\".", unknown);
             }
-        };
+        }?;
         self.check_collision(&fixture, cfg)?;
         self.fixtures.push(fixture);
         info!(
@@ -348,21 +356,29 @@ impl Patch {
 
 /// Fixture constructor trait to handle patching fixtures.
 pub trait PatchFixture: Fixture + Default {
+    /// Create a new instance of the fixture from the provided options.
+    /// Non-customizable fixtures will fall back to using default.
+    /// This can be overridden for fixtures that are customizable.
+    fn new(_options: &HashMap<String, String>) -> Result<Self, Box<dyn Error>> {
+        Ok(Self::default())
+    }
+
     /// The number of contiguous DMX channels used by the fixture.
-    const CHANNEL_COUNT: usize;
+    fn channel_count(&self) -> usize;
 
     /// Produce a wrapped fixture at the provided DMX address.
-    fn patch(cfg: &FixtureConfig) -> FixtureWrapper
+    fn patch(cfg: &FixtureConfig) -> Result<FixtureWrapper, Box<dyn Error>>
     where
         Self: Sized + 'static,
     {
-        FixtureWrapper {
+        let fixture = Self::new(&cfg.options)?;
+        Ok(FixtureWrapper {
             name: cfg.name.clone(),
             group: (&cfg.group).into(),
             dmx_index: cfg.addr - 1,
-            channel_count: Self::CHANNEL_COUNT,
-            fixture: Box::new(Self::default()),
-        }
+            channel_count: fixture.channel_count(),
+            fixture: Box::new(fixture),
+        })
     }
 }
 

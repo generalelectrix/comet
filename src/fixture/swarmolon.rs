@@ -22,7 +22,9 @@ pub struct Swarmolon {
 }
 
 impl PatchFixture for Swarmolon {
-    const CHANNEL_COUNT: usize = 9;
+    fn channel_count(&self) -> usize {
+        9
+    }
 }
 
 impl Swarmolon {
