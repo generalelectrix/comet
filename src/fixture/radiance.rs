@@ -4,7 +4,7 @@
 use number::UnipolarFloat;
 
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::util::unipolar_to_range;
+use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Radiance {
@@ -30,7 +30,7 @@ impl Radiance {
 }
 
 impl Fixture for Radiance {
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.haze);
         dmx_buf[1] = unipolar_to_range(0, 255, self.fan);
     }

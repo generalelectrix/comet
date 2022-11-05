@@ -3,7 +3,7 @@ mod color;
 mod comet;
 mod faderboard;
 mod freedom_fries;
-mod generic;
+pub mod generic;
 mod h2o;
 mod lumasphere;
 mod radiance;

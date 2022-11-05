@@ -2,14 +2,16 @@ use log::error;
 use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::util::unipolar_to_range;
+use super::{
+    generic::{GenericStrobe, GenericStrobeStateChange},
+    EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture,
+};
+use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Comet {
     shutter_open: bool,
-    strobing: bool,
-    strobe_rate: UnipolarFloat,
+    strobe: GenericStrobe,
     shutter_sound_active: bool,
     macro_pattern: usize,
     mirror_speed: UnipolarFloat,
@@ -31,8 +33,8 @@ impl Comet {
             0
         } else if self.shutter_sound_active {
             125
-        } else if self.strobing {
-            unipolar_to_range(151, 255, self.strobe_rate)
+        } else if self.strobe.on() {
+            unipolar_to_range(151, 255, self.strobe.rate())
         } else {
             75
         }
@@ -54,8 +56,7 @@ impl Comet {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,
-            Strobe(v) => self.strobing = v,
-            StrobeRate(v) => self.strobe_rate = v,
+            Strobe(v) => self.strobe.handle_state_change(v),
             ShutterSoundActive(v) => self.shutter_sound_active = v,
             SelectMacro(v) => {
                 if v >= Self::GAME_DMX_VALS.len() {
@@ -79,7 +80,7 @@ impl Fixture for Comet {
         self.trigger_state.update(delta_t);
     }
 
-    fn render(&self, dmx_univ: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_univ: &mut [u8]) {
         dmx_univ[0] = self.render_shutter();
         dmx_univ[1] = Self::GAME_DMX_VALS[self.macro_pattern];
         dmx_univ[2] = self.render_mspeed();
@@ -90,8 +91,10 @@ impl Fixture for Comet {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_comet(Shutter(self.shutter_open));
-        emitter.emit_comet(Strobe(self.strobing));
-        emitter.emit_comet(StrobeRate(self.strobe_rate));
+        let mut emit_strobe = |ssc| {
+            emitter.emit_comet(Strobe(ssc));
+        };
+        self.strobe.emit_state(&mut emit_strobe);
         emitter.emit_comet(ShutterSoundActive(self.shutter_sound_active));
         emitter.emit_comet(SelectMacro(self.macro_pattern));
         emitter.emit_comet(MirrorSpeed(self.mirror_speed));
@@ -241,8 +244,7 @@ pub enum ControlMessage {
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     Shutter(bool),
-    Strobe(bool),
-    StrobeRate(UnipolarFloat),
+    Strobe(GenericStrobeStateChange),
     ShutterSoundActive(bool),
     SelectMacro(usize),
     MirrorSpeed(UnipolarFloat),

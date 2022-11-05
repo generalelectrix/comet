@@ -6,6 +6,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use crate::master::MasterControls;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -70,37 +71,31 @@ impl Swarmolon {
 }
 
 impl Fixture for Swarmolon {
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = 255; // always set to DMX mode
         dmx_buf[1] = self.derby_color.render();
         dmx_buf[2] = 0; // Not using automatic derby programs.
-        dmx_buf[3] = if self.derby_strobe.on() {
-            unipolar_to_range(254, 10, self.derby_strobe.rate())
-        } else {
-            0
-        };
-        dmx_buf[4] = self.white_strobe.render();
+        dmx_buf[3] = self
+            .derby_strobe
+            .render_range_with_master(master.strobe(), 0, 254, 10);
+        dmx_buf[4] = self.white_strobe.render(master);
         dmx_buf[5] = match (self.red_laser_on, self.green_laser_on) {
             (false, false) => 0,
             (true, false) => 10,
             (false, true) => 50,
             (true, true) => 255, // TODO: verify this is actually correct.
         };
-        dmx_buf[6] = if self.laser_strobe.on() {
-            unipolar_to_range(5, 254, self.laser_strobe.rate())
-        } else {
-            0
-        };
+        dmx_buf[6] = self
+            .laser_strobe
+            .render_range_with_master(master.strobe(), 0, 5, 254);
         dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
         dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
         if self.quad_phase_mindmeld {
             dmx_buf[9] = self.derby_color.render_quad_phase();
             dmx_buf[10] = bipolar_to_split_range(self.derby_rotation, 120, 10, 135, 245, 0);
-            dmx_buf[11] = if self.derby_strobe.on() {
-                unipolar_to_range(1, 255, self.derby_strobe.rate())
-            } else {
-                0
-            };
+            dmx_buf[11] = self
+                .derby_strobe
+                .render_range_with_master(master.strobe(), 0, 1, 255);
             dmx_buf[12] = if self.derby_color.any_on() { 255 } else { 0 };
         }
     }
@@ -330,12 +325,12 @@ impl WhiteStrobe {
         Ok(())
     }
 
-    pub fn render(&self) -> u8 {
-        if !self.state.on() {
+    pub fn render(&self, master: &MasterControls) -> u8 {
+        if !self.state.on() || !master.strobe().on() {
             return 0;
         }
         let program_base = (self.program + 1) * 10;
-        let program_speed = unipolar_to_range(9, 0, self.state.rate());
+        let program_speed = unipolar_to_range(9, 0, master.strobe().rate());
         program_base as u8 + program_speed
     }
 }

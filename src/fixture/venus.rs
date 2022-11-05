@@ -5,7 +5,10 @@ use std::time::Duration;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::util::{unipolar_to_range, RampingParameter};
+use crate::{
+    master::MasterControls,
+    util::{unipolar_to_range, RampingParameter},
+};
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus
@@ -75,7 +78,7 @@ impl Fixture for Venus {
         self.color_rotation.update(delta_t);
     }
 
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         render_bipolar_to_dir_and_val(self.base_rotation.current(), &mut dmx_buf[0..2]);
         dmx_buf[2] = unipolar_to_range(0, 255, self.cradle_motion.current());
         render_bipolar_to_dir_and_val(self.head_rotation.current(), &mut dmx_buf[3..5]);

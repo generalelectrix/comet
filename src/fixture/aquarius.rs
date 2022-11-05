@@ -3,7 +3,7 @@
 use number::BipolarFloat;
 
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::util::bipolar_to_split_range;
+use crate::{master::MasterControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
 pub struct Aquarius {
@@ -29,7 +29,7 @@ impl Aquarius {
 }
 
 impl Fixture for Aquarius {
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = bipolar_to_split_range(self.rotation, 130, 8, 132, 255, 0);
         dmx_buf[1] = if self.lamp_on { 255 } else { 0 };
     }

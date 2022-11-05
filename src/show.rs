@@ -4,7 +4,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{config::Config, fixture::Patch, osc::OscController};
+use crate::{
+    config::Config,
+    fixture::{FixtureControlMessage, Patch},
+    master::MasterControls,
+    osc::OscController,
+};
 
 use log::{error, warn};
 use rust_dmx::DmxPort;
@@ -12,6 +17,7 @@ use rust_dmx::DmxPort;
 pub struct Show {
     osc_controller: OscController,
     patch: Patch,
+    master_controls: MasterControls,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
@@ -40,9 +46,14 @@ impl Show {
             fixture.emit_state(&mut osc_controller);
         }
 
+        let master_controls = MasterControls::default();
+        osc_controller.map_controls(&master_controls);
+        master_controls.emit_state(&mut osc_controller);
+
         Ok(Self {
             patch,
             osc_controller,
+            master_controls,
         })
     }
 
@@ -81,12 +92,20 @@ impl Show {
     }
 
     fn control(&mut self, timeout: Duration) -> Result<(), Box<dyn Error>> {
-        let mut msg = Some(match self.osc_controller.recv(timeout)? {
+        let msg = match self.osc_controller.recv(timeout)? {
             Some(m) => m,
             None => {
                 return Ok(());
             }
-        });
+        };
+
+        if let FixtureControlMessage::Master(mc) = msg.msg {
+            self.master_controls.control(mc, &mut self.osc_controller);
+            return Ok(());
+        }
+
+        // "Option dance" to pass ownership into/back out of handlers.
+        let mut msg = Some(msg);
 
         for fixture in self.patch.iter_mut() {
             match msg.take() {
@@ -110,11 +129,11 @@ impl Show {
         }
     }
 
-    fn render(&mut self, dmx_buffer: &mut [u8]) {
+    fn render(&self, dmx_buffer: &mut [u8]) {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
         for fixture in self.patch.iter() {
-            fixture.render(dmx_buffer);
+            fixture.render(&self.master_controls, dmx_buffer);
         }
     }
 }

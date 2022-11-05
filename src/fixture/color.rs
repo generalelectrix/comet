@@ -5,6 +5,8 @@ use std::{collections::HashMap, error::Error};
 use number::{Phase, UnipolarFloat};
 use simple_error::bail;
 
+use crate::master::MasterControls;
+
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 
 #[derive(Default, Debug)]
@@ -51,7 +53,7 @@ impl Color {
 }
 
 impl Fixture for Color {
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf.copy_from_slice(self.model.vals());
     }
 

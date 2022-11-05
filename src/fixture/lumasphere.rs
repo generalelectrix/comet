@@ -4,6 +4,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use crate::master::MasterControls;
 use crate::util::{unipolar_to_range, RampingParameter};
 
 /// DMX 255 is too fast; restrict to a reasonable value.
@@ -111,7 +112,7 @@ impl Fixture for Lumasphere {
         self.ball_rotation.update(delta_t);
     }
 
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         self.render_ball_rotation(&mut dmx_buf[0..2]);
         dmx_buf[2] = self.render_color_rotation();
         self.strobe_1.render(&mut dmx_buf[3..5]);

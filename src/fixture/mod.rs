@@ -38,6 +38,9 @@ use self::swarmolon::{
 };
 use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange, Venus};
 use crate::config::FixtureConfig;
+use crate::master::{
+    ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
+};
 use crate::osc::MapControls;
 
 pub mod aquarius;
@@ -130,6 +133,7 @@ pub trait EmitFixtureStateChange {
     fn emit_rush_wizard(&mut self, sc: RushWizardStateChange) {
         self.emit(FixtureStateChange::RushWizard(sc));
     }
+
     fn emit_color(&mut self, sc: ColorStateChange) {
         self.emit(FixtureStateChange::Color(sc));
     }
@@ -155,6 +159,7 @@ pub enum FixtureStateChange {
     Faderboard(FaderboardStateChange),
     RushWizard(RushWizardStateChange),
     Color(ColorStateChange),
+    Master(MasterStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -177,6 +182,7 @@ pub enum FixtureControlMessage {
     Faderboard(FaderboardControlMessage),
     RushWizard(RushWizardControlMessage),
     Color(ColorControlMessage),
+    Master(MasterControlMessage),
 }
 
 #[derive(Debug)]
@@ -234,9 +240,10 @@ impl FixtureWrapper {
     }
 
     /// Render into the provided DMX universe.
-    pub fn render(&self, dmx_univ: &mut [u8]) {
+    /// The master controls are provided to potentially alter the render.
+    pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
         let dmx_buf = &mut dmx_univ[self.dmx_index..self.dmx_index + self.channel_count];
-        self.fixture.render(dmx_buf);
+        self.fixture.render(master_controls, dmx_buf);
         debug!("{} ({:?}): {:?}", self.name, self.group, dmx_buf);
     }
 }
@@ -399,5 +406,6 @@ pub trait Fixture: MapControls + Debug {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
-    fn render(&self, dmx_buffer: &mut [u8]);
+    /// The master controls are provided to potentially alter the render process.
+    fn render(&self, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
 }

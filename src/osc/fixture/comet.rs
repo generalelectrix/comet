@@ -1,3 +1,4 @@
+use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::FixtureControlMessage;
 use crate::osc::{ControlMap, HandleStateChange, MapControls, RadioButton};
 use crate::{
@@ -24,9 +25,11 @@ impl MapControls for Comet {
         use FixtureControlMessage::Comet;
         use StateChange::*;
         map.add_bool(CONTROLS, "Shutter", |v| Comet(Set(Shutter(v))));
-        map.add_bool(CONTROLS, "Strobe", |v| Comet(Set(Strobe(v))));
+        map.add_bool(CONTROLS, "StrobeOn", |v| {
+            Comet(Set(Strobe(GenericStrobeStateChange::On(v))))
+        });
         map.add_unipolar(CONTROLS, "StrobeRate", |v| {
-            Comet(Set(StrobeRate(quadratic(v))))
+            Comet(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(v)))))
         });
         map.add_unipolar(CONTROLS, "Mspeed", |v| Comet(Set(MirrorSpeed(v))));
         map.add_bool(CONTROLS, "AutoStep", |v| Comet(Set(AutoStep(v))));

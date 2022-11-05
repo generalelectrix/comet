@@ -5,6 +5,7 @@ use number::{BipolarFloat, UnipolarFloat};
 use super::{
     EmitFixtureStateChange as EmitShowStateChange, Fixture, FixtureControlMessage, PatchFixture,
 };
+use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -39,7 +40,7 @@ impl H2O {
 }
 
 impl Fixture for H2O {
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
         dmx_buf[1] = bipolar_to_split_range(self.rotation, 120, 10, 135, 245, 0);
         if self.color_rotate {

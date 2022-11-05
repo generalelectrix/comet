@@ -5,6 +5,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use crate::master::MasterControls;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -54,12 +55,11 @@ impl RushWizard {
 }
 
 impl Fixture for RushWizard {
-    fn render(&self, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = if self.strobe.on() {
-            unipolar_to_range(16, 131, self.strobe.rate())
-        } else {
-            8
-        };
+    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = self
+            .strobe
+            .render_range_with_master(master.strobe(), 8, 16, 131);
+
         dmx_buf[1] = unipolar_to_range(0, 255, self.dimmer);
         dmx_buf[2] = if self.twinkle {
             // WHY did you put twinkle on the color wheel...

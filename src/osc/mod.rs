@@ -13,6 +13,7 @@ use crate::fixture::venus::Venus;
 use crate::fixture::{
     ControlMessage, EmitStateChange, FixtureControlMessage, FixtureStateChange, StateChange,
 };
+use crate::master::MasterControls;
 use control_message::OscControlMessage;
 use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
@@ -32,6 +33,7 @@ use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod control_message;
 mod fixture;
+mod master;
 mod radio_button;
 
 /// Map OSC control inputs for a fixture type.
@@ -116,6 +118,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Faderboard(sc) => Faderboard::emit_state_change(sc, send),
             FixtureStateChange::RushWizard(sc) => RushWizard::emit_state_change(sc, send),
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
+            FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
         }
     }
 }

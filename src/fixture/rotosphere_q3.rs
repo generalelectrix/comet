@@ -4,6 +4,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use crate::master::MasterControls;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -38,16 +39,14 @@ impl RotosphereQ3 {
 }
 
 impl Fixture for RotosphereQ3 {
-    fn render(&self, dmx_buf: &mut [u8]) {
+    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.red);
         dmx_buf[1] = unipolar_to_range(0, 255, self.green);
         dmx_buf[2] = unipolar_to_range(0, 255, self.blue);
         dmx_buf[3] = unipolar_to_range(0, 255, self.white);
-        dmx_buf[4] = if self.strobe.on() {
-            unipolar_to_range(1, 250, self.strobe.rate())
-        } else {
-            0
-        };
+        dmx_buf[4] = self
+            .strobe
+            .render_range_with_master(master.strobe(), 0, 1, 250);
         dmx_buf[5] = bipolar_to_split_range(self.rotation, 1, 127, 129, 255, 0);
         dmx_buf[6] = 0; // TODO auto programs
         dmx_buf[7] = 0; // TODO auto program speed

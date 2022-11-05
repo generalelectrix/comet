@@ -12,6 +12,7 @@ use crate::show::Show;
 mod config;
 mod dmx;
 mod fixture;
+mod master;
 mod osc;
 mod show;
 mod util;

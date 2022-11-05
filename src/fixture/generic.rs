@@ -2,6 +2,8 @@
 
 use number::UnipolarFloat;
 
+use crate::util::unipolar_to_range;
+
 /// Most basic strobe control - active/not, plus rate.
 #[derive(Default, Clone, Debug)]
 pub struct GenericStrobe {
@@ -32,6 +34,26 @@ impl GenericStrobe {
         match sc {
             On(v) => self.on = v,
             Rate(v) => self.rate = v,
+        }
+    }
+
+    /// Render as a single DMX range with off.
+    pub fn render_range(&self, off: u8, slow: u8, fast: u8) -> u8 {
+        if self.on {
+            unipolar_to_range(slow, fast, self.rate)
+        } else {
+            off
+        }
+    }
+
+    /// Render as a single DMX range with off, using master as an override.
+    /// Only strobe if master strobe is on and the local strobe is also on.
+    /// Always use the master strobe rate.
+    pub fn render_range_with_master(&self, master: &Self, off: u8, slow: u8, fast: u8) -> u8 {
+        if self.on && master.on {
+            unipolar_to_range(slow, fast, master.rate)
+        } else {
+            off
         }
     }
 }
