@@ -1,4 +1,5 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
+//! Also
 
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
@@ -19,11 +20,28 @@ pub struct Swarmolon {
     green_laser_on: bool,
     laser_strobe: GenericStrobe,
     laser_rotation: BipolarFloat,
+    /// If true, duplicate the derby settings to a slaved quad phase.
+    /// The quad phase is assumed to be addressed just after the Swarmolon.
+    quad_phase_mindmeld: bool,
 }
 
 impl PatchFixture for Swarmolon {
     fn channel_count(&self) -> usize {
-        9
+        if self.quad_phase_mindmeld {
+            13
+        } else {
+            9
+        }
+    }
+
+    fn new(
+        options: &std::collections::HashMap<String, String>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut s = Self::default();
+        if options.contains_key("quad_phase") {
+            s.quad_phase_mindmeld = true;
+        }
+        Ok(s)
     }
 }
 
@@ -75,6 +93,16 @@ impl Fixture for Swarmolon {
         };
         dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
         dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
+        if self.quad_phase_mindmeld {
+            dmx_buf[9] = self.derby_color.render_quad_phase();
+            dmx_buf[10] = bipolar_to_split_range(self.derby_rotation, 120, 10, 135, 245, 0);
+            dmx_buf[11] = if self.derby_strobe.on() {
+                unipolar_to_range(1, 255, self.derby_strobe.rate())
+            } else {
+                0
+            };
+            dmx_buf[12] = if self.derby_color.any_on() { 255 } else { 0 };
+        }
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
@@ -172,6 +200,10 @@ impl Default for DerbyColorState {
 }
 
 impl DerbyColorState {
+    pub fn any_on(&self) -> bool {
+        self.0.len() > 0
+    }
+
     pub fn set(&mut self, color: DerbyColor, add: bool) {
         if !add {
             self.0.retain(|v| *v != color);
@@ -226,6 +258,33 @@ impl DerbyColorState {
             [Red, Green, Amber, White] => 150,
             [Red, Blue, Amber, White] => 155,
             [Red, Green, Blue, Amber, White] => 160,
+            _ => {
+                error!("Unmatched derby color state: {:?}.", self.0);
+                0
+            }
+        }
+    }
+
+    pub fn render_quad_phase(&self) -> u8 {
+        use DerbyColor::*;
+        match self.0[..] {
+            // FIXME: who knows what the color combos actually are
+            [] | [Amber] => 0, // FIXME: does this actually turn off all the diodes?
+            [Red] | [Red, Amber] => 1,
+            [Green] | [Green, Amber] => 17,
+            [Blue] | [Blue, Amber] => 34,
+            [White] | [Amber, White] => 51,
+            [Red, Green] | [Red, Green, Amber] => 68,
+            [Red, Blue] | [Red, Blue, Amber] => 85,
+            [Red, White] | [Red, Amber, White] => 102,
+            [Green, Blue] | [Green, Blue, Amber] => 136,
+            [Green, White] | [Green, Amber, White] => 153,
+            [Blue, White] | [Blue, Amber, White] => 170,
+            [Red, Green, Blue] | [Red, Green, Blue, Amber] => 187,
+            [Red, Green, White] | [Red, Green, Amber, White] => 204,
+            [Red, Blue, White] | [Red, Blue, Amber, White] => 221,
+            [Green, Blue, White] | [Green, Blue, Amber, White] => 238,
+            [Red, Green, Blue, White] | [Red, Green, Blue, Amber, White] => 255, // FIXME: huh? only 15 combos?
             _ => {
                 error!("Unmatched derby color state: {:?}.", self.0);
                 0
