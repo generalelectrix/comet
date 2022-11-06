@@ -7,6 +7,7 @@ use number::{BipolarFloat, UnipolarFloat};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::master::MasterControls;
+use crate::osc::{quadratic_bipolar, quartic_bipolar};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -91,12 +92,14 @@ impl Fixture for Swarmolon {
         dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
         dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
         if self.quad_phase_mindmeld {
-            dmx_buf[9] = self.derby_color.render_quad_phase();
-            dmx_buf[10] = bipolar_to_split_range(self.derby_rotation, 120, 10, 135, 245, 0);
+            let color_val = self.derby_color.render_quad_phase();
+            dmx_buf[9] = color_val;
+            dmx_buf[10] =
+                bipolar_to_split_range(quartic_bipolar(self.derby_rotation), 120, 10, 135, 245, 0);
             dmx_buf[11] = self
                 .derby_strobe
                 .render_range_with_master(master.strobe(), 0, 1, 255);
-            dmx_buf[12] = if self.derby_color.any_on() { 255 } else { 0 };
+            dmx_buf[12] = if color_val == 0 { 0 } else { 255 };
         }
     }
 
@@ -157,6 +160,13 @@ impl Fixture for Swarmolon {
     }
 }
 
+/// The swarmolon has incredibly weird rotation speed.
+/// Squash most of the quad phase speed range into the top of the fader to try
+/// to match them.
+pub fn squash_quad_phase_rotation(v: BipolarFloat) -> BipolarFloat {
+    BipolarFloat::new(v.val().powi(5).copysign(v.val()))
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     DerbyColor(DerbyColor, bool),
@@ -195,10 +205,6 @@ impl Default for DerbyColorState {
 }
 
 impl DerbyColorState {
-    pub fn any_on(&self) -> bool {
-        self.0.len() > 0
-    }
-
     pub fn set(&mut self, color: DerbyColor, add: bool) {
         if !add {
             self.0.retain(|v| *v != color);
@@ -260,11 +266,12 @@ impl DerbyColorState {
         }
     }
 
+    /// Return the DMX color setting.
+    /// If 0, we should also close the shutter.
     pub fn render_quad_phase(&self) -> u8 {
         use DerbyColor::*;
         match self.0[..] {
-            // FIXME: who knows what the color combos actually are
-            [] | [Amber] => 0, // FIXME: does this actually turn off all the diodes?
+            [] | [Amber] => 0,
             [Red] | [Red, Amber] => 1,
             [Green] | [Green, Amber] => 17,
             [Blue] | [Blue, Amber] => 34,
@@ -272,14 +279,14 @@ impl DerbyColorState {
             [Red, Green] | [Red, Green, Amber] => 68,
             [Red, Blue] | [Red, Blue, Amber] => 85,
             [Red, White] | [Red, Amber, White] => 102,
-            [Green, Blue] | [Green, Blue, Amber] => 136,
-            [Green, White] | [Green, Amber, White] => 153,
-            [Blue, White] | [Blue, Amber, White] => 170,
-            [Red, Green, Blue] | [Red, Green, Blue, Amber] => 187,
-            [Red, Green, White] | [Red, Green, Amber, White] => 204,
-            [Red, Blue, White] | [Red, Blue, Amber, White] => 221,
-            [Green, Blue, White] | [Green, Blue, Amber, White] => 238,
-            [Red, Green, Blue, White] | [Red, Green, Blue, Amber, White] => 255, // FIXME: huh? only 15 combos?
+            [Green, Blue] | [Green, Blue, Amber] => 119,
+            [Green, White] | [Green, Amber, White] => 136,
+            [Blue, White] | [Blue, Amber, White] => 153,
+            [Red, Green, Blue] | [Red, Green, Blue, Amber] => 170,
+            [Red, Green, White] | [Red, Green, Amber, White] => 187,
+            [Red, Blue, White] | [Red, Blue, Amber, White] => 204,
+            [Green, Blue, White] | [Green, Blue, Amber, White] => 221,
+            [Red, Green, Blue, White] | [Red, Green, Blue, Amber, White] => 238,
             _ => {
                 error!("Unmatched derby color state: {:?}.", self.0);
                 0
