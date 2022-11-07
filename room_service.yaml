@@ -29,6 +29,9 @@ fixtures:
       kind: hsv
   - name: rush_wizard
     addr: 70
+  - name: dimmer
+    addr: 80
+    group: UV
   - name: radiance
     addr: 500
     options:

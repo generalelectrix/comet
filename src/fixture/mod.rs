@@ -12,6 +12,9 @@ use self::aquarius::{
 };
 use self::color::{Color, ControlMessage as ColorControlMessage, StateChange as ColorStateChange};
 use self::comet::{Comet, ControlMessage as CometControlMessage, StateChange as CometStateChange};
+use self::dimmer::{
+    ControlMessage as DimmerControlMessage, Dimmer, StateChange as DimmerStateChange,
+};
 use self::faderboard::{
     ControlMessage as FaderboardControlMessage, Faderboard, StateChange as FaderboardStateChange,
 };
@@ -46,6 +49,7 @@ use crate::osc::MapControls;
 pub mod aquarius;
 pub mod color;
 pub mod comet;
+pub mod dimmer;
 pub mod faderboard;
 pub mod freedom_fries;
 pub mod generic;
@@ -137,6 +141,10 @@ pub trait EmitFixtureStateChange {
     fn emit_color(&mut self, sc: ColorStateChange) {
         self.emit(FixtureStateChange::Color(sc));
     }
+
+    fn emit_dimmer(&mut self, sc: DimmerStateChange) {
+        self.emit(FixtureStateChange::Dimmer(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -159,6 +167,7 @@ pub enum FixtureStateChange {
     Faderboard(FaderboardStateChange),
     RushWizard(RushWizardStateChange),
     Color(ColorStateChange),
+    Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
 }
 
@@ -182,6 +191,7 @@ pub enum FixtureControlMessage {
     Faderboard(FaderboardControlMessage),
     RushWizard(RushWizardControlMessage),
     Color(ColorControlMessage),
+    Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
 }
 
@@ -298,6 +308,7 @@ impl Patch {
             "faderboard" => Faderboard::patch(&cfg),
             "rush_wizard" => RushWizard::patch(&cfg),
             "color" => Color::patch(&cfg),
+            "dimmer" => Dimmer::patch(&cfg),
             unknown => {
                 bail!("Unknown fixture type \"{}\".", unknown);
             }

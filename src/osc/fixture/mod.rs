@@ -1,6 +1,7 @@
 mod aquarius;
 mod color;
 mod comet;
+mod dimmer;
 mod faderboard;
 mod freedom_fries;
 pub mod generic;
