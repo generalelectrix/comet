@@ -7,7 +7,6 @@ use number::{BipolarFloat, UnipolarFloat};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::master::MasterControls;
-use crate::osc::{quadratic_bipolar, quartic_bipolar};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -109,8 +108,14 @@ impl Fixture for Swarmolon {
             offset += QUAD_PHASE_CHANNEL_COUNT;
             let color_val = self.derby_color.render_quad_phase();
             slice[0] = color_val;
-            slice[1] =
-                bipolar_to_split_range(quartic_bipolar(self.derby_rotation), 120, 10, 135, 245, 0);
+            slice[1] = bipolar_to_split_range(
+                squash_quad_phase_rotation(self.derby_rotation),
+                120,
+                10,
+                135,
+                245,
+                0,
+            );
             slice[2] = self
                 .derby_strobe
                 .render_range_with_master(master.strobe(), 0, 1, 255);
