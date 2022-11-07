@@ -6,7 +6,7 @@ use std::{collections::HashMap, error::Error, time::Duration};
 use number::UnipolarFloat;
 
 use super::{generic::Timer, EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::{dmx, master::MasterControls, util::unipolar_to_range};
+use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Radiance {

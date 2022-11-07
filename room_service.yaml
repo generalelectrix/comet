@@ -1,0 +1,37 @@
+receive_port: 8000
+send_host: 192.168.1.213
+send_port: 9000
+debug: False
+fixtures:
+  - name: swarmolon
+    addr: 1
+    options:
+      quad_phase: yes
+      galaxian: yes
+  - name: rotosphere_q3
+    addr: 20
+  - name: freedom_fries
+    addr: 30
+  - name: color
+    addr: 40
+    group: Uplights1
+    options:
+      kind: rgbw
+  - name: color
+    addr: 50
+    group: Uplights2
+    options:
+      kind: rgbw
+  - name: color
+    addr: 60
+    group: MirrorBall
+    options:
+      kind: hsv
+  - name: rush_wizard
+    addr: 70
+  - name: radiance
+    addr: 500
+    options:
+      use_timer: yes
+      timer_on: 60
+      timer_off: 240

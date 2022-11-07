@@ -299,6 +299,10 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>, Box<dyn Error>> 
 fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result<(), OscError> {
     match packet {
         OscPacket::Message(m) => {
+            // Set TouchOSC pages to send this message, and ignore them all here.
+            if m.addr == "/page" {
+                return Ok(());
+            }
             let cm = OscControlMessage::new(m)?;
             send.send(cm).unwrap();
         }

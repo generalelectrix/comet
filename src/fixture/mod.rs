@@ -39,8 +39,7 @@ use self::swarmolon::{
 use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange, Venus};
 use crate::config::FixtureConfig;
 use crate::master::{
-    Autopilot, ControlMessage as MasterControlMessage, MasterControls,
-    StateChange as MasterStateChange,
+    ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
 };
 use crate::osc::MapControls;
 

@@ -5,7 +5,6 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::dmx;
 use crate::master::{Autopilot, MasterControls};
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};

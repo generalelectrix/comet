@@ -40,6 +40,7 @@ impl GenericStrobe {
     }
 
     /// Render as a single DMX range with off.
+    #[allow(dead_code)]
     pub fn render_range(&self, off: u8, slow: u8, fast: u8) -> u8 {
         if self.on {
             unipolar_to_range(slow, fast, self.rate)
@@ -114,6 +115,7 @@ impl Timer {
         self.is_on
     }
 
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         self.is_on = true;
         self.state_age = Duration::ZERO;
