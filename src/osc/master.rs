@@ -7,7 +7,7 @@ use crate::master::{MasterControls, StateChange};
 use super::fixture::generic::map_strobe;
 use super::{ControlMap, HandleStateChange, MapControls};
 
-const GROUP: &str = "Global";
+const GROUP: &str = "Master";
 
 impl MapControls for MasterControls {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
