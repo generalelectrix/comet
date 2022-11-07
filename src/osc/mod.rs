@@ -352,16 +352,8 @@ fn get_phase(v: &OscControlMessage) -> Result<Phase, OscError> {
     Ok(Phase::new(get_float(v)?))
 }
 
-pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
+fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
     UnipolarFloat::new(v.val().powi(2))
-}
-
-pub fn quadratic_bipolar(v: BipolarFloat) -> BipolarFloat {
-    BipolarFloat::new(v.val().powi(2).copysign(v.val()))
-}
-
-pub fn quartic_bipolar(v: BipolarFloat) -> BipolarFloat {
-    BipolarFloat::new(v.val().powi(4).copysign(v.val()))
 }
 
 /// Get a single boolean argument from the provided OSC message.

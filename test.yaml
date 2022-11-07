@@ -7,3 +7,4 @@ fixtures:
     addr: 1
     options:
       quad_phase: true
+      galaxian: true

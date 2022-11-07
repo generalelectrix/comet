@@ -25,15 +25,24 @@ pub struct Swarmolon {
     /// If true, duplicate the derby settings to a slaved quad phase.
     /// The quad phase is assumed to be addressed just after the Swarmolon.
     quad_phase_mindmeld: bool,
+    /// If true, duplicate the laser settings to a slaved Galaxian 3D.
+    /// The galaxian is assumed to be addressed after the also-slaved quad phase.
+    galaxian_mindmeld: bool,
 }
+
+const QUAD_PHASE_CHANNEL_COUNT: usize = 4;
+const GALAXIAN_CHANNEL_COUNT: usize = 5;
 
 impl PatchFixture for Swarmolon {
     fn channel_count(&self) -> usize {
+        let mut count = 9;
         if self.quad_phase_mindmeld {
-            13
-        } else {
-            9
+            count += QUAD_PHASE_CHANNEL_COUNT;
         }
+        if self.galaxian_mindmeld {
+            count += GALAXIAN_CHANNEL_COUNT;
+        }
+        count
     }
 
     fn new(
@@ -42,6 +51,9 @@ impl PatchFixture for Swarmolon {
         let mut s = Self::default();
         if options.contains_key("quad_phase") {
             s.quad_phase_mindmeld = true;
+        }
+        if options.contains_key("galaxian") {
+            s.galaxian_mindmeld = true;
         }
         Ok(s)
     }
@@ -91,15 +103,44 @@ impl Fixture for Swarmolon {
             .render_range_with_master(master.strobe(), 0, 5, 254);
         dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
         dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
+        let mut offset = 9;
         if self.quad_phase_mindmeld {
+            let slice = &mut dmx_buf[offset..offset + QUAD_PHASE_CHANNEL_COUNT];
+            offset += QUAD_PHASE_CHANNEL_COUNT;
             let color_val = self.derby_color.render_quad_phase();
-            dmx_buf[9] = color_val;
-            dmx_buf[10] =
+            slice[0] = color_val;
+            slice[1] =
                 bipolar_to_split_range(quartic_bipolar(self.derby_rotation), 120, 10, 135, 245, 0);
-            dmx_buf[11] = self
+            slice[2] = self
                 .derby_strobe
                 .render_range_with_master(master.strobe(), 0, 1, 255);
-            dmx_buf[12] = if color_val == 0 { 0 } else { 255 };
+            slice[3] = if color_val == 0 { 0 } else { 255 };
+        }
+        if self.galaxian_mindmeld {
+            let slice = &mut dmx_buf[offset..offset + GALAXIAN_CHANNEL_COUNT];
+            slice[0] = if !self.red_laser_on {
+                0
+            // FIXME: this won't work if we don't use master strobe in the future.
+            } else if !master.strobe().on() {
+                8
+            } else {
+                self.laser_strobe
+                    .render_range_with_master(master.strobe(), 8, 16, 239)
+            };
+            slice[1] = if !self.green_laser_on {
+                0
+            // FIXME: this won't work if we don't use master strobe in the future.
+            } else if !master.strobe().on() {
+                8
+            } else {
+                self.laser_strobe
+                    .render_range_with_master(master.strobe(), 8, 16, 239)
+            };
+            let laser_rotation =
+                bipolar_to_split_range(self.laser_rotation, 194, 255, 189, 128, 190);
+            slice[2] = laser_rotation;
+            slice[3] = laser_rotation;
+            slice[4] = 0;
         }
     }
 
