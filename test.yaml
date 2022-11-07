@@ -3,8 +3,9 @@ send_host: 192.168.1.213
 send_port: 9000
 debug: True
 fixtures:
-  - name: swarmolon
+  - name: radiance
     addr: 1
     options:
-      quad_phase: true
-      galaxian: true
+      use_timer: true
+      timer_on: 5
+      timer_off: 3

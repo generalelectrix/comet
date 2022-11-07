@@ -31,5 +31,7 @@ pub struct FixtureConfig {
     pub group: Option<String>,
     /// Additional key-value string options for configuring specific fixture types.
     #[serde(default)]
-    pub options: HashMap<String, String>,
+    pub options: Options,
 }
+
+pub type Options = HashMap<String, String>;

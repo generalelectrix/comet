@@ -1,20 +1,31 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
 
+use std::{collections::HashMap, error::Error, time::Duration};
+
 use number::UnipolarFloat;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::{master::MasterControls, util::unipolar_to_range};
+use super::{generic::Timer, EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use crate::{dmx, master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Radiance {
     haze: UnipolarFloat,
     fan: UnipolarFloat,
+    timer: Option<Timer>,
 }
 
 impl PatchFixture for Radiance {
     fn channel_count(&self) -> usize {
         2
+    }
+
+    fn new(options: &HashMap<String, String>) -> Result<Self, Box<dyn Error>> {
+        let mut s = Self::default();
+        if options.contains_key("use_timer") {
+            s.timer = Some(Timer::from_options(options)?);
+        }
+        Ok(s)
     }
 }
 
@@ -30,7 +41,19 @@ impl Radiance {
 }
 
 impl Fixture for Radiance {
+    fn update(&mut self, delta_t: Duration) {
+        if let Some(timer) = self.timer.as_mut() {
+            timer.update(delta_t);
+        }
+    }
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
+        if let Some(timer) = self.timer.as_ref() {
+            if !timer.is_on() {
+                dmx_buf[0] = 0;
+                dmx_buf[1] = 0;
+                return;
+            }
+        }
         dmx_buf[0] = unipolar_to_range(0, 255, self.haze);
         dmx_buf[1] = unipolar_to_range(0, 255, self.fan);
     }
