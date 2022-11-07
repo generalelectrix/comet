@@ -44,17 +44,25 @@ impl FreedomFries {
 }
 
 impl Fixture for FreedomFries {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render(&self, master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
         dmx_buf[1] = 0;
         dmx_buf[2] = 0;
         dmx_buf[3] = 0;
         dmx_buf[4] = 0;
         dmx_buf[5] = 0; // TODO strobing
-        dmx_buf[6] = if self.program_cycle_all {
-            227
-        } else {
-            ((self.program * 8) + 11) as u8
+        dmx_buf[6] = {
+            let autopilot = master_controls.autopilot();
+            let program = if autopilot.on() {
+                autopilot.program() % Self::PROGRAM_COUNT
+            } else {
+                self.program
+            };
+            if !autopilot.on() && self.program_cycle_all {
+                227
+            } else {
+                ((program * 8) + 11) as u8
+            }
         };
         dmx_buf[7] = unipolar_to_range(0, 255, self.speed);
     }

@@ -4,7 +4,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::master::MasterControls;
+use crate::master::{Autopilot, MasterControls};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -36,10 +36,37 @@ impl RotosphereQ3 {
         };
         emitter.emit_rotosphere_q3(sc);
     }
+
+    fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = 0;
+        dmx_buf[1] = 0;
+        dmx_buf[2] = 0;
+        dmx_buf[3] = 0;
+        dmx_buf[4] = 0;
+        dmx_buf[5] = 0;
+        dmx_buf[6] = match autopilot.program() % 5 {
+            0 => 212,
+            1 => 221,
+            2 => 230,
+            3 => 239,
+            4 => 248,
+            _ => 212,
+        };
+        dmx_buf[7] = if autopilot.sound_active() {
+            255
+        } else {
+            50 // TODO is this a good value?  Too slow?
+        };
+        dmx_buf[8] = 30; // TODO is this a good value?  Too slow?
+    }
 }
 
 impl Fixture for RotosphereQ3 {
     fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
+        if master.autopilot().on() {
+            self.render_autopilot(master.autopilot(), dmx_buf);
+            return;
+        }
         dmx_buf[0] = unipolar_to_range(0, 255, self.red);
         dmx_buf[1] = unipolar_to_range(0, 255, self.green);
         dmx_buf[2] = unipolar_to_range(0, 255, self.blue);
@@ -48,9 +75,9 @@ impl Fixture for RotosphereQ3 {
             .strobe
             .render_range_with_master(master.strobe(), 0, 1, 250);
         dmx_buf[5] = bipolar_to_split_range(self.rotation, 1, 127, 129, 255, 0);
-        dmx_buf[6] = 0; // TODO auto programs
-        dmx_buf[7] = 0; // TODO auto program speed
-        dmx_buf[8] = 0; // TODO wtf did they make two motor control channels
+        dmx_buf[6] = 0;
+        dmx_buf[7] = 0;
+        dmx_buf[8] = 0;
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {

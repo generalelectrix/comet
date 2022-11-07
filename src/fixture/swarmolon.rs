@@ -6,7 +6,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
-use crate::master::MasterControls;
+use crate::master::{Autopilot, MasterControls};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -29,12 +29,13 @@ pub struct Swarmolon {
     galaxian_mindmeld: bool,
 }
 
+const CHANNEL_COUNT: usize = 9;
 const QUAD_PHASE_CHANNEL_COUNT: usize = 4;
 const GALAXIAN_CHANNEL_COUNT: usize = 5;
 
 impl PatchFixture for Swarmolon {
     fn channel_count(&self) -> usize {
-        let mut count = 9;
+        let mut count = CHANNEL_COUNT;
         if self.quad_phase_mindmeld {
             count += QUAD_PHASE_CHANNEL_COUNT;
         }
@@ -80,10 +81,48 @@ impl Swarmolon {
         };
         emitter.emit_swarmolon(sc);
     }
+
+    fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
+        dmx_buf[0] = if autopilot.sound_active() { 130 } else { 25 };
+        dmx_buf[1] = 0;
+        dmx_buf[2] = 0;
+        dmx_buf[3] = 0;
+        dmx_buf[4] = 0;
+        dmx_buf[5] = 0;
+        dmx_buf[6] = 0;
+        dmx_buf[7] = 0;
+        dmx_buf[8] = 0;
+        let mut offset = CHANNEL_COUNT;
+        if self.quad_phase_mindmeld {
+            let slice = &mut dmx_buf[offset..offset + QUAD_PHASE_CHANNEL_COUNT];
+            offset += QUAD_PHASE_CHANNEL_COUNT;
+            slice[0] = 51; // just use white, it's gonna be a massive color clusterfuck anyway...
+            slice[1] = if autopilot.sound_active() { 255 } else { 30 };
+            slice[2] = 0;
+            slice[3] = 255;
+        }
+        if self.galaxian_mindmeld {
+            let slice = &mut dmx_buf[offset..offset + GALAXIAN_CHANNEL_COUNT];
+            slice[0] = 0;
+            slice[1] = 0;
+            slice[2] = 0;
+            slice[3] = 0;
+            let program = (autopilot.program() % 15) as u8;
+            slice[4] = if autopilot.sound_active() {
+                255
+            } else {
+                (program * 16) + 8
+            };
+        }
+    }
 }
 
 impl Fixture for Swarmolon {
     fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
+        if master.autopilot().on() {
+            self.render_autopilot(master.autopilot(), dmx_buf);
+            return;
+        }
         dmx_buf[0] = 255; // always set to DMX mode
         dmx_buf[1] = self.derby_color.render();
         dmx_buf[2] = 0; // Not using automatic derby programs.
@@ -102,7 +141,7 @@ impl Fixture for Swarmolon {
             .render_range_with_master(master.strobe(), 0, 5, 254);
         dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
         dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
-        let mut offset = 9;
+        let mut offset = CHANNEL_COUNT;
         if self.quad_phase_mindmeld {
             let slice = &mut dmx_buf[offset..offset + QUAD_PHASE_CHANNEL_COUNT];
             offset += QUAD_PHASE_CHANNEL_COUNT;
