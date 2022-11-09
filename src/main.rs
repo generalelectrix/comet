@@ -1,6 +1,5 @@
 use local_ip_address::local_ip;
 use log::info;
-use log::warn;
 use log::LevelFilter;
 use rust_dmx::select_port;
 use simplelog::{Config as LogConfig, SimpleLogger};
