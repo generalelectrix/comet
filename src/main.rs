@@ -1,5 +1,6 @@
 use local_ip_address::local_ip;
 use log::info;
+use log::warn;
 use log::LevelFilter;
 use rust_dmx::select_port;
 use simplelog::{Config as LogConfig, SimpleLogger};
@@ -29,8 +30,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     SimpleLogger::init(log_level, LogConfig::default())?;
 
-    let ip = local_ip()?;
-    info!("Listening for OSC at {}:{}", ip, cfg.receive_port);
+    match local_ip() {
+        Ok(ip) => info!("Listening for OSC at {}:{}.", ip, cfg.receive_port),
+        Err(e) => info!("Unable to fetch local IP address: {}.", e),
+    }
 
     let mut show = Show::new(&cfg)?;
 
