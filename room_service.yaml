@@ -1,5 +1,5 @@
 receive_port: 8000
-send_host: 192.168.1.213
+send_host: 10.0.1.2
 send_port: 9000
 debug: False
 fixtures:
@@ -26,7 +26,7 @@ fixtures:
     addr: 60
     group: MirrorBall
     options:
-      kind: hsv
+      kind: sabre_spot
   - name: rush_wizard
     addr: 70
   - name: dimmer

@@ -30,6 +30,7 @@ impl PatchFixture for Color {
                 "rgbw" => Model::rgbw(),
                 "hsv" => Model::hsv(),
                 "rgbwau" => Model::rgbwau(),
+                "sabre_spot" => Model::sabre_spot(),
                 other => {
                     bail!("unknown color model \"{}\"", other);
                 }
@@ -95,6 +96,7 @@ enum Model {
     Rgbw([u8; 4]),
     Hsv([u8; 3]),
     Rgbwau([u8; 6]),
+    SabreSpot([u8; 3]),
 }
 
 impl Default for Model {
@@ -120,12 +122,17 @@ impl Model {
         Self::Rgbwau([0; 6])
     }
 
+    fn sabre_spot() -> Self {
+        Self::SabreSpot([0; 3])
+    }
+
     fn channel_count(&self) -> usize {
         match self {
             Self::Rgb(_) => 3,
             Self::Rgbw(_) => 4,
             Self::Hsv(_) => 3,
             Self::Rgbwau(_) => 6,
+            Self::SabreSpot(_) => 3,
         }
     }
 
@@ -149,6 +156,11 @@ impl Model {
                 let rgb_slice = &mut vals[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
             }
+            Self::SabreSpot(vals) => {
+                vals[0] = unit_to_u8((hue + 0.33333333333).val() * -1.0 + 1.0);
+                vals[1] = unit_to_u8(sat.invert().val());
+                vals[2] = unit_to_u8(val.val());
+            }
         }
     }
 
@@ -158,6 +170,7 @@ impl Model {
             Self::Rgbw(v) => v,
             Self::Hsv(v) => v,
             Self::Rgbwau(v) => v,
+            Self::SabreSpot(v) => v,
         }
     }
 }

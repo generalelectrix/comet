@@ -91,9 +91,9 @@ impl Fixture for RushWizard {
             self.color.as_dmx()
         };
         dmx_buf[3] = (self.gobo as u8) * 2 + 160;
-        dmx_buf[4] = bipolar_to_split_range(self.drum_rotation, 128, 190, 193, 255, 191);
+        dmx_buf[4] = bipolar_to_split_range(self.drum_rotation, 190, 128, 193, 255, 191);
         dmx_buf[5] = bipolar_to_range(0, 120, self.drum_swivel);
-        dmx_buf[6] = bipolar_to_split_range(self.reflector_rotation, 128, 190, 193, 255, 191);
+        dmx_buf[6] = bipolar_to_split_range(self.reflector_rotation, 190, 128, 193, 255, 191);
         dmx_buf[7] = 0;
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;

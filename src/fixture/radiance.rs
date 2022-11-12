@@ -54,7 +54,7 @@ impl Fixture for Radiance {
                 return;
             }
         }
-        dmx_buf[0] = unipolar_to_range(0, 255, self.haze);
+        dmx_buf[0] = unipolar_to_range(0, 255, self.haze * UnipolarFloat::new(0.2));
         dmx_buf[1] = unipolar_to_range(0, 255, self.fan);
     }
 
