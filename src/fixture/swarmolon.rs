@@ -165,7 +165,7 @@ impl Fixture for Swarmolon {
             slice[0] = if !self.red_laser_on {
                 0
             // FIXME: this won't work if we don't use master strobe in the future.
-            } else if !master.strobe().on() {
+            } else if !master.strobe().state.on() {
                 8
             } else {
                 self.laser_strobe
@@ -174,7 +174,7 @@ impl Fixture for Swarmolon {
             slice[1] = if !self.green_laser_on {
                 0
             // FIXME: this won't work if we don't use master strobe in the future.
-            } else if !master.strobe().on() {
+            } else if !master.strobe().state.on() {
                 8
             } else {
                 self.laser_strobe
@@ -418,11 +418,17 @@ impl WhiteStrobe {
     }
 
     pub fn render(&self, master: &MasterControls) -> u8 {
-        if !self.state.on() || !master.strobe().on() {
+        let master_strobe = master.strobe();
+        if !self.state.on() || !master_strobe.state.on() {
             return 0;
         }
+        let rate = if master_strobe.use_master_rate {
+            master_strobe.state.rate()
+        } else {
+            self.state.rate()
+        };
         let program_base = (self.program + 1) * 10;
-        let program_speed = unipolar_to_range(9, 0, master.strobe().rate());
+        let program_speed = unipolar_to_range(9, 0, rate);
         program_base as u8 + program_speed
     }
 }

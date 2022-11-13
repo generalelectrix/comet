@@ -9,12 +9,12 @@ use crate::fixture::{
 
 #[derive(Debug, Default)]
 pub struct MasterControls {
-    strobe: GenericStrobe,
+    strobe: Strobe,
     autopilot: Autopilot,
 }
 
 impl MasterControls {
-    pub fn strobe(&self) -> &GenericStrobe {
+    pub fn strobe(&self) -> &Strobe {
         &self.strobe
     }
 
@@ -34,13 +34,14 @@ impl MasterControls {
                 sc: FixtureStateChange::Master(Strobe(ssc)),
             });
         };
-        self.strobe.emit_state(&mut emit_strobe);
+        self.strobe.state.emit_state(&mut emit_strobe);
     }
 
     pub fn control(&mut self, msg: ControlMessage, emitter: &mut dyn EmitStateChange) {
         use StateChange::*;
         match msg {
-            Strobe(sc) => self.strobe.handle_state_change(sc),
+            Strobe(sc) => self.strobe.state.handle_state_change(sc),
+            UseMasterStrobeRate(v) => self.strobe.use_master_rate = v,
             AutopilotOn(v) => self.autopilot.on = v,
             AutopilotSoundActive(v) => self.autopilot.sound_active = v,
         }
@@ -99,8 +100,15 @@ impl Autopilot {
 #[derive(Debug, Clone)]
 pub enum StateChange {
     Strobe(GenericStrobeStateChange),
+    UseMasterStrobeRate(bool),
     AutopilotOn(bool),
     AutopilotSoundActive(bool),
 }
 
 pub type ControlMessage = StateChange;
+
+#[derive(Debug, Default)]
+pub struct Strobe {
+    pub state: GenericStrobe,
+    pub use_master_rate: bool,
+}

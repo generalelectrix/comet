@@ -12,6 +12,9 @@ const GROUP: &str = "Master";
 impl MapControls for MasterControls {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
+        map.add_bool(GROUP, "UseMasterStrobeRate", |v| {
+            FixtureControlMessage::Master(StateChange::UseMasterStrobeRate(v))
+        });
         map.add_bool(GROUP, "AutopilotOn", |v| {
             FixtureControlMessage::Master(StateChange::AutopilotOn(v))
         });

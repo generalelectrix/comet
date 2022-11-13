@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use number::UnipolarFloat;
 
+use crate::master::Strobe as MasterStrobe;
 use crate::{config::Options, util::unipolar_to_range};
 
 /// Most basic strobe control - active/not, plus rate.
@@ -52,9 +53,20 @@ impl GenericStrobe {
     /// Render as a single DMX range with off, using master as an override.
     /// Only strobe if master strobe is on and the local strobe is also on.
     /// Always use the master strobe rate.
-    pub fn render_range_with_master(&self, master: &Self, off: u8, slow: u8, fast: u8) -> u8 {
-        if self.on && master.on {
-            unipolar_to_range(slow, fast, master.rate)
+    pub fn render_range_with_master(
+        &self,
+        master: &MasterStrobe,
+        off: u8,
+        slow: u8,
+        fast: u8,
+    ) -> u8 {
+        let rate = if master.use_master_rate {
+            master.state.rate
+        } else {
+            self.rate
+        };
+        if self.on && master.state.on {
+            unipolar_to_range(slow, fast, rate)
         } else {
             off
         }
