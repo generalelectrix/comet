@@ -41,7 +41,16 @@ impl PatchFixture for Color {
 }
 
 impl Color {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    pub fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) {
+        self.update_state(sc);
+        emitter.emit_color(sc);
+    }
+
+    pub fn update_state(&mut self, sc: StateChange) {
         use StateChange::*;
         match sc {
             Hue(v) => self.hue = v,
@@ -49,7 +58,23 @@ impl Color {
             Val(v) => self.val = v,
         };
         self.model.update(self.hue, self.sat, self.val);
-        emitter.emit_color(sc);
+    }
+
+    pub fn from_model(m: Model) -> Self {
+        let mut c = Self::default();
+        c.model = m;
+        c
+    }
+
+    /// Call the provided callback with all controllable state.
+    pub fn state<F>(&self, f: &mut F)
+    where
+        F: FnMut(StateChange),
+    {
+        use StateChange::*;
+        f(Hue(self.hue));
+        f(Sat(self.sat));
+        f(Val(self.val));
     }
 }
 
@@ -59,10 +84,7 @@ impl Fixture for Color {
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
-        use StateChange::*;
-        emitter.emit_color(Hue(self.hue));
-        emitter.emit_color(Sat(self.sat));
-        emitter.emit_color(Val(self.val));
+        self.state(&mut |sc| emitter.emit_color(sc));
     }
 
     fn control(
@@ -91,7 +113,7 @@ pub enum StateChange {
 pub type ControlMessage = StateChange;
 
 #[derive(Debug)]
-enum Model {
+pub enum Model {
     Rgb([u8; 3]),
     Rgbw([u8; 4]),
     Hsv([u8; 3]),
@@ -106,19 +128,19 @@ impl Default for Model {
 }
 
 impl Model {
-    fn rgb() -> Self {
+    pub fn rgb() -> Self {
         Self::Rgb([0; 3])
     }
 
-    fn hsv() -> Self {
+    pub fn hsv() -> Self {
         Self::Hsv([0; 3])
     }
 
-    fn rgbw() -> Self {
+    pub fn rgbw() -> Self {
         Self::Rgbw([0; 4])
     }
 
-    fn rgbwau() -> Self {
+    pub fn rgbwau() -> Self {
         Self::Rgbwau([0; 6])
     }
 
@@ -142,9 +164,9 @@ impl Model {
                 *vals = hsv_to_rgb(hue, sat, val);
             }
             Self::Rgbw(vals) => {
-                // TODO: decide what to do with white
                 let rgb_slice = &mut vals[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
+                vals[3] = unit_to_u8(sat.invert().val());
             }
             Self::Hsv(vals) => {
                 vals[0] = unit_to_u8(hue.val());

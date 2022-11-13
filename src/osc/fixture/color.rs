@@ -6,12 +6,21 @@ const GROUP: &str = "Color";
 
 impl MapControls for Color {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use FixtureControlMessage::Color;
-        use StateChange::*;
-        map.add_phase(GROUP, "Hue", |v| Color(Hue(v)));
-        map.add_unipolar(GROUP, "Sat", |v| Color(Sat(v)));
-        map.add_unipolar(GROUP, "Val", |v| Color(Val(v)));
+        map_color(map, GROUP, &wrap_color);
     }
 }
 
 impl HandleStateChange<StateChange> for Color {}
+
+fn wrap_color(sc: StateChange) -> FixtureControlMessage {
+    FixtureControlMessage::Color(sc)
+}
+
+pub fn map_color<F>(map: &mut ControlMap<FixtureControlMessage>, group: &str, wrap: &'static F)
+where
+    F: Fn(StateChange) -> FixtureControlMessage + 'static,
+{
+    map.add_phase(group, "Hue", move |v| wrap(StateChange::Hue(v)));
+    map.add_unipolar(group, "Sat", move |v| wrap(StateChange::Sat(v)));
+    map.add_unipolar(group, "Val", move |v| wrap(StateChange::Val(v)));
+}
