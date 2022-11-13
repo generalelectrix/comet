@@ -166,7 +166,7 @@ impl Model {
             Self::Rgbw(vals) => {
                 let rgb_slice = &mut vals[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
-                vals[3] = unit_to_u8(sat.invert().val());
+                vals[3] = unit_to_u8((sat.invert() * val).val());
             }
             Self::Hsv(vals) => {
                 vals[0] = unit_to_u8(hue.val());

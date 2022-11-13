@@ -2,17 +2,27 @@
 
 use number::BipolarFloat;
 
-use super::color::{Color, StateChange as ColorStateChange};
+use super::color::{Color, Model as ColorModel, StateChange as ColorStateChange};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::master::{Autopilot, MasterControls};
-use crate::util::{bipolar_to_split_range, unipolar_to_range};
+use crate::util::bipolar_to_split_range;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct RotosphereQ3 {
     color: Color,
     strobe: GenericStrobe,
     rotation: BipolarFloat,
+}
+
+impl Default for RotosphereQ3 {
+    fn default() -> Self {
+        Self {
+            color: Color::from_model(ColorModel::rgbw()),
+            strobe: GenericStrobe::default(),
+            rotation: BipolarFloat::default(),
+        }
+    }
 }
 
 impl PatchFixture for RotosphereQ3 {
