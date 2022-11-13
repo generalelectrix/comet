@@ -6,13 +6,20 @@
 use log::error;
 use number::UnipolarFloat;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    color::{Color, StateChange as ColorStateChange},
+    generic::{GenericStrobe, GenericStrobeStateChange},
+    EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture,
+};
 use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct FreedomFries {
     dimmer: UnipolarFloat,
+    color: Color,
     speed: UnipolarFloat,
+    strobe: GenericStrobe,
+    run_program: bool,
     program: usize,
     program_cycle_all: bool,
 }
@@ -29,7 +36,10 @@ impl FreedomFries {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
+            Color(v) => self.color.update_state(v),
+            Strobe(sc) => self.strobe.handle_state_change(sc),
             Speed(v) => self.speed = v,
+            RunProgram(v) => self.run_program = v,
             Program(v) => {
                 if v >= Self::PROGRAM_COUNT {
                     error!("Program select index {} out of range.", v);
@@ -46,11 +56,11 @@ impl FreedomFries {
 impl Fixture for FreedomFries {
     fn render(&self, master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
-        dmx_buf[1] = 0;
-        dmx_buf[2] = 0;
-        dmx_buf[3] = 0;
+        self.color.render(master_controls, &mut dmx_buf[1..4]);
         dmx_buf[4] = 0;
-        dmx_buf[5] = 0; // TODO strobing
+        dmx_buf[5] = self
+            .strobe
+            .render_range_with_master(master_controls.strobe(), 0, 11, 255);
         dmx_buf[6] = {
             let autopilot = master_controls.autopilot();
             let program = if autopilot.on() {
@@ -58,7 +68,9 @@ impl Fixture for FreedomFries {
             } else {
                 self.program
             };
-            if !autopilot.on() && self.program_cycle_all {
+            if !self.run_program {
+                0
+            } else if !autopilot.on() && self.program_cycle_all {
                 227
             } else {
                 ((program * 8) + 11) as u8
@@ -93,6 +105,9 @@ impl Fixture for FreedomFries {
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     Dimmer(UnipolarFloat),
+    Color(ColorStateChange),
+    Strobe(GenericStrobeStateChange),
+    RunProgram(bool),
     Speed(UnipolarFloat),
     Program(usize),
     ProgramCycleAll(bool),
