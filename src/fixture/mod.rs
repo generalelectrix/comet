@@ -40,6 +40,10 @@ use self::swarmolon::{
     ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange, Swarmolon,
 };
 use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange, Venus};
+use self::wizard_extreme::{
+    ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
+    WizardExtreme,
+};
 use crate::config::FixtureConfig;
 use crate::master::{
     ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
@@ -60,6 +64,7 @@ pub mod rotosphere_q3;
 pub mod rush_wizard;
 pub mod swarmolon;
 pub mod venus;
+pub mod wizard_extreme;
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Hash)]
 pub struct Group(Option<Arc<String>>);
@@ -138,6 +143,10 @@ pub trait EmitFixtureStateChange {
         self.emit(FixtureStateChange::RushWizard(sc));
     }
 
+    fn emit_wizard_extreme(&mut self, sc: WizardExtremeStateChange) {
+        self.emit(FixtureStateChange::WizardExtreme(sc));
+    }
+
     fn emit_color(&mut self, sc: ColorStateChange) {
         self.emit(FixtureStateChange::Color(sc));
     }
@@ -166,6 +175,7 @@ pub enum FixtureStateChange {
     FreedomFries(FreedomFriesStateChange),
     Faderboard(FaderboardStateChange),
     RushWizard(RushWizardStateChange),
+    WizardExtreme(WizardExtremeStateChange),
     Color(ColorStateChange),
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
@@ -190,6 +200,7 @@ pub enum FixtureControlMessage {
     FreedomFries(FreedomFriesControlMessage),
     Faderboard(FaderboardControlMessage),
     RushWizard(RushWizardControlMessage),
+    WizardExtreme(WizardExtremeControlMessage),
     Color(ColorControlMessage),
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
@@ -307,6 +318,7 @@ impl Patch {
             "freedom_fries" => FreedomFries::patch(cfg),
             "faderboard" => Faderboard::patch(cfg),
             "rush_wizard" => RushWizard::patch(cfg),
+            "wizard_extreme" => WizardExtreme::patch(cfg),
             "color" => Color::patch(cfg),
             "dimmer" => Dimmer::patch(cfg),
             unknown => {

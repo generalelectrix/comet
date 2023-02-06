@@ -12,3 +12,4 @@ mod rotosphere_q3;
 mod rush_wizard;
 mod swarmolon;
 mod venus;
+mod wizard_extreme;

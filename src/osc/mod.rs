@@ -11,6 +11,7 @@ use crate::fixture::rotosphere_q3::RotosphereQ3;
 use crate::fixture::rush_wizard::RushWizard;
 use crate::fixture::swarmolon::Swarmolon;
 use crate::fixture::venus::Venus;
+use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
     ControlMessage, EmitStateChange, FixtureControlMessage, FixtureStateChange, StateChange,
 };
@@ -118,6 +119,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::FreedomFries(sc) => FreedomFries::emit_state_change(sc, send),
             FixtureStateChange::Faderboard(sc) => Faderboard::emit_state_change(sc, send),
             FixtureStateChange::RushWizard(sc) => RushWizard::emit_state_change(sc, send),
+            FixtureStateChange::WizardExtreme(sc) => WizardExtreme::emit_state_change(sc, send),
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
