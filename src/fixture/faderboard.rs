@@ -3,7 +3,10 @@
 use log::error;
 use number::UnipolarFloat;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    animation_target::TargetedAnimations, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    PatchFixture,
+};
 use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Debug)]

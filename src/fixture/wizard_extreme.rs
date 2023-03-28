@@ -164,3 +164,22 @@ impl Color {
         }
     }
 }
+
+#[derive(Clone, Copy)]
+pub enum AnimationTarget {
+    Dimmer,
+    TwinkleSpeed,
+    DrumRotation,
+    DrumSwivel,
+    ReflectorRotation,
+}
+
+impl AnimationTarget {
+    /// Return true if this target is unipolar instead of bipolar.
+    pub fn is_unipolar(&self) -> bool {
+        match self {
+            Self::Dimmer | Self::TwinkleSpeed => true,
+            _ => false,
+        }
+    }
+}

@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use rosc::{OscMessage, OscType};
 
-use crate::fixture::Group;
+use crate::fixture::GroupName;
 
 use super::OscError;
 
@@ -23,7 +23,7 @@ pub struct OscControlMessage {
     /// careful not to accidentally try to slice past the end of the address.
     key_end: usize,
     /// The group ID, if present.
-    pub group: Group,
+    pub group: GroupName,
 }
 
 impl OscControlMessage {
@@ -67,7 +67,7 @@ impl OscControlMessage {
     }
 }
 
-fn parse_address(addr: &str) -> Result<(usize, usize, Group), String> {
+fn parse_address(addr: &str) -> Result<(usize, usize, GroupName), String> {
     lazy_static! {
         static ref WITH_GROUP: Regex = Regex::new(r"^/:([^/]+)(/[^/]+/[^/]+)").unwrap();
         static ref WITHOUT_GROUP: Regex = Regex::new(r"^(/[^:/][^/]*/[^/]+)").unwrap();
@@ -75,11 +75,11 @@ fn parse_address(addr: &str) -> Result<(usize, usize, Group), String> {
 
     if let Some(caps) = WITH_GROUP.captures(addr) {
         let key_match = caps.get(2).unwrap();
-        return Ok((key_match.start(), key_match.end(), Group::new(&caps[1])));
+        return Ok((key_match.start(), key_match.end(), GroupName::new(&caps[1])));
     }
     if let Some(caps) = WITHOUT_GROUP.captures(addr) {
         let key_match = caps.get(1).unwrap();
-        return Ok((key_match.start(), key_match.end(), Group::none()));
+        return Ok((key_match.start(), key_match.end(), GroupName::none()));
     }
     Err("address did not match expected patterns".to_string())
 }

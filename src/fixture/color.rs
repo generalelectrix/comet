@@ -7,7 +7,10 @@ use simple_error::bail;
 
 use crate::master::MasterControls;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    animation_target::TargetedAnimations, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    PatchFixture,
+};
 
 #[derive(Default, Debug)]
 pub struct Color {

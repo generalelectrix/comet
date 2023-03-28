@@ -3,6 +3,7 @@ use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
 use super::{
+    animation_target::TargetedAnimations,
     generic::{GenericStrobe, GenericStrobeStateChange},
     EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture,
 };

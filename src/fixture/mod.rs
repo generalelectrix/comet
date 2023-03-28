@@ -7,6 +7,7 @@ use std::time::Duration;
 use log::{debug, info};
 use simple_error::bail;
 
+use self::animation_target::{AnimationTarget, TargetedAnimations};
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
@@ -50,6 +51,7 @@ use crate::master::{
 };
 use crate::osc::MapControls;
 
+pub mod animation_target;
 pub mod aquarius;
 pub mod color;
 pub mod comet;
@@ -67,9 +69,9 @@ pub mod venus;
 pub mod wizard_extreme;
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Hash)]
-pub struct Group(Option<Arc<String>>);
+pub struct GroupName(Option<Arc<String>>);
 
-impl Group {
+impl GroupName {
     pub fn none() -> Self {
         Self(None)
     }
@@ -83,11 +85,11 @@ impl Group {
     }
 }
 
-impl From<&Option<String>> for Group {
+impl From<&Option<String>> for GroupName {
     fn from(v: &Option<String>) -> Self {
         match v {
             None => Self::none(),
-            Some(v) => Self::new(v.clone()),
+            Some(v) => Self::new(v),
         }
     }
 }
@@ -158,7 +160,7 @@ pub trait EmitFixtureStateChange {
 
 #[derive(Clone, Debug)]
 pub struct StateChange {
-    pub group: Group,
+    pub group: GroupName,
     pub sc: FixtureStateChange,
 }
 
@@ -183,7 +185,7 @@ pub enum FixtureStateChange {
 
 #[derive(Clone, Debug)]
 pub struct ControlMessage {
-    pub group: Group,
+    pub group: GroupName,
     pub msg: FixtureControlMessage,
 }
 
@@ -206,12 +208,19 @@ pub enum FixtureControlMessage {
     Master(MasterControlMessage),
 }
 
+pub struct FixtureGroup {
+    /// The name of this group.  If None, it is the "default" group.
+    name: GroupName,
+    // /// Animators defined for this group, if any.
+    // animators:
+}
+
 #[derive(Debug)]
 pub struct FixtureWrapper {
     /// The name of this type of fixture.
     name: String,
     /// The group index of this fixture.
-    group: Group,
+    group: GroupName,
     /// The starting index into the DMX buffer for this fixture.
     dmx_index: usize,
     /// The number of DMX channels used by this fixture.
@@ -262,9 +271,15 @@ impl FixtureWrapper {
 
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
-    pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
+    pub fn render(
+        &self,
+        master_controls: &MasterControls,
+        animations: &TargetedAnimations,
+        dmx_univ: &mut [u8],
+    ) {
         let dmx_buf = &mut dmx_univ[self.dmx_index..self.dmx_index + self.channel_count];
-        self.fixture.render(master_controls, dmx_buf);
+        self.fixture
+            .render_with_animations(master_controls, animations, dmx_buf);
         debug!("{} ({:?}): {:?}", self.name, self.group, dmx_buf);
     }
 }
@@ -272,7 +287,7 @@ impl FixtureWrapper {
 /// Wrap a state change emitter,
 struct StateChangeWithGroupEmitter<'a> {
     emitter: &'a mut dyn EmitStateChange,
-    group: Group,
+    group: GroupName,
 }
 
 impl<'a> EmitFixtureStateChange for StateChangeWithGroupEmitter<'a> {
@@ -293,7 +308,7 @@ impl MapControls for FixtureWrapper {
 pub struct Patch {
     fixtures: Vec<FixtureWrapper>,
     used_addrs: HashMap<usize, FixtureConfig>,
-    used_groups: HashMap<String, HashSet<Group>>,
+    used_groups: HashMap<String, HashSet<GroupName>>,
 }
 
 impl Patch {
@@ -425,6 +440,17 @@ pub trait Fixture: MapControls + Debug {
     ) -> Option<FixtureControlMessage>;
 
     fn update(&mut self, _: Duration) {}
+
+    /// Render into the provided DMX buffer, including animations.
+    /// This default implementation ignores animations.
+    fn render_with_animations(
+        &self,
+        master_controls: &MasterControls,
+        animations: &TargetedAnimations,
+        dmx_buffer: &mut [u8],
+    ) {
+        self.render(master_controls, dmx_buffer);
+    }
 
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset

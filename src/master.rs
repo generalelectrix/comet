@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::fixture::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    EmitStateChange, FixtureStateChange, Group, StateChange as ShowStateChange,
+    EmitStateChange, FixtureStateChange, GroupName, StateChange as ShowStateChange,
 };
 
 #[derive(Debug, Default)]
@@ -30,7 +30,7 @@ impl MasterControls {
         use StateChange::*;
         let mut emit_strobe = |ssc| {
             emitter.emit(ShowStateChange {
-                group: Group::none(),
+                group: GroupName::none(),
                 sc: FixtureStateChange::Master(Strobe(ssc)),
             });
         };
@@ -46,7 +46,7 @@ impl MasterControls {
             AutopilotSoundActive(v) => self.autopilot.sound_active = v,
         }
         emitter.emit(ShowStateChange {
-            group: Group::none(),
+            group: GroupName::none(),
             sc: FixtureStateChange::Master(msg),
         });
     }
