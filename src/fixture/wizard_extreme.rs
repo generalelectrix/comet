@@ -3,6 +3,9 @@
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
+use super::animation_target::{
+    AnimationTarget::WizardExtreme as WizardAnimation, TargetedAnimations,
+};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::master::MasterControls;
@@ -70,9 +73,30 @@ impl WizardExtreme {
 }
 
 impl Fixture for WizardExtreme {
-    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render_with_animations(
+        &self,
+        master: &MasterControls,
+        animations: &TargetedAnimations,
+        dmx_buf: &mut [u8],
+    ) {
+        let mut drum_swivel = self.drum_swivel.val();
+        let mut drum_rotation = self.drum_rotation.val();
+        let mut reflector_rotation = self.reflector_rotation.val();
+        for (val, target) in animations {
+            if let WizardAnimation(t) = target {
+                use AnimationTarget::*;
+                match t {
+                    DrumSwivel => drum_swivel += val,
+                    DrumRotation => drum_rotation += val,
+                    ReflectorRotation => reflector_rotation += val,
+                    // FIXME: decide how to handle unipolar values
+                    _ => (),
+                }
+            }
+        }
         dmx_buf[0] = self.render_shutter(master);
-        dmx_buf[1] = bipolar_to_split_range(self.reflector_rotation, 2, 63, 127, 66, 0);
+        dmx_buf[1] =
+            bipolar_to_split_range(BipolarFloat::new(reflector_rotation), 2, 63, 127, 66, 0);
 
         dmx_buf[2] = if self.twinkle {
             // WHY did you put twinkle on the color wheel...
@@ -83,8 +107,8 @@ impl Fixture for WizardExtreme {
         dmx_buf[3] = 0; // color shake
         dmx_buf[4] = (self.gobo as u8) * 12;
         dmx_buf[5] = 0; // gobo shake
-        dmx_buf[6] = bipolar_to_range(0, 127, self.drum_swivel);
-        dmx_buf[7] = bipolar_to_split_range(self.drum_rotation, 2, 63, 127, 66, 0);
+        dmx_buf[6] = bipolar_to_range(0, 127, BipolarFloat::new(drum_swivel));
+        dmx_buf[7] = bipolar_to_split_range(BipolarFloat::new(drum_rotation), 2, 63, 127, 66, 0);
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
         dmx_buf[10] = 0;

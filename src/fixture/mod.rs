@@ -7,7 +7,7 @@ use std::time::Duration;
 use log::{debug, info};
 use simple_error::bail;
 
-use self::animation_target::{TargetedAnimations};
+use self::animation_target::TargetedAnimations;
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
@@ -456,5 +456,8 @@ pub trait Fixture: MapControls + Debug {
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
     /// The master controls are provided to potentially alter the render process.
-    fn render(&self, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
+    fn render(&self, _master_controls: &MasterControls, _dmx_buffer: &mut [u8]) {
+        // FIXME: no-op default to allow implementing either render or
+        // render_with_animations...
+    }
 }
