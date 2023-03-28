@@ -7,7 +7,7 @@ use std::time::Duration;
 use log::{debug, info};
 use simple_error::bail;
 
-use self::animation_target::{AnimationTarget, TargetedAnimations};
+use self::animation_target::{TargetedAnimations};
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
@@ -446,7 +446,7 @@ pub trait Fixture: MapControls + Debug {
     fn render_with_animations(
         &self,
         master_controls: &MasterControls,
-        animations: &TargetedAnimations,
+        _animations: &TargetedAnimations,
         dmx_buffer: &mut [u8],
     ) {
         self.render(master_controls, dmx_buffer);

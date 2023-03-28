@@ -3,7 +3,7 @@
 use number::BipolarFloat;
 
 use super::{
-    animation_target::TargetedAnimations, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    EmitFixtureStateChange, Fixture, FixtureControlMessage,
     PatchFixture,
 };
 use crate::{master::MasterControls, util::bipolar_to_split_range};

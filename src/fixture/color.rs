@@ -8,7 +8,7 @@ use simple_error::bail;
 use crate::master::MasterControls;
 
 use super::{
-    animation_target::TargetedAnimations, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    EmitFixtureStateChange, Fixture, FixtureControlMessage,
     PatchFixture,
 };
 
