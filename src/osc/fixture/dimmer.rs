@@ -6,7 +6,7 @@ const GROUP: &str = "Dimmer";
 
 impl MapControls for Dimmer {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        map.add_unipolar(GROUP, "Level", |v| FixtureControlMessage::Dimmer(v));
+        map.add_unipolar(GROUP, "Level", FixtureControlMessage::Dimmer);
     }
 }
 

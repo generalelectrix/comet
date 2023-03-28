@@ -74,6 +74,7 @@ impl HandleStateChange<StateChange> for Swarmolon {
         S: FnMut(OscMessage),
     {
         use StateChange::*;
+        #[allow(clippy::single_match)]
         match sc {
             WhiteStrobe(WhiteStrobeStateChange::Program(v)) => {
                 if let Err(e) = STROBE_PROGRAM_SELECT.set(v, send) {

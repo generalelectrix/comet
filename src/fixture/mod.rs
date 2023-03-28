@@ -296,19 +296,19 @@ impl Patch {
 
     pub fn patch(&mut self, cfg: &FixtureConfig) -> Result<(), Box<dyn Error>> {
         let fixture = match cfg.name.as_str() {
-            "comet" => Comet::patch(&cfg),
-            "lumasphere" => Lumasphere::patch(&cfg),
-            "venus" => Venus::patch(&cfg),
-            "h2o" => H2O::patch(&cfg),
-            "aquarius" => Aquarius::patch(&cfg),
-            "radiance" => Radiance::patch(&cfg),
-            "swarmolon" => Swarmolon::patch(&cfg),
-            "rotosphere_q3" => RotosphereQ3::patch(&cfg),
-            "freedom_fries" => FreedomFries::patch(&cfg),
-            "faderboard" => Faderboard::patch(&cfg),
-            "rush_wizard" => RushWizard::patch(&cfg),
-            "color" => Color::patch(&cfg),
-            "dimmer" => Dimmer::patch(&cfg),
+            "comet" => Comet::patch(cfg),
+            "lumasphere" => Lumasphere::patch(cfg),
+            "venus" => Venus::patch(cfg),
+            "h2o" => H2O::patch(cfg),
+            "aquarius" => Aquarius::patch(cfg),
+            "radiance" => Radiance::patch(cfg),
+            "swarmolon" => Swarmolon::patch(cfg),
+            "rotosphere_q3" => RotosphereQ3::patch(cfg),
+            "freedom_fries" => FreedomFries::patch(cfg),
+            "faderboard" => Faderboard::patch(cfg),
+            "rush_wizard" => RushWizard::patch(cfg),
+            "color" => Color::patch(cfg),
+            "dimmer" => Dimmer::patch(cfg),
             unknown => {
                 bail!("Unknown fixture type \"{}\".", unknown);
             }

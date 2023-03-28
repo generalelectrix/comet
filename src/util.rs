@@ -57,12 +57,10 @@ pub fn bipolar_fader_with_detent(v: BipolarFloat) -> BipolarFloat {
         } else {
             BipolarFloat::new((v + 0.05) / 0.95)
         }
+    } else if v < 0.05 {
+        BipolarFloat::ZERO
     } else {
-        if v < 0.05 {
-            BipolarFloat::ZERO
-        } else {
-            BipolarFloat::new((v - 0.05) / 0.95)
-        }
+        BipolarFloat::new((v - 0.05) / 0.95)
     }
 }
 
@@ -88,7 +86,7 @@ impl<P: Copy + Sub<Output = P> + Into<f64> + AddAssign<f64>> RampingParameter<P>
         let (target, current) = (self.target, self.current);
         let delta: f64 = (target - current).into();
         let ramp_rate: f64 = self.ramp_rate.into();
-        let step = (ramp_rate * delta_t.as_secs_f64()).copysign(delta.into());
+        let step = (ramp_rate * delta_t.as_secs_f64()).copysign(delta);
         if step.abs() > delta.abs() {
             self.current = self.target;
         } else {

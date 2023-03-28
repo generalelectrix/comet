@@ -55,6 +55,7 @@ impl HandleStateChange<StateChange> for Comet {
         S: FnMut(OscMessage),
     {
         use StateChange::*;
+        #[allow(clippy::single_match)]
         match sc {
             // Most controls do not have talkback due to network latency issues.
             // Consider changing this.

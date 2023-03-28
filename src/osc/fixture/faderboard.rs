@@ -12,7 +12,7 @@ impl MapControls for Faderboard {
         map.add(GROUP, "Fader", |msg| {
             let index = msg
                 .addr_payload()
-                .split("/")
+                .split('/')
                 .take(2)
                 .map(str::parse::<usize>)
                 .next()
@@ -20,7 +20,7 @@ impl MapControls for Faderboard {
             if index == 0 {
                 bail!("Faderboard index is 0.");
             }
-            let val = get_unipolar(&msg)?;
+            let val = get_unipolar(msg)?;
             Ok(Some(Faderboard((index - 1, val))))
         })
     }

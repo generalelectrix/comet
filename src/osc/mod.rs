@@ -209,7 +209,7 @@ impl<C> ControlMap<C> {
         Process: Fn(EnumType, ParseResult) -> C + 'static,
     {
         self.add(group, control, move |m| {
-            let variant: EnumType = EnumType::parse(&m)?;
+            let variant: EnumType = EnumType::parse(m)?;
             let val = parse(m)?;
             Ok(Some(process(variant, val)))
         })

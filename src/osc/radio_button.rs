@@ -81,7 +81,7 @@ impl RadioButton {
 /// Parse radio button indices from a TouchOSC button grid.
 fn parse_radio_button_indices(addr_payload: &str) -> Result<(usize, usize), String> {
     let mut pieces_iter = addr_payload
-        .split("/")
+        .split('/')
         .skip(1)
         .take(2)
         .map(str::parse::<usize>);
@@ -94,10 +94,10 @@ fn parse_radio_button_indices(addr_payload: &str) -> Result<(usize, usize), Stri
         .ok_or_else(|| "y radio button index missing".to_string())?
         .map_err(|err| format!("failed to parse radio button y index: {}", err))?;
     if x == 0 {
-        return Err(format!("x index is unexpectedly 0"));
+        return Err("x index is unexpectedly 0".to_string());
     }
     if y == 0 {
-        return Err(format!("y index is unexpectedly 0"));
+        return Err("y index is unexpectedly 0".to_string());
     }
     Ok((x - 1, y - 1))
 }
@@ -108,7 +108,7 @@ where
 {
     /// Parse a enum variant of the specified type from the third argument of the address.
     fn parse(m: &OscControlMessage) -> Result<Self, OscError> {
-        let name = match m.addr_payload().split("/").skip(1).next() {
+        let name = match m.addr_payload().split('/').nth(1) {
             Some(c) => c,
             None => {
                 return Err(m.err("command is missing variant specifier"));

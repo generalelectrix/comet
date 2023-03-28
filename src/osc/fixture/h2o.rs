@@ -35,6 +35,7 @@ impl HandleStateChange<StateChange> for H2O {
     where
         S: FnMut(OscMessage),
     {
+        #[allow(clippy::single_match)]
         match sc {
             StateChange::FixedColor(c) => {
                 c.set(GROUP, FIXED_COLOR, send);

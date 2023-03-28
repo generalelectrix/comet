@@ -213,7 +213,7 @@ impl TriggerState {
 
         // if we're not taking a step, easy sauce
         if self.music_trigger {
-            return Self::DMX_VAL_MUSIC_TRIG;
+            Self::DMX_VAL_MUSIC_TRIG
         } else if self.auto_step {
             return unipolar_to_range(151, 255, self.auto_step_rate);
         } else {

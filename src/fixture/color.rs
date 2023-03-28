@@ -61,9 +61,10 @@ impl Color {
     }
 
     pub fn from_model(m: Model) -> Self {
-        let mut c = Self::default();
-        c.model = m;
-        c
+        Self {
+            model: m,
+            ..Self::default()
+        }
     }
 
     /// Call the provided callback with all controllable state.

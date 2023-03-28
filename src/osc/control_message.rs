@@ -87,7 +87,7 @@ fn parse_address(addr: &str) -> Result<(usize, usize, Group), String> {
 fn get_single_arg(mut args: Vec<OscType>) -> Result<OscType, String> {
     if args.len() > 1 {
         Err(format!("message has {} args (expected one)", args.len()))
-    } else if args.len() == 0 {
+    } else if args.is_empty() {
         Err("message has empty args list".to_string())
     } else {
         Ok(args.pop().unwrap())
@@ -105,7 +105,7 @@ mod test {
         assert_eq!("/foo/bar", get_control_key("/foo/bar").unwrap());
         let bad = vec!["", "foo", "foo/bar", "/bar", "/", "/:foo/bar"];
         for b in bad.iter() {
-            assert!(get_control_key(*b).is_err());
+            assert!(get_control_key(b).is_err());
         }
     }
 

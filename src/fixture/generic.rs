@@ -91,7 +91,8 @@ fn parse_seconds(options: &Options, key: &str) -> Result<Duration, String> {
     let v = options
         .get(key)
         .ok_or_else(|| format!("missing options key \"{}\"", key))?;
-    let secs = u64::from_str_radix(v, 10)
+    let secs = v
+        .parse::<u64>()
         .map_err(|e| format!("{}: expected integer seconds: {}", key, e))?;
     Ok(Duration::from_secs(secs))
 }
