@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Err(e) => info!("Unable to fetch local IP address: {}.", e),
     }
 
-    let mut show = Show::new(&cfg)?;
+    let mut show = Show::new(cfg)?;
 
     let dmx_port = select_port()?;
 

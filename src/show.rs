@@ -24,13 +24,13 @@ const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
 const UPDATE_INTERVAL: Duration = Duration::from_millis(10);
 
 impl Show {
-    pub fn new(cfg: &Config) -> Result<Self, Box<dyn Error>> {
+    pub fn new(cfg: Config) -> Result<Self, Box<dyn Error>> {
         let mut patch = Patch::new();
 
         let mut osc_controller =
             OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
 
-        for fixture in cfg.fixtures.iter() {
+        for fixture in cfg.fixtures.into_iter() {
             patch.patch(fixture)?;
         }
 

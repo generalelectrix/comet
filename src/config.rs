@@ -1,4 +1,5 @@
 use crate::dmx::DmxAddr;
+use crate::fixture::GroupName;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
@@ -28,7 +29,7 @@ pub struct FixtureConfig {
     /// For fixtures that we may want to separately control multiple instances,
     /// provide a group index.  Most fixtures do not use this.
     #[serde(default)]
-    pub group: Option<String>,
+    pub group: GroupName,
     /// Additional key-value string options for configuring specific fixture types.
     #[serde(default)]
     pub options: Options,
