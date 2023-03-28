@@ -177,9 +177,6 @@ pub enum AnimationTarget {
 impl AnimationTarget {
     /// Return true if this target is unipolar instead of bipolar.
     pub fn is_unipolar(&self) -> bool {
-        match self {
-            Self::Dimmer | Self::TwinkleSpeed => true,
-            _ => false,
-        }
+        matches!(self, Self::Dimmer | Self::TwinkleSpeed)
     }
 }
