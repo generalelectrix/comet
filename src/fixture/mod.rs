@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -69,7 +69,7 @@ pub mod swarmolon;
 pub mod venus;
 pub mod wizard_extreme;
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct GroupName(Option<Arc<String>>);
 
 impl GroupName {
@@ -92,6 +92,16 @@ impl From<&Option<String>> for GroupName {
             None => Self::none(),
             Some(v) => Self::new(v),
         }
+    }
+}
+
+impl Display for GroupName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0.as_ref().map(|g| g.as_str()).unwrap_or("none")
+        )
     }
 }
 
@@ -275,7 +285,7 @@ impl FixtureGroup {
             let dmx_buf = &mut dmx_univ[*dmx_index..*dmx_index + self.channel_count];
             self.fixture
                 .render_with_animations(master_controls, animations, dmx_buf);
-            debug!("{} ({:?}): {:?}", self.fixture_type, self.name, dmx_buf);
+            debug!("{} ({}): {:?}", self.fixture_type, self.name, dmx_buf);
         }
     }
 }
@@ -338,7 +348,7 @@ impl Patch {
         }?;
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
         info!(
-            "Controlling {} at {} (group: {:?}).",
+            "Controlling {} at {} (group: {}).",
             cfg.name, cfg.addr, cfg.group
         );
         // Either identify an existing appropriate group or create a new one.
