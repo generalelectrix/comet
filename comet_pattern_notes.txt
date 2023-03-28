@@ -1,0 +1,11 @@
+pattern notes:
+
+0: all mirrors, low angle, mix of few and many mirrors
+1: all mirrors, low angle 2, few mirrors
+3: everything
+4: full moves, closed or open, pairs and fulls
+5: lots of everything
+6: full moves, individually symmetric
+7: all mirrors full move
+8: lots of small fractional moves
+9: combo of everything?  maybe? lots going on here
