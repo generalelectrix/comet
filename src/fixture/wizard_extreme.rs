@@ -189,7 +189,7 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum AnimationTarget {
     Dimmer,
     TwinkleSpeed,

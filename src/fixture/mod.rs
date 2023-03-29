@@ -5,10 +5,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use log::{debug, info};
+use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 use simple_error::bail;
 
-use self::animation_target::TargetedAnimations;
+use self::animation_target::{TargetedAnimation, TargetedAnimations};
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
@@ -47,6 +48,7 @@ use self::wizard_extreme::{
     WizardExtreme,
 };
 use crate::config::FixtureConfig;
+use crate::fixture::animation_target::AnimationTarget;
 use crate::master::{
     ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
 };
@@ -219,6 +221,8 @@ pub enum FixtureControlMessage {
     Master(MasterControlMessage),
 }
 
+pub const N_ANIM: usize = 4;
+
 #[derive(Debug)]
 pub struct FixtureGroup {
     /// The name of this type of fixture.
@@ -231,6 +235,8 @@ pub struct FixtureGroup {
     channel_count: usize,
     /// The inner implementation of the fixture.
     fixture: Box<dyn Fixture>,
+    /// Optional collection of animations.
+    animations: Option<[TargetedAnimation; N_ANIM]>,
 }
 
 impl FixtureGroup {
@@ -275,16 +281,27 @@ impl FixtureGroup {
 
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
-    pub fn render(
-        &self,
-        master_controls: &MasterControls,
-        animations: &TargetedAnimations,
-        dmx_univ: &mut [u8],
-    ) {
-        for dmx_index in self.dmx_indexes.iter() {
+    pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
+        let phase_offset_per_fixture = Phase::new(1.0 / self.dmx_indexes.len() as f64);
+        let mut animation_vals = [(0.0, AnimationTarget::None); N_ANIM];
+        for (i, dmx_index) in self.dmx_indexes.iter().enumerate() {
+            let phase_offset = phase_offset_per_fixture * i as f64;
+            // FIXME: implement unipolar variant of animations
+            if let Some(animations) = self.animations.as_ref() {
+                for (i, ta) in animations.iter().enumerate() {
+                    animation_vals[i] = (
+                        ta.animation.get_value(
+                            phase_offset,
+                            &master_controls.clock_state,
+                            UnipolarFloat::ZERO,
+                        ),
+                        ta.target,
+                    );
+                }
+            }
             let dmx_buf = &mut dmx_univ[*dmx_index..*dmx_index + self.channel_count];
             self.fixture
-                .render_with_animations(master_controls, animations, dmx_buf);
+                .render_with_animations(master_controls, &animation_vals, dmx_buf);
             debug!("{} ({}): {:?}", self.fixture_type, self.name, dmx_buf);
         }
     }
@@ -365,6 +382,7 @@ impl Patch {
             dmx_indexes: vec![cfg.addr.dmx_index()],
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
+            animations: None,
         });
 
         Ok(())

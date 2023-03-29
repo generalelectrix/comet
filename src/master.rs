@@ -2,6 +2,8 @@
 
 use std::time::Duration;
 
+use tunnels::clock_server::StaticClockBank;
+
 use crate::fixture::{
     generic::{GenericStrobe, GenericStrobeStateChange},
     EmitStateChange, FixtureStateChange, GroupName, StateChange as ShowStateChange,
@@ -11,6 +13,7 @@ use crate::fixture::{
 pub struct MasterControls {
     strobe: Strobe,
     autopilot: Autopilot,
+    pub clock_state: StaticClockBank,
 }
 
 impl MasterControls {

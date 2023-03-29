@@ -21,3 +21,4 @@ number = { git = "https://github.com/generalelectrix/number", branch = "main" }
 strum = "0.24"
 strum_macros = "0.24"
 regex = "1.6"
+tunnels = { git = "https://github.com/generalelectrix/tunnels", branch = "main"}

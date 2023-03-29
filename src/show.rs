@@ -133,9 +133,8 @@ impl Show {
     fn render(&self, dmx_buffer: &mut [u8]) {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
-        let empty_animations = Vec::new();
-        for fixture in self.patch.iter() {
-            fixture.render(&self.master_controls, &empty_animations, dmx_buffer);
+        for group in self.patch.iter() {
+            group.render(&self.master_controls, dmx_buffer);
         }
     }
 }
