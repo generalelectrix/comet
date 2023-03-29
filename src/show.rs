@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    clock_service::ClockService,
     config::Config,
     fixture::{FixtureControlMessage, Patch},
     master::MasterControls,
@@ -18,13 +19,14 @@ pub struct Show {
     osc_controller: OscController,
     patch: Patch,
     master_controls: MasterControls,
+    clock_service: Option<ClockService>,
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
 const UPDATE_INTERVAL: Duration = Duration::from_millis(10);
 
 impl Show {
-    pub fn new(cfg: Config) -> Result<Self, Box<dyn Error>> {
+    pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self, Box<dyn Error>> {
         let mut patch = Patch::new();
 
         let mut osc_controller =
@@ -54,6 +56,7 @@ impl Show {
             patch,
             osc_controller,
             master_controls,
+            clock_service,
         })
     }
 
@@ -127,6 +130,10 @@ impl Show {
         self.master_controls.update(delta_t);
         for fixture in self.patch.iter_mut() {
             fixture.update(delta_t);
+        }
+        if let Some(ref clock_service) = self.clock_service {
+            let clock_state = clock_service.get();
+            self.master_controls.clock_state = clock_state;
         }
     }
 

@@ -12,6 +12,8 @@ pub struct Config {
     pub send_port: u16,
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,
+    #[serde(default)]
+    pub animation_groups: Vec<GroupName>,
 }
 
 impl Config {
