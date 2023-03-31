@@ -32,7 +32,7 @@ use std::thread;
 use std::time::Duration;
 
 pub use self::animation::AnimationControls;
-use self::animation_target::AnimationTargetControls;
+pub use self::animation_target::AnimationTargetControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;

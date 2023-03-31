@@ -26,13 +26,12 @@ pub struct AnimationTargetControls;
 
 impl MapControls for AnimationTargetControls {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use ControlMessage::*;
         use FixtureControlMessage::{AnimationSelect, AnimationTarget};
 
         map.add_enum_handler(GROUP, TARGET, ignore_payload, |t, _| {
             AnimationTarget(crate::fixture::animation_target::AnimationTarget::WizardExtreme(t))
         });
-        map.add_radio_button_array(ANIMATION_SELECT, |v| AnimationSelect(v));
+        map.add_radio_button_array(ANIMATION_SELECT, AnimationSelect);
     }
 }
 
