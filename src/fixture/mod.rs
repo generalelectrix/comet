@@ -260,7 +260,7 @@ impl FixtureGroup {
         &self.key
     }
     pub fn fixture_type(&self) -> &str {
-        &self.key.fixture
+        self.key.fixture
     }
 
     pub fn name(&self) -> &GroupName {

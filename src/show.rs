@@ -67,6 +67,11 @@ impl Show {
             let key = animated_groups[0].key().clone();
             animation_ui_state.current_group = Some(key.clone());
             animation_ui_state.selected_animator_by_group.insert(key, 0);
+            animation_ui_state
+                .current_animation(&mut patch)
+                .unwrap()
+                .animation
+                .emit_state(&mut osc_controller);
         } else if animated_groups.len() > 1 {
             bail!("I only hacked in one animation group, sorry future self");
         }
@@ -128,28 +133,8 @@ impl Show {
         }
 
         if let FixtureControlMessage::Animation(msg) = msg.msg {
-            let key = self
-                .animation_ui_state
-                .current_group
-                .as_ref()
-                .ok_or_else(|| {
-                    SimpleError::new(format!(
-                        "got animation control message {msg:?} but no group is selected"
-                    ))
-                })?;
-            let animation_index = self
-                .animation_ui_state
-                .selected_animator_by_group
-                .get(key)
-                .ok_or_else(|| SimpleError::new(format!("no current animatior set for {key:?}")))?;
-            let group = self
-                .patch
-                .group_mut(key)
-                .ok_or_else(|| SimpleError::new(format!("no group found for {key:?}")))?;
-            group
-                .animations_mut()
-                .ok_or_else(|| SimpleError::new(format!("{key:?} does not have animations")))?
-                [*animation_index]
+            self.animation_ui_state
+                .current_animation(&mut self.patch)?
                 .animation
                 .control(msg, &mut self.osc_controller);
             return Ok(());
