@@ -38,9 +38,9 @@ const N_PERIODS_SELECT: RadioButton = RadioButton {
     x_primary_coordinate: false,
 };
 
-const CLOCK_SELECT: RadioButton = RadioButton {
+const CLOCK_SOURCE: RadioButton = RadioButton {
     group: GROUP,
-    control: "ClockSelect",
+    control: "ClockSource",
     n: N_CLOCKS + 1,
     x_primary_coordinate: false,
 };
@@ -70,7 +70,7 @@ impl MapControls for AnimationControls {
         map.add_unipolar(GROUP, SMOOTHING, |v| Animation(Set(Smoothing(v))));
 
         map.add_radio_button_array(N_PERIODS_SELECT, |v| Animation(Set(NPeriods(v))));
-        map.add_radio_button_array(CLOCK_SELECT, |v| {
+        map.add_radio_button_array(CLOCK_SOURCE, |v| {
             if v == 0 {
                 Animation(SetClockSource(None))
             } else {
@@ -108,7 +108,7 @@ impl HandleStateChange<StateChange> for AnimationControls {
 
             NPeriods(v) => N_PERIODS_SELECT.set(v, send),
             ClockSource(maybe_clock) => {
-                CLOCK_SELECT.set(maybe_clock.map(|v| usize::from(v) + 1).unwrap_or(0), send)
+                CLOCK_SOURCE.set(maybe_clock.map(|v| usize::from(v) + 1).unwrap_or(0), send)
             }
 
             Pulse(v) => send_button(GROUP, PULSE, v, send),
