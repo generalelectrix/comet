@@ -56,26 +56,11 @@ impl WizardExtreme {
         };
         emitter.emit_wizard_extreme(sc);
     }
-
-    fn render_shutter(&self, master: &MasterControls) -> u8 {
-        if self.dimmer == UnipolarFloat::ZERO {
-            return 0;
-        }
-        let strobe_off = 0;
-        let strobe = self
-            .strobe
-            .render_range_with_master(master.strobe(), strobe_off, 189, 130);
-        if strobe == strobe_off {
-            unipolar_to_range(129, 1, self.dimmer)
-        } else {
-            strobe
-        }
-    }
 }
 
 impl Fixture for WizardExtreme {
     fn default_animation_target(&self) -> Option<super::animation_target::AnimationTarget> {
-        Some(WizardAnimation(AnimationTarget::DrumSwivel))
+        Some(WizardAnimation(AnimationTarget::default()))
     }
 
     fn render_with_animations(
@@ -88,6 +73,8 @@ impl Fixture for WizardExtreme {
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
         let mut reflector_rotation = self.reflector_rotation.val();
+        let mut dimmer = self.dimmer.val();
+        let mut twinkle_speed = self.twinkle_speed.val();
         for (val, target) in animations {
             if let WizardAnimation(t) = target {
                 use AnimationTarget::*;
@@ -95,18 +82,29 @@ impl Fixture for WizardExtreme {
                     DrumSwivel => drum_swivel += val,
                     DrumRotation => drum_rotation += val,
                     ReflectorRotation => reflector_rotation += val,
-                    // FIXME: decide how to handle unipolar values
-                    _ => (),
+                    // FIXME: might want to do something nicer for unipolar values
+                    Dimmer => dimmer += val,
+                    TwinkleSpeed => twinkle_speed += val,
                 }
             }
         }
-        dmx_buf[0] = self.render_shutter(master);
+        dmx_buf[0] = {
+            let strobe_off = 0;
+            let strobe =
+                self.strobe
+                    .render_range_with_master(master.strobe(), strobe_off, 189, 130);
+            if strobe != strobe_off {
+                unipolar_to_range(129, 1, UnipolarFloat::new(dimmer))
+            } else {
+                strobe
+            }
+        };
         dmx_buf[1] =
             bipolar_to_split_range(BipolarFloat::new(reflector_rotation), 2, 63, 127, 66, 0);
 
         dmx_buf[2] = if self.twinkle {
             // WHY did you put twinkle on the color wheel...
-            unipolar_to_range(176, 243, self.twinkle_speed)
+            unipolar_to_range(176, 243, UnipolarFloat::new(twinkle_speed))
         } else {
             self.color.as_dmx()
         };
