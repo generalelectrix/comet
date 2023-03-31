@@ -8,7 +8,7 @@ use crate::{
     animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
-    fixture::{FixtureControlMessage, Patch},
+    fixture::{EmitStateChange, FixtureControlMessage, GroupName, Patch, StateChange},
     master::MasterControls,
     osc::{AnimationControls, OscController},
 };
@@ -64,15 +64,12 @@ impl Show {
             .filter(|g| g.animations().is_some())
             .collect::<Vec<_>>();
         if animated_groups.len() == 1 {
+            // FIXME clean this up
             osc_controller.map_controls(&AnimationControls);
             let key = animated_groups[0].key().clone();
             animation_ui_state.current_group = Some(key.clone());
             animation_ui_state.selected_animator_by_group.insert(key, 0);
-            animation_ui_state
-                .current_animation(&mut patch)
-                .unwrap()
-                .animation
-                .emit_state(&mut osc_controller);
+            animation_ui_state.emit_state(&mut patch, &mut osc_controller)?;
         } else if animated_groups.len() > 1 {
             bail!("I only hacked in one animation group, sorry future self");
         }
@@ -133,12 +130,17 @@ impl Show {
             return Ok(());
         }
 
-        if let FixtureControlMessage::Animation(msg) = msg.msg {
-            self.animation_ui_state
-                .current_animation(&mut self.patch)?
-                .animation
-                .control(msg, &mut self.osc_controller);
-            return Ok(());
+        if matches!(
+            msg.msg,
+            FixtureControlMessage::Animation(_)
+                | FixtureControlMessage::AnimationSelect(_)
+                | FixtureControlMessage::AnimationTarget(_)
+        ) {
+            return self.animation_ui_state.control(
+                msg.msg,
+                &mut self.patch,
+                &mut self.osc_controller,
+            );
         }
 
         // "Option dance" to pass ownership into/back out of handlers.

@@ -208,6 +208,8 @@ pub enum FixtureStateChange {
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
     Animation(AnimationStateChange),
+    AnimationTarget(AnimationTarget),
+    AnimationSelect(usize),
 }
 
 #[derive(Clone, Debug)]
@@ -234,6 +236,8 @@ pub enum FixtureControlMessage {
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
     Animation(AnimationControlMessage),
+    AnimationTarget(AnimationTarget),
+    AnimationSelect(usize),
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
 }

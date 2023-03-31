@@ -32,9 +32,11 @@ use std::thread;
 use std::time::Duration;
 
 pub use self::animation::AnimationControls;
+use self::animation_target::AnimationTargetControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;
+mod animation_target;
 mod control_message;
 mod fixture;
 mod master;
@@ -126,6 +128,12 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
             FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
+            FixtureStateChange::AnimationSelect(sc) => {
+                AnimationTargetControls::emit_state_change(sc, send)
+            }
+            FixtureStateChange::AnimationTarget(sc) => {
+                AnimationTargetControls::emit_state_change(sc, send)
+            }
         }
     }
 }

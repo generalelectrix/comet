@@ -2,6 +2,7 @@ use log::error;
 use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
+use crate::fixture::wizard_extreme::AnimationTarget as WizardExtremeAnimationTarget;
 use crate::fixture::{EmitStateChange, FixtureControlMessage};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleStateChange};
@@ -44,7 +45,6 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
     n: N_CLOCKS + 1,
     x_primary_coordinate: false,
 };
-
 pub struct AnimationControls;
 
 impl MapControls for AnimationControls {

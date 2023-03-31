@@ -193,7 +193,7 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, EnumString, EnumIter, EnumDisplay)]
 pub enum AnimationTarget {
     #[default]
     Dimmer,
