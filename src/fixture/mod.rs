@@ -256,6 +256,9 @@ pub struct FixtureGroup {
 }
 
 impl FixtureGroup {
+    pub fn key(&self) -> &FixtureGroupKey {
+        &self.key
+    }
     pub fn fixture_type(&self) -> &str {
         &self.key.fixture
     }

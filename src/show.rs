@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
     fixture::{FixtureControlMessage, Patch},
@@ -14,11 +15,13 @@ use crate::{
 
 use log::{error, warn};
 use rust_dmx::DmxPort;
+use simple_error::{bail, SimpleError};
 
 pub struct Show {
     osc_controller: OscController,
     patch: Patch,
     master_controls: MasterControls,
+    animation_ui_state: AnimationUIState,
     clock_service: Option<ClockService>,
 }
 
@@ -53,14 +56,26 @@ impl Show {
         master_controls.emit_state(&mut osc_controller);
 
         // Configure animation controls.
-        if patch.iter().any(|g| g.animations().is_some()) {
+        // For now, assert that we only have one animatable group.
+        let mut animation_ui_state = AnimationUIState::default();
+        let animated_groups = patch
+            .iter()
+            .filter(|g| g.animations().is_some())
+            .collect::<Vec<_>>();
+        if animated_groups.len() == 1 {
             osc_controller.map_controls(&AnimationControls);
+            let key = animated_groups[0].key().clone();
+            animation_ui_state.current_group = Some(key.clone());
+            animation_ui_state.selected_animator_by_group.insert(key, 0);
+        } else if animated_groups.len() > 1 {
+            bail!("I only hacked in one animation group, sorry future self");
         }
 
         Ok(Self {
             patch,
             osc_controller,
             master_controls,
+            animation_ui_state,
             clock_service,
         })
     }
@@ -109,6 +124,34 @@ impl Show {
 
         if let FixtureControlMessage::Master(mc) = msg.msg {
             self.master_controls.control(mc, &mut self.osc_controller);
+            return Ok(());
+        }
+
+        if let FixtureControlMessage::Animation(msg) = msg.msg {
+            let key = self
+                .animation_ui_state
+                .current_group
+                .as_ref()
+                .ok_or_else(|| {
+                    SimpleError::new(format!(
+                        "got animation control message {msg:?} but no group is selected"
+                    ))
+                })?;
+            let animation_index = self
+                .animation_ui_state
+                .selected_animator_by_group
+                .get(key)
+                .ok_or_else(|| SimpleError::new(format!("no current animatior set for {key:?}")))?;
+            let group = self
+                .patch
+                .group_mut(key)
+                .ok_or_else(|| SimpleError::new(format!("no group found for {key:?}")))?;
+            group
+                .animations_mut()
+                .ok_or_else(|| SimpleError::new(format!("{key:?} does not have animations")))?
+                [*animation_index]
+                .animation
+                .control(msg, &mut self.osc_controller);
             return Ok(());
         }
 
