@@ -1,6 +1,6 @@
 //! Martin Wizard Extreme - the one that Goes Slow
 
-use log::error;
+use log::{debug, error};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::animation_target::{
@@ -74,12 +74,17 @@ impl WizardExtreme {
 }
 
 impl Fixture for WizardExtreme {
+    fn default_animation_target(&self) -> Option<super::animation_target::AnimationTarget> {
+        Some(WizardAnimation(AnimationTarget::DrumSwivel))
+    }
+
     fn render_with_animations(
         &self,
         master: &MasterControls,
         animations: &TargetedAnimations,
         dmx_buf: &mut [u8],
     ) {
+        debug!("{:?}", animations);
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
         let mut reflector_rotation = self.reflector_rotation.val();

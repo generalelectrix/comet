@@ -306,8 +306,11 @@ impl FixtureGroup {
             })
     }
 
-    pub fn update(&mut self, delta_t: Duration) {
+    pub fn update(&mut self, delta_t: Duration, audio_envelope: UnipolarFloat) {
         self.fixture.update(delta_t);
+        for animation in self.animations.iter_mut().flatten() {
+            animation.animation.update_state(delta_t, audio_envelope);
+        }
     }
 
     /// Render into the provided DMX universe.
