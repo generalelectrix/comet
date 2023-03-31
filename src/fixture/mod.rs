@@ -7,7 +7,11 @@ use std::time::Duration;
 use log::{debug, info};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
-use simple_error::bail;
+use simple_error::{bail, SimpleError};
+
+use tunnels::animation::{
+    ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
+};
 
 use self::animation_target::{TargetedAnimation, TargetedAnimations};
 use self::aquarius::{
@@ -194,6 +198,7 @@ pub enum FixtureStateChange {
     Color(ColorStateChange),
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
+    Animation(AnimationStateChange),
 }
 
 #[derive(Clone, Debug)]
@@ -219,6 +224,9 @@ pub enum FixtureControlMessage {
     Color(ColorControlMessage),
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
+    Animation(AnimationControlMessage),
+    /// FIXME: horrible hack around OSC control map handlers currently being infallible
+    Error(String),
 }
 
 pub const N_ANIM: usize = 4;
@@ -240,8 +248,20 @@ pub struct FixtureGroup {
 }
 
 impl FixtureGroup {
-    pub fn name(&self) -> &str {
+    pub fn fixture_type(&self) -> &str {
         &self.fixture_type
+    }
+
+    /// Configure animations for this group.
+    pub fn add_animations(&mut self) -> Result<(), Box<dyn Error>> {
+        match TargetedAnimation::default_for_fixture(&*self.fixture) {
+            Some(ta) => {
+                // FIXME: would be nice to populate this less literally.
+                self.animations = Some([ta.clone(), ta.clone(), ta.clone(), ta]);
+                Ok(())
+            }
+            None => bail!("{} is unable to be animated", self.fixture_type),
+        }
     }
 
     /// Emit the current state of all controls.
@@ -388,6 +408,18 @@ impl Patch {
         Ok(())
     }
 
+    /// Configure the named group to use animations.
+    pub fn add_animations(
+        &mut self,
+        fixture_type: &str,
+        group: &GroupName,
+    ) -> Result<(), Box<dyn Error>> {
+        let group = self.group_mut(fixture_type, group).ok_or_else(|| {
+            SimpleError::new(format!("no group {group} found for fixture {fixture_type}"))
+        })?;
+        group.add_animations()
+    }
+
     /// Check that the patch candidate doesn't conflict with another patched fixture.
     /// Return an updated collection of used addresses if it does not conflict.
     fn check_collision(
@@ -415,6 +447,16 @@ impl Patch {
             }
         }
         Ok(used_addrs)
+    }
+
+    pub fn group_mut(
+        &mut self,
+        fixture_type: &str,
+        group: &GroupName,
+    ) -> Option<&mut FixtureGroup> {
+        self.fixtures
+            .iter_mut()
+            .find(|g| g.name == *group && g.fixture_type == fixture_type)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {
@@ -469,6 +511,11 @@ pub trait Fixture: MapControls + Debug {
     ) -> Option<FixtureControlMessage>;
 
     fn update(&mut self, _: Duration) {}
+
+    /// Return the default animation target for this fixture, if it has one.
+    fn default_animation_target(&self) -> Option<AnimationTarget> {
+        None
+    }
 
     /// Render into the provided DMX buffer, including animations.
     /// This default implementation ignores animations.

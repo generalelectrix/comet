@@ -76,11 +76,7 @@ impl HandleStateChange<StateChange> for Swarmolon {
         use StateChange::*;
         #[allow(clippy::single_match)]
         match sc {
-            WhiteStrobe(WhiteStrobeStateChange::Program(v)) => {
-                if let Err(e) = STROBE_PROGRAM_SELECT.set(v, send) {
-                    error!("Swarmolon strobe program select update error: {}.", e);
-                }
-            }
+            WhiteStrobe(WhiteStrobeStateChange::Program(v)) => STROBE_PROGRAM_SELECT.set(v, send),
             _ => (),
         }
     }

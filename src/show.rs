@@ -9,7 +9,7 @@ use crate::{
     config::Config,
     fixture::{FixtureControlMessage, Patch},
     master::MasterControls,
-    osc::OscController,
+    osc::{AnimationControls, OscController},
 };
 
 use log::{error, warn};
@@ -39,18 +39,26 @@ impl Show {
         // Only patch a fixture type's controls once.
         let mut patched_controls = HashSet::new();
 
-        for fixture in patch.iter() {
-            if !patched_controls.contains(fixture.name()) {
-                osc_controller.map_controls(fixture);
-                patched_controls.insert(fixture.name().to_string());
+        for group in patch.iter() {
+            if !patched_controls.contains(group.fixture_type()) {
+                osc_controller.map_controls(group);
+                patched_controls.insert(group.fixture_type().to_string());
             }
 
-            fixture.emit_state(&mut osc_controller);
+            group.emit_state(&mut osc_controller);
         }
 
         let master_controls = MasterControls::default();
         osc_controller.map_controls(&master_controls);
         master_controls.emit_state(&mut osc_controller);
+
+        // Configure animations.
+        for anim_group in cfg.animation_groups.iter() {
+            patch.add_animations(&anim_group.fixture_type, &anim_group.group)?;
+        }
+        if !cfg.animation_groups.is_empty() {
+            osc_controller.map_controls(&AnimationControls);
+        }
 
         Ok(Self {
             patch,

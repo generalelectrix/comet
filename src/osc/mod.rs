@@ -31,8 +31,10 @@ use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
+pub use self::animation::AnimationControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
+mod animation;
 mod control_message;
 mod fixture;
 mod master;
@@ -123,6 +125,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
+            FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
         }
     }
 }
@@ -385,4 +388,23 @@ fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
 /// A OSC message processor that ignores the message payload, returning unit.
 fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
     Ok(())
+}
+
+/// Send an OSC message setting the state of a float control.
+fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, send: &mut S)
+where
+    S: FnMut(OscMessage),
+{
+    send(OscMessage {
+        addr: format!("/{group}/{control}"),
+        args: vec![OscType::Float(val.into() as f32)],
+    });
+}
+
+/// Send an OSC message setting the state of a button.
+fn send_button<S>(group: &str, control: &str, val: bool, send: &mut S)
+where
+    S: FnMut(OscMessage),
+{
+    send_float(group, control, if val { 1.0 } else { 0.0 }, send);
 }

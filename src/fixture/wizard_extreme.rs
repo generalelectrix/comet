@@ -189,8 +189,9 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum AnimationTarget {
+    #[default]
     Dimmer,
     TwinkleSpeed,
     DrumRotation,

@@ -13,7 +13,13 @@ pub struct Config {
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,
     #[serde(default)]
-    pub animation_groups: Vec<GroupName>,
+    pub animation_groups: Vec<AnimationGroup>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AnimationGroup {
+    pub fixture_type: String,
+    pub group: GroupName,
 }
 
 impl Config {

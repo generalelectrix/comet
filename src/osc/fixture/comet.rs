@@ -59,11 +59,7 @@ impl HandleStateChange<StateChange> for Comet {
         match sc {
             // Most controls do not have talkback due to network latency issues.
             // Consider changing this.
-            SelectMacro(v) => {
-                if let Err(e) = MACRO_SELECT_RADIO_BUTTON.set(v, send) {
-                    error!("Macro select update error: {}.", e);
-                }
-            }
+            SelectMacro(v) => MACRO_SELECT_RADIO_BUTTON.set(v, send),
             _ => (),
         }
     }

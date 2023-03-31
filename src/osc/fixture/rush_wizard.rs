@@ -55,11 +55,7 @@ impl HandleStateChange<StateChange> for RushWizard {
             StateChange::Color(c) => {
                 c.set(GROUP, COLOR, send);
             }
-            StateChange::Gobo(v) => {
-                if let Err(e) = GOBO_SELECT.set(v, send) {
-                    error!("Rush Wizard gobo select update error: {}.", e);
-                }
-            }
+            StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
             _ => (),
         }
     }
