@@ -20,6 +20,7 @@ pub struct Comet {
 }
 
 impl PatchFixture for Comet {
+    const NAME: &'static str = "comet";
     fn channel_count(&self) -> usize {
         5
     }

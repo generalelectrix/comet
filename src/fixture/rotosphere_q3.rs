@@ -26,6 +26,7 @@ impl Default for RotosphereQ3 {
 }
 
 impl PatchFixture for RotosphereQ3 {
+    const NAME: &'static str = "rotosphere_q3";
     fn channel_count(&self) -> usize {
         9
     }

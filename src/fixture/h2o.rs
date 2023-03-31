@@ -20,6 +20,7 @@ pub struct H2O {
 }
 
 impl PatchFixture for H2O {
+    const NAME: &'static str = "h2o";
     fn channel_count(&self) -> usize {
         3
     }

@@ -7,10 +7,7 @@ use simple_error::bail;
 
 use crate::master::MasterControls;
 
-use super::{
-    EmitFixtureStateChange, Fixture, FixtureControlMessage,
-    PatchFixture,
-};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 
 #[derive(Default, Debug)]
 pub struct Color {
@@ -21,6 +18,7 @@ pub struct Color {
 }
 
 impl PatchFixture for Color {
+    const NAME: &'static str = "color";
     fn channel_count(&self) -> usize {
         self.model.channel_count()
     }

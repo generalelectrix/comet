@@ -2,16 +2,14 @@
 
 use number::UnipolarFloat;
 
-use super::{
-    EmitFixtureStateChange, Fixture, FixtureControlMessage,
-    PatchFixture,
-};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Dimmer(UnipolarFloat);
 
 impl PatchFixture for Dimmer {
+    const NAME: &'static str = "dimmer";
     fn channel_count(&self) -> usize {
         1
     }

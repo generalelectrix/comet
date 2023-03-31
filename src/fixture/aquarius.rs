@@ -2,10 +2,7 @@
 
 use number::BipolarFloat;
 
-use super::{
-    EmitFixtureStateChange, Fixture, FixtureControlMessage,
-    PatchFixture,
-};
+use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -15,6 +12,7 @@ pub struct Aquarius {
 }
 
 impl PatchFixture for Aquarius {
+    const NAME: &'static str = "aquarius";
     fn channel_count(&self) -> usize {
         2
     }

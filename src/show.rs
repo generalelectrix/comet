@@ -52,11 +52,8 @@ impl Show {
         osc_controller.map_controls(&master_controls);
         master_controls.emit_state(&mut osc_controller);
 
-        // Configure animations.
-        for anim_group in cfg.animation_groups.iter() {
-            patch.add_animations(&anim_group.fixture_type, &anim_group.group)?;
-        }
-        if !cfg.animation_groups.is_empty() {
+        // Configure animation controls.
+        if patch.iter().any(|g| g.animations().is_some()) {
             osc_controller.map_controls(&AnimationControls);
         }
 

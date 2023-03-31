@@ -12,8 +12,6 @@ pub struct Config {
     pub send_port: u16,
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,
-    #[serde(default)]
-    pub animation_groups: Vec<AnimationGroup>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,6 +39,9 @@ pub struct FixtureConfig {
     /// Additional key-value string options for configuring specific fixture types.
     #[serde(default)]
     pub options: Options,
+    /// If true, use animations.
+    #[serde(default)]
+    pub animations: bool,
 }
 
 pub type Options = HashMap<String, String>;

@@ -4,10 +4,11 @@ use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use std::time::Duration;
 
+use lazy_static::lazy_static;
 use log::{debug, info};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
-use simple_error::{bail, SimpleError};
+use simple_error::bail;
 
 use tunnels::animation::{
     ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
@@ -51,7 +52,7 @@ use self::wizard_extreme::{
     ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
     WizardExtreme,
 };
-use crate::config::FixtureConfig;
+use crate::config::{FixtureConfig, Options};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::master::{
     ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
@@ -75,6 +76,7 @@ pub mod swarmolon;
 pub mod venus;
 pub mod wizard_extreme;
 
+/// Identify a named group of a particular type of fixture.
 #[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct GroupName(Option<Arc<String>>);
 
@@ -109,6 +111,13 @@ impl Display for GroupName {
             self.0.as_ref().map(|g| g.as_str()).unwrap_or("none")
         )
     }
+}
+
+/// Uniquely identify the a specific fixture group.
+#[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+pub struct FixtureGroupKey {
+    fixture: &'static str,
+    group: GroupName,
 }
 
 pub trait EmitStateChange {
@@ -230,13 +239,12 @@ pub enum FixtureControlMessage {
 }
 
 pub const N_ANIM: usize = 4;
+pub type TargetedAnimationss = [TargetedAnimation; N_ANIM];
 
 #[derive(Debug)]
 pub struct FixtureGroup {
-    /// The name of this type of fixture.
-    fixture_type: String,
-    /// The group index.
-    name: GroupName,
+    /// The unique identifier of this group.
+    key: FixtureGroupKey,
     /// The starting index into the DMX buffer for the fixtures in this group.
     dmx_indexes: Vec<usize>,
     /// The number of DMX channels used by this fixture.
@@ -244,31 +252,31 @@ pub struct FixtureGroup {
     /// The inner implementation of the fixture.
     fixture: Box<dyn Fixture>,
     /// Optional collection of animations.
-    animations: Option<[TargetedAnimation; N_ANIM]>,
+    animations: Option<TargetedAnimationss>,
 }
 
 impl FixtureGroup {
     pub fn fixture_type(&self) -> &str {
-        &self.fixture_type
+        &self.key.fixture
     }
 
-    /// Configure animations for this group.
-    pub fn add_animations(&mut self) -> Result<(), Box<dyn Error>> {
-        match TargetedAnimation::default_for_fixture(&*self.fixture) {
-            Some(ta) => {
-                // FIXME: would be nice to populate this less literally.
-                self.animations = Some([ta.clone(), ta.clone(), ta.clone(), ta]);
-                Ok(())
-            }
-            None => bail!("{} is unable to be animated", self.fixture_type),
-        }
+    pub fn name(&self) -> &GroupName {
+        &self.key.group
+    }
+
+    pub fn animations(&self) -> Option<&TargetedAnimationss> {
+        self.animations.as_ref()
+    }
+
+    pub fn animations_mut(&mut self) -> Option<&mut TargetedAnimationss> {
+        self.animations.as_mut()
     }
 
     /// Emit the current state of all controls.
     pub fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
         let mut emitter = StateChangeWithGroupEmitter {
             emitter,
-            group: self.name.clone(),
+            group: self.name().clone(),
         };
         self.fixture.emit_state(&mut emitter);
     }
@@ -280,12 +288,12 @@ impl FixtureGroup {
         msg: ControlMessage,
         emitter: &mut dyn EmitStateChange,
     ) -> Option<ControlMessage> {
-        if self.name != msg.group {
+        if *self.name() != msg.group {
             return Some(msg);
         }
         let mut emitter = StateChangeWithGroupEmitter {
             emitter,
-            group: self.name.clone(),
+            group: self.name().clone(),
         };
         self.fixture
             .control(msg.msg, &mut emitter)
@@ -322,7 +330,7 @@ impl FixtureGroup {
             let dmx_buf = &mut dmx_univ[*dmx_index..*dmx_index + self.channel_count];
             self.fixture
                 .render_with_animations(master_controls, &animation_vals, dmx_buf);
-            debug!("{} ({}): {:?}", self.fixture_type, self.name, dmx_buf);
+            debug!("{} ({}): {:?}", self.fixture_type(), self.name(), dmx_buf);
         }
     }
 }
@@ -355,6 +363,25 @@ pub struct Patch {
     used_addrs: UsedAddrs,
 }
 
+lazy_static! {
+    static ref PATCHERS: Vec<Patcher> = vec![
+        Aquarius::patcher(),
+        Color::patcher(),
+        Comet::patcher(),
+        Dimmer::patcher(),
+        Faderboard::patcher(),
+        FreedomFries::patcher(),
+        H2O::patcher(),
+        Lumasphere::patcher(),
+        Radiance::patcher(),
+        RotosphereQ3::patcher(),
+        RushWizard::patcher(),
+        Swarmolon::patcher(),
+        Venus::patcher(),
+        WizardExtreme::patcher(),
+    ];
+}
+
 impl Patch {
     pub fn new() -> Self {
         Self {
@@ -364,60 +391,57 @@ impl Patch {
     }
 
     pub fn patch(&mut self, cfg: FixtureConfig) -> Result<(), Box<dyn Error>> {
-        let candidate = match cfg.name.as_str() {
-            "comet" => Comet::patch(&cfg),
-            "lumasphere" => Lumasphere::patch(&cfg),
-            "venus" => Venus::patch(&cfg),
-            "h2o" => H2O::patch(&cfg),
-            "aquarius" => Aquarius::patch(&cfg),
-            "radiance" => Radiance::patch(&cfg),
-            "swarmolon" => Swarmolon::patch(&cfg),
-            "rotosphere_q3" => RotosphereQ3::patch(&cfg),
-            "freedom_fries" => FreedomFries::patch(&cfg),
-            "faderboard" => Faderboard::patch(&cfg),
-            "rush_wizard" => RushWizard::patch(&cfg),
-            "wizard_extreme" => WizardExtreme::patch(&cfg),
-            "color" => Color::patch(&cfg),
-            "dimmer" => Dimmer::patch(&cfg),
-            unknown => {
-                bail!("Unknown fixture type \"{}\".", unknown);
-            }
-        }?;
+        let mut candidates = PATCHERS
+            .iter()
+            .flat_map(|p| p(&cfg))
+            .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+        let candidate = match candidates.len() {
+            0 => bail!("unable to patch {cfg:?}"),
+            1 => candidates.pop().unwrap(),
+            _ => bail!(
+                "multiple fixture patch candidates: {:?}",
+                candidates
+                    .iter()
+                    .map(|c| c.fixture_type)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        };
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
         info!(
             "Controlling {} at {} (group: {}).",
             cfg.name, cfg.addr, cfg.group
         );
+        let key = FixtureGroupKey {
+            fixture: candidate.fixture_type,
+            group: cfg.group,
+        };
         // Either identify an existing appropriate group or create a new one.
-        for group in self.fixtures.iter_mut() {
-            if group.fixture_type == cfg.name && group.name == cfg.group {
-                group.dmx_indexes.push(cfg.addr.dmx_index());
-                return Ok(());
-            }
+        if let Some(group) = self.group_mut(&key) {
+            group.dmx_indexes.push(cfg.addr.dmx_index());
+            return Ok(());
         }
         // No existing group; create a new one.
+        let animations = if cfg.animations {
+            match TargetedAnimation::default_for_fixture(&*candidate.fixture) {
+                Some(ta) => {
+                    // FIXME: would be nice to populate this less literally.
+                    Some([ta.clone(), ta.clone(), ta.clone(), ta])
+                }
+                None => bail!("{} is unable to be animated", candidate.fixture_type),
+            }
+        } else {
+            None
+        };
         self.fixtures.push(FixtureGroup {
-            fixture_type: cfg.name,
-            name: cfg.group,
+            key,
             dmx_indexes: vec![cfg.addr.dmx_index()],
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
-            animations: None,
+            animations,
         });
 
         Ok(())
-    }
-
-    /// Configure the named group to use animations.
-    pub fn add_animations(
-        &mut self,
-        fixture_type: &str,
-        group: &GroupName,
-    ) -> Result<(), Box<dyn Error>> {
-        let group = self.group_mut(fixture_type, group).ok_or_else(|| {
-            SimpleError::new(format!("no group {group} found for fixture {fixture_type}"))
-        })?;
-        group.add_animations()
     }
 
     /// Check that the patch candidate doesn't conflict with another patched fixture.
@@ -449,14 +473,8 @@ impl Patch {
         Ok(used_addrs)
     }
 
-    pub fn group_mut(
-        &mut self,
-        fixture_type: &str,
-        group: &GroupName,
-    ) -> Option<&mut FixtureGroup> {
-        self.fixtures
-            .iter_mut()
-            .find(|g| g.name == *group && g.fixture_type == fixture_type)
+    pub fn group_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
+        self.fixtures.iter_mut().find(|g| g.key == *key)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {
@@ -469,32 +487,43 @@ impl Patch {
 }
 
 pub struct PatchCandidate {
-    fixture: Box<dyn Fixture>,
+    fixture_type: &'static str,
     channel_count: usize,
+    fixture: Box<dyn Fixture>,
 }
 
+pub type Patcher =
+    Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate, Box<dyn Error>>> + Sync>;
+
 /// Fixture constructor trait to handle patching fixtures.
-pub trait PatchFixture: Fixture + Default {
-    /// Create a new instance of the fixture from the provided options.
-    /// Non-customizable fixtures will fall back to using default.
-    /// This can be overridden for fixtures that are customizable.
-    fn new(_options: &HashMap<String, String>) -> Result<Self, Box<dyn Error>> {
-        Ok(Self::default())
+pub trait PatchFixture: Fixture + Default + 'static {
+    const NAME: &'static str;
+
+    /// Return a closure that will try to patch a fixture if it has the appropriate name.
+    fn patcher() -> Patcher {
+        Box::new(|cfg| {
+            if cfg.name != Self::NAME {
+                return None;
+            }
+            match Self::new(&cfg.options) {
+                Ok(fixture) => Some(Ok(PatchCandidate {
+                    fixture_type: Self::NAME,
+                    channel_count: fixture.channel_count(),
+                    fixture: Box::new(fixture),
+                })),
+                Err(e) => Some(Err(e)),
+            }
+        })
     }
 
     /// The number of contiguous DMX channels used by the fixture.
     fn channel_count(&self) -> usize;
 
-    /// Produce a wrapped fixture at the provided DMX address.
-    fn patch(cfg: &FixtureConfig) -> Result<PatchCandidate, Box<dyn Error>>
-    where
-        Self: Sized + 'static,
-    {
-        let fixture = Self::new(&cfg.options)?;
-        Ok(PatchCandidate {
-            channel_count: fixture.channel_count(),
-            fixture: Box::new(fixture),
-        })
+    /// Create a new instance of the fixture from the provided options.
+    /// Non-customizable fixtures will fall back to using default.
+    /// This can be overridden for fixtures that are customizable.
+    fn new(_options: &Options) -> Result<Self, Box<dyn Error>> {
+        Ok(Self::default())
     }
 }
 

@@ -26,6 +26,7 @@ pub struct WizardExtreme {
 }
 
 impl PatchFixture for WizardExtreme {
+    const NAME: &'static str = "wizard_extreme";
     fn channel_count(&self) -> usize {
         11
     }
