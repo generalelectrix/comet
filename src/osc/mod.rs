@@ -9,6 +9,7 @@ use crate::fixture::lumasphere::Lumasphere;
 use crate::fixture::radiance::Radiance;
 use crate::fixture::rotosphere_q3::RotosphereQ3;
 use crate::fixture::rush_wizard::RushWizard;
+use crate::fixture::starlight::Starlight;
 use crate::fixture::swarmolon::Swarmolon;
 use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
@@ -119,6 +120,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Aquarius(sc) => Aquarius::emit_state_change(sc, send),
             FixtureStateChange::Radiance(sc) => Radiance::emit_state_change(sc, send),
             FixtureStateChange::Swarmolon(sc) => Swarmolon::emit_state_change(sc, send),
+            FixtureStateChange::Starlight(sc) => Starlight::emit_state_change(sc, send),
             FixtureStateChange::RotosphereQ3(sc) => RotosphereQ3::emit_state_change(sc, send),
             FixtureStateChange::FreedomFries(sc) => FreedomFries::emit_state_change(sc, send),
             FixtureStateChange::Faderboard(sc) => Faderboard::emit_state_change(sc, send),
