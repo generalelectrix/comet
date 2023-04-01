@@ -94,7 +94,7 @@ impl Fixture for WizardExtreme {
                 self.strobe
                     .render_range_with_master(master.strobe(), strobe_off, 189, 130);
             if strobe == strobe_off {
-                unipolar_to_range(129, 1, UnipolarFloat::new(dimmer))
+                unipolar_to_range(0, 129, UnipolarFloat::new(dimmer))
             } else {
                 strobe
             }
