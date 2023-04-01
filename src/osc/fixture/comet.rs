@@ -5,7 +5,7 @@ use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
     osc::quadratic,
 };
-use log::error;
+
 use rosc::OscMessage;
 // Control group names.
 const CONTROLS: &str = "Controls";

@@ -8,7 +8,7 @@ use crate::{
     animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
-    fixture::{EmitStateChange, FixtureControlMessage, GroupName, Patch, StateChange},
+    fixture::{FixtureControlMessage, Patch},
     master::MasterControls,
     osc::{AnimationControls, AnimationTargetControls, OscController},
 };
@@ -16,7 +16,7 @@ use crate::{
 use log::{error, warn};
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
-use simple_error::{bail, SimpleError};
+use simple_error::{bail};
 
 pub struct Show {
     osc_controller: OscController,

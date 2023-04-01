@@ -1,4 +1,4 @@
-use log::error;
+
 use rosc::OscMessage;
 
 use super::generic::map_strobe;

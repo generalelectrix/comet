@@ -1,7 +1,7 @@
 use log::error;
 use rosc::{OscMessage, OscType};
-use simple_error::bail;
-use std::{error::Error, fmt::Display, str::FromStr};
+
+use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;
 
 use super::{control_message::OscControlMessage, OscError};

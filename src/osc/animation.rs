@@ -1,13 +1,13 @@
-use log::error;
+
 use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
-use crate::fixture::wizard_extreme::AnimationTarget as WizardExtremeAnimationTarget;
-use crate::fixture::{EmitStateChange, FixtureControlMessage};
+
+use crate::fixture::{FixtureControlMessage};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::{HandleStateChange};
 use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
-use crate::util::bipolar_fader_with_detent;
+
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
 
 const GROUP: &str = "Animation";
