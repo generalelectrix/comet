@@ -19,7 +19,7 @@ impl MapControls for Starlight {
         map.add_bipolar(GROUP, "Rotation", |v| {
             Starlight(Rotation(bipolar_fader_with_detent(v)))
         });
-        map_strobe(map, GROUP, "Strone", &wrap_strobe);
+        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
     }
 }
 
