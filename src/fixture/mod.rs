@@ -44,6 +44,9 @@ use self::rotosphere_q3::{
 use self::rush_wizard::{
     ControlMessage as RushWizardControlMessage, RushWizard, StateChange as RushWizardStateChange,
 };
+use self::starlight::{
+    ControlMessage as StarlightControlMessage, Starlight, StateChange as StarlightStateChange,
+};
 use self::swarmolon::{
     ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange, Swarmolon,
 };
@@ -72,6 +75,7 @@ pub mod lumasphere;
 pub mod radiance;
 pub mod rotosphere_q3;
 pub mod rush_wizard;
+pub mod starlight;
 pub mod swarmolon;
 pub mod venus;
 pub mod wizard_extreme;
@@ -182,6 +186,10 @@ pub trait EmitFixtureStateChange {
     fn emit_dimmer(&mut self, sc: DimmerStateChange) {
         self.emit(FixtureStateChange::Dimmer(sc));
     }
+
+    fn emit_starlight(&mut self, sc: StarlightStateChange) {
+        self.emit(FixtureStateChange::Starlight(sc));
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -203,6 +211,7 @@ pub enum FixtureStateChange {
     FreedomFries(FreedomFriesStateChange),
     Faderboard(FaderboardStateChange),
     RushWizard(RushWizardStateChange),
+    Starlight(StarlightStateChange),
     WizardExtreme(WizardExtremeStateChange),
     Color(ColorStateChange),
     Dimmer(DimmerControlMessage),
@@ -227,6 +236,7 @@ pub enum FixtureControlMessage {
     Aquarius(AquariusControlMessage),
     Radiance(RadianceControlMessage),
     Swarmolon(SwarmolonControlMessage),
+    Starlight(StarlightControlMessage),
     RotosphereQ3(RotosphereQ3ControlMessage),
     FreedomFries(FreedomFriesControlMessage),
     Faderboard(FaderboardControlMessage),
@@ -387,6 +397,7 @@ lazy_static! {
         RotosphereQ3::patcher(),
         RushWizard::patcher(),
         Swarmolon::patcher(),
+        Starlight::patcher(),
         Venus::patcher(),
         WizardExtreme::patcher(),
     ];

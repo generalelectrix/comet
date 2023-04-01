@@ -10,6 +10,7 @@ mod lumasphere;
 mod radiance;
 mod rotosphere_q3;
 mod rush_wizard;
+mod starlight;
 mod swarmolon;
 mod venus;
 mod wizard_extreme;
