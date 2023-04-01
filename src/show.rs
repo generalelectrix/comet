@@ -27,7 +27,7 @@ pub struct Show {
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
-const UPDATE_INTERVAL: Duration = Duration::from_millis(10);
+const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
     pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self, Box<dyn Error>> {
