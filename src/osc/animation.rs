@@ -4,7 +4,6 @@ use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
 
 use crate::fixture::{FixtureControlMessage};
-use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{HandleStateChange};
 use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
 

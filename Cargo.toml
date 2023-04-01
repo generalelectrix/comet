@@ -21,8 +21,8 @@ number = { git = "https://github.com/generalelectrix/number", branch = "main" }
 strum = "0.24"
 strum_macros = "0.24"
 regex = "1.6"
-tunnels = { path = "../tunnels/tunnels"}
-tunnels_lib = { path = "../tunnels/tunnels_lib"}
-# tunnels = { git = "https://github.com/generalelectrix/tunnels", branch = "main"}
-# tunnels_lib = { git = "https://github.com/generalelectrix/tunnels", branch = "main"}
+# tunnels = { path = "../tunnels/tunnels"}
+# tunnels_lib = { path = "../tunnels/tunnels_lib"}
+tunnels = { git = "https://github.com/generalelectrix/tunnels", branch = "main"}
+tunnels_lib = { git = "https://github.com/generalelectrix/tunnels", branch = "main"}
 zmq = "0.10.0"

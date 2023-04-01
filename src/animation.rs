@@ -6,9 +6,8 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
     fixture::{
-        animation_target::TargetedAnimation, EmitFixtureStateChange, EmitStateChange,
-        FixtureControlMessage, FixtureGroupKey, FixtureStateChange, GroupName, Patch, StateChange,
-        N_ANIM,
+        animation_target::TargetedAnimation, EmitStateChange, FixtureControlMessage,
+        FixtureGroupKey, FixtureStateChange, GroupName, Patch, StateChange, N_ANIM,
     },
     osc::OscController,
 };

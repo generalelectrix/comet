@@ -16,7 +16,7 @@ use crate::{
 use log::{error, warn};
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
-use simple_error::{bail};
+use simple_error::bail;
 
 pub struct Show {
     osc_controller: OscController,
@@ -63,6 +63,7 @@ impl Show {
             .iter()
             .filter(|g| g.animations().is_some())
             .collect::<Vec<_>>();
+        #[allow(clippy::comparison_chain)]
         if animated_groups.len() == 1 {
             // FIXME clean this up
             osc_controller.map_controls(&AnimationControls);
