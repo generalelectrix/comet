@@ -2,15 +2,18 @@
 
 use std::time::Duration;
 
+use tunnels::clock_server::StaticClockBank;
+
 use crate::fixture::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    EmitStateChange, FixtureStateChange, Group, StateChange as ShowStateChange,
+    EmitStateChange, FixtureStateChange, GroupName, StateChange as ShowStateChange,
 };
 
 #[derive(Debug, Default)]
 pub struct MasterControls {
     strobe: Strobe,
     autopilot: Autopilot,
+    pub clock_state: StaticClockBank,
 }
 
 impl MasterControls {
@@ -30,7 +33,7 @@ impl MasterControls {
         use StateChange::*;
         let mut emit_strobe = |ssc| {
             emitter.emit(ShowStateChange {
-                group: Group::none(),
+                group: GroupName::none(),
                 sc: FixtureStateChange::Master(Strobe(ssc)),
             });
         };
@@ -46,7 +49,7 @@ impl MasterControls {
             AutopilotSoundActive(v) => self.autopilot.sound_active = v,
         }
         emitter.emit(ShowStateChange {
-            group: Group::none(),
+            group: GroupName::none(),
             sc: FixtureStateChange::Master(msg),
         });
     }

@@ -9,6 +9,7 @@ use crate::{master::MasterControls, util::unipolar_to_range};
 pub struct Dimmer(UnipolarFloat);
 
 impl PatchFixture for Dimmer {
+    const NAME: &'static str = "dimmer";
     fn channel_count(&self) -> usize {
         1
     }

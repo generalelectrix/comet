@@ -23,6 +23,7 @@ pub struct RushWizard {
 }
 
 impl PatchFixture for RushWizard {
+    const NAME: &'static str = "rush_wizard";
     fn channel_count(&self) -> usize {
         10
     }

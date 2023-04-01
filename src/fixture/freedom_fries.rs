@@ -25,6 +25,7 @@ pub struct FreedomFries {
 }
 
 impl PatchFixture for FreedomFries {
+    const NAME: &'static str = "freedom_fries";
     fn channel_count(&self) -> usize {
         8
     }

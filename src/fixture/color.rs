@@ -18,6 +18,7 @@ pub struct Color {
 }
 
 impl PatchFixture for Color {
+    const NAME: &'static str = "color";
     fn channel_count(&self) -> usize {
         self.model.channel_count()
     }

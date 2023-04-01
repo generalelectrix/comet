@@ -13,6 +13,7 @@ pub struct Faderboard {
 }
 
 impl PatchFixture for Faderboard {
+    const NAME: &'static str = "faderboard";
     fn channel_count(&self) -> usize {
         self.channel_count
     }

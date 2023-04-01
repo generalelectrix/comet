@@ -1,6 +1,7 @@
+use log::error;
 use rosc::{OscMessage, OscType};
-use simple_error::bail;
-use std::{error::Error, fmt::Display, str::FromStr};
+
+use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;
 
 use super::{control_message::OscControlMessage, OscError};
@@ -50,17 +51,17 @@ impl RadioButton {
     }
 
     /// Send OSC messages to set the current state of the button.
-    pub fn set<S>(&self, n: usize, send: &mut S) -> Result<(), Box<dyn Error>>
+    /// Error conditions are logged.
+    pub fn set<S>(&self, n: usize, send: &mut S)
     where
         S: FnMut(OscMessage),
     {
         if n >= self.n {
-            bail!(
+            error!(
                 "radio button index {} out of range for {}/{}",
-                n,
-                self.group,
-                self.control
+                n, self.group, self.control
             );
+            return;
         }
         for i in 0..self.n {
             let val = if i == n { 1.0 } else { 0.0 };
@@ -74,7 +75,6 @@ impl RadioButton {
                 args: vec![OscType::Float(val)],
             })
         }
-        Ok(())
     }
 }
 

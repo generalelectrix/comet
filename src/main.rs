@@ -1,3 +1,4 @@
+use clock_service::prompt_start_clock_service;
 use local_ip_address::local_ip;
 use log::info;
 use log::LevelFilter;
@@ -5,10 +6,13 @@ use rust_dmx::select_port;
 use simplelog::{Config as LogConfig, SimpleLogger};
 use std::env;
 use std::error::Error;
+use zmq::Context;
 
 use crate::config::Config;
 use crate::show::Show;
 
+mod animation;
+mod clock_service;
 mod config;
 mod dmx;
 mod fixture;
@@ -28,13 +32,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         LevelFilter::Info
     };
     SimpleLogger::init(log_level, LogConfig::default())?;
+    let clock_service = prompt_start_clock_service(Context::new())?;
 
     match local_ip() {
         Ok(ip) => info!("Listening for OSC at {}:{}.", ip, cfg.receive_port),
         Err(e) => info!("Unable to fetch local IP address: {}.", e),
     }
 
-    let mut show = Show::new(&cfg)?;
+    let mut show = Show::new(cfg, clock_service)?;
 
     let dmx_port = select_port()?;
 

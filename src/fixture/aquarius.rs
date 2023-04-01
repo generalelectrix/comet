@@ -12,6 +12,7 @@ pub struct Aquarius {
 }
 
 impl PatchFixture for Aquarius {
+    const NAME: &'static str = "aquarius";
     fn channel_count(&self) -> usize {
         2
     }

@@ -1,8 +1,11 @@
 //! Martin Wizard Extreme - the one that Goes Slow
 
-use log::error;
+use log::{debug, error};
 use number::{BipolarFloat, UnipolarFloat};
 
+use super::animation_target::{
+    AnimationTarget::WizardExtreme as WizardAnimation, TargetedAnimations,
+};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
 use crate::master::MasterControls;
@@ -23,6 +26,7 @@ pub struct WizardExtreme {
 }
 
 impl PatchFixture for WizardExtreme {
+    const NAME: &'static str = "wizard_extreme";
     fn channel_count(&self) -> usize {
         11
     }
@@ -52,39 +56,63 @@ impl WizardExtreme {
         };
         emitter.emit_wizard_extreme(sc);
     }
-
-    fn render_shutter(&self, master: &MasterControls) -> u8 {
-        if self.dimmer == UnipolarFloat::ZERO {
-            return 0;
-        }
-        let strobe_off = 0;
-        let strobe = self
-            .strobe
-            .render_range_with_master(master.strobe(), strobe_off, 189, 130);
-        if strobe == strobe_off {
-            unipolar_to_range(129, 1, self.dimmer)
-        } else {
-            strobe
-        }
-    }
 }
 
 impl Fixture for WizardExtreme {
-    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = self.render_shutter(master);
-        dmx_buf[1] = bipolar_to_split_range(self.reflector_rotation, 2, 63, 127, 66, 0);
+    fn default_animation_target(&self) -> Option<super::animation_target::AnimationTarget> {
+        Some(WizardAnimation(AnimationTarget::default()))
+    }
+
+    fn render_with_animations(
+        &self,
+        master: &MasterControls,
+        animations: &TargetedAnimations,
+        dmx_buf: &mut [u8],
+    ) {
+        debug!("{:?}", animations);
+        let mut drum_swivel = self.drum_swivel.val();
+        let mut drum_rotation = self.drum_rotation.val();
+        let mut reflector_rotation = self.reflector_rotation.val();
+        let mut dimmer = self.dimmer.val();
+        let mut twinkle_speed = self.twinkle_speed.val();
+        for (val, target) in animations {
+            if let WizardAnimation(t) = target {
+                use AnimationTarget::*;
+                match t {
+                    DrumSwivel => drum_swivel += val,
+                    DrumRotation => drum_rotation += val,
+                    ReflectorRotation => reflector_rotation += val,
+                    // FIXME: might want to do something nicer for unipolar values
+                    Dimmer => dimmer += val,
+                    TwinkleSpeed => twinkle_speed += val,
+                }
+            }
+        }
+        dmx_buf[0] = {
+            let strobe_off = 0;
+            let strobe =
+                self.strobe
+                    .render_range_with_master(master.strobe(), strobe_off, 189, 130);
+            if strobe == strobe_off {
+                unipolar_to_range(129, 1, UnipolarFloat::new(dimmer))
+            } else {
+                strobe
+            }
+        };
+        dmx_buf[1] =
+            bipolar_to_split_range(BipolarFloat::new(reflector_rotation), 2, 63, 127, 66, 0);
 
         dmx_buf[2] = if self.twinkle {
             // WHY did you put twinkle on the color wheel...
-            unipolar_to_range(176, 243, self.twinkle_speed)
+            unipolar_to_range(176, 243, UnipolarFloat::new(twinkle_speed))
         } else {
             self.color.as_dmx()
         };
         dmx_buf[3] = 0; // color shake
         dmx_buf[4] = (self.gobo as u8) * 12;
         dmx_buf[5] = 0; // gobo shake
-        dmx_buf[6] = bipolar_to_range(0, 127, self.drum_swivel);
-        dmx_buf[7] = bipolar_to_split_range(self.drum_rotation, 2, 63, 127, 66, 0);
+        dmx_buf[6] = bipolar_to_range(0, 127, BipolarFloat::new(drum_swivel));
+        dmx_buf[7] = bipolar_to_split_range(BipolarFloat::new(drum_rotation), 2, 63, 127, 66, 0);
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
         dmx_buf[10] = 0;
@@ -162,5 +190,23 @@ impl Color {
             Yellow => 72,
             Magenta => 84,
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, EnumString, EnumIter, EnumDisplay)]
+pub enum AnimationTarget {
+    #[default]
+    Dimmer,
+    TwinkleSpeed,
+    DrumRotation,
+    DrumSwivel,
+    ReflectorRotation,
+}
+
+impl AnimationTarget {
+    /// Return true if this target is unipolar instead of bipolar.
+    #[allow(unused)]
+    pub fn is_unipolar(&self) -> bool {
+        matches!(self, Self::Dimmer | Self::TwinkleSpeed)
     }
 }

@@ -46,6 +46,7 @@ pub struct Lumasphere {
 }
 
 impl PatchFixture for Lumasphere {
+    const NAME: &'static str = "lumasphere";
     fn channel_count(&self) -> usize {
         9
     }
