@@ -43,7 +43,7 @@ impl Fixture for Starlight {
         dmx_buf[2] = self
             .strobe
             .render_range_with_master(master_controls.strobe(), 0, 10, 255);
-        dmx_buf[3] = bipolar_to_range(128, 255, self.rotation);
+        dmx_buf[3] = bipolar_to_split_range(self.rotation, 0, 127, 255, 128, 0);
     }
 
     fn control(
