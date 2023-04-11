@@ -1,7 +1,6 @@
 //! Maintain UI state for animations.
-
-use simple_error::{bail, SimpleError};
-use std::{collections::HashMap, error::Error};
+use anyhow::{anyhow, bail, Result};
+use std::collections::HashMap;
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
@@ -24,7 +23,7 @@ impl AnimationUIState {
         &self,
         patch: &mut Patch,                  // FIXME this doesn't need to be mutable
         osc_controller: &mut OscController, // FIXME this ought to be generic
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<()> {
         let (ta, index) = self.current_animation_with_index(patch)?;
         ta.animation.emit_state(osc_controller);
         osc_controller.emit(StateChange {
@@ -44,7 +43,7 @@ impl AnimationUIState {
         msg: FixtureControlMessage,
         patch: &mut Patch,
         osc_controller: &mut OscController,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<()> {
         match msg {
             FixtureControlMessage::Animation(msg) => {
                 self.current_animation(patch)?
@@ -74,48 +73,44 @@ impl AnimationUIState {
     fn current_animation_with_index<'a>(
         &self,
         patch: &'a mut Patch,
-    ) -> Result<(&'a mut TargetedAnimation, usize), Box<dyn Error>> {
+    ) -> Result<(&'a mut TargetedAnimation, usize)> {
         let key = self.current_group()?;
         let animation_index = self.animation_index_for_key(key)?;
         let group = patch
             .group_mut(key)
-            .ok_or_else(|| SimpleError::new(format!("no group found for {key:?}")))?;
+            .ok_or_else(|| anyhow!("no group found for {key:?}"))?;
         Ok((
             &mut group
                 .animations_mut()
-                .ok_or_else(|| SimpleError::new(format!("{key:?} does not have animations")))?
-                [animation_index],
+                .ok_or_else(|| anyhow!("{key:?} does not have animations"))?[animation_index],
             animation_index,
         ))
     }
 
-    fn current_animation<'a>(
-        &self,
-        patch: &'a mut Patch,
-    ) -> Result<&'a mut TargetedAnimation, Box<dyn Error>> {
+    fn current_animation<'a>(&self, patch: &'a mut Patch) -> Result<&'a mut TargetedAnimation> {
         let (ta, _) = self.current_animation_with_index(patch)?;
         Ok(ta)
     }
 
-    fn current_group(&self) -> Result<&FixtureGroupKey, Box<dyn Error>> {
+    fn current_group(&self) -> Result<&FixtureGroupKey> {
         let group = self
             .current_group
             .as_ref()
-            .ok_or_else(|| SimpleError::new("no animation group is selected"))?;
+            .ok_or_else(|| anyhow!("no animation group is selected"))?;
         Ok(group)
     }
 
-    fn animation_index_for_key(&self, key: &FixtureGroupKey) -> Result<usize, Box<dyn Error>> {
+    fn animation_index_for_key(&self, key: &FixtureGroupKey) -> Result<usize> {
         let index = self
             .selected_animator_by_group
             .get(key)
             .cloned()
-            .ok_or_else(|| SimpleError::new(format!("no current animation set for {key:?}")))?;
+            .ok_or_else(|| anyhow!("no current animation set for {key:?}"))?;
         Ok(index)
     }
 
     /// Set the current animation for the current group to the provided value.
-    pub fn set_current_animation(&mut self, n: usize) -> Result<(), Box<dyn Error>> {
+    pub fn set_current_animation(&mut self, n: usize) -> Result<()> {
         if n > N_ANIM {
             bail!("animator index {n} out of range");
         }

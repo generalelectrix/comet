@@ -1,4 +1,4 @@
-use simple_error::bail;
+use anyhow::{anyhow, bail};
 
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::FixtureControlMessage;
@@ -16,7 +16,7 @@ impl MapControls for Faderboard {
                 .take(2)
                 .map(str::parse::<usize>)
                 .next()
-                .ok_or_else(|| "faderboard index missing".to_string())??;
+                .ok_or_else(|| anyhow!("faderboard index missing"))??;
             if index == 0 {
                 bail!("Faderboard index is 0.");
             }

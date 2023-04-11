@@ -1,6 +1,5 @@
 use std::{
     collections::HashSet,
-    error::Error,
     time::{Duration, Instant},
 };
 
@@ -13,10 +12,10 @@ use crate::{
     osc::{AnimationControls, AnimationTargetControls, OscController},
 };
 
+use anyhow::{bail, Result};
 use log::{error, warn};
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
-use simple_error::bail;
 
 pub struct Show {
     osc_controller: OscController,
@@ -30,7 +29,7 @@ const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
 const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
-    pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
         let mut patch = Patch::new();
 
         let mut osc_controller =
@@ -119,7 +118,7 @@ impl Show {
         }
     }
 
-    fn control(&mut self, timeout: Duration) -> Result<(), Box<dyn Error>> {
+    fn control(&mut self, timeout: Duration) -> Result<()> {
         let msg = match self.osc_controller.recv(timeout)? {
             Some(m) => m,
             None => {

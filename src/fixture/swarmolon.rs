@@ -1,6 +1,6 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 //! Also
-
+use anyhow::Result;
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
@@ -46,9 +46,7 @@ impl PatchFixture for Swarmolon {
         count
     }
 
-    fn new(
-        options: &std::collections::HashMap<String, String>,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    fn new(options: &std::collections::HashMap<String, String>) -> Result<Self> {
         let mut s = Self::default();
         if options.contains_key("quad_phase") {
             s.quad_phase_mindmeld = true;

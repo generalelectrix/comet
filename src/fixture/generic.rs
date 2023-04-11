@@ -1,5 +1,5 @@
 //! Control abstractions that are re-usable across fixture types.
-
+use anyhow::{anyhow, Result};
 use std::time::Duration;
 
 use number::UnipolarFloat;
@@ -87,18 +87,18 @@ pub struct Timer {
     state_age: Duration,
 }
 
-fn parse_seconds(options: &Options, key: &str) -> Result<Duration, String> {
+fn parse_seconds(options: &Options, key: &str) -> Result<Duration> {
     let v = options
         .get(key)
-        .ok_or_else(|| format!("missing options key \"{}\"", key))?;
+        .ok_or_else(|| anyhow!("missing options key \"{}\"", key))?;
     let secs = v
         .parse::<u64>()
-        .map_err(|e| format!("{}: expected integer seconds: {}", key, e))?;
+        .map_err(|e| anyhow!("{}: expected integer seconds: {}", key, e))?;
     Ok(Duration::from_secs(secs))
 }
 
 impl Timer {
-    pub fn from_options(options: &Options) -> Result<Self, String> {
+    pub fn from_options(options: &Options) -> Result<Self> {
         let on = parse_seconds(options, "timer_on")?;
         let off = parse_seconds(options, "timer_off")?;
         Ok(Self::new(on, off))

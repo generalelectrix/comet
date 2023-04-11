@@ -1,13 +1,12 @@
 //! Interact with a remote clock service.
 use std::{
-    error::Error,
     sync::{Arc, Mutex},
     thread,
     time::Duration,
 };
 
+use anyhow::{bail, Result};
 use log::error;
-use simple_error::bail;
 use tunnels::clock_server::{clock_subscriber, StaticClockBank};
 use tunnels_lib::prompt::{prompt_bool, prompt_parse};
 use zmq::Context;
@@ -25,7 +24,7 @@ impl ClockService {
 /// If the user requests to start the service, browse briefly for services,
 /// and present options.  Connect to the service and return a mutex that wraps
 /// the clock state shared with the receiver thread.
-pub fn prompt_start_clock_service(ctx: Context) -> Result<Option<ClockService>, Box<dyn Error>> {
+pub fn prompt_start_clock_service(ctx: Context) -> Result<Option<ClockService>> {
     if !prompt_bool("Run clock service?")? {
         return Ok(None);
     }

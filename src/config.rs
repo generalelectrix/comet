@@ -1,8 +1,8 @@
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs::File;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub struct AnimationGroup {
 }
 
 impl Config {
-    pub fn load(path: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn load(path: &str) -> Result<Self> {
         let config_file = File::open(path)?;
         let cfg: Config = serde_yaml::from_reader(config_file)?;
         Ok(cfg)

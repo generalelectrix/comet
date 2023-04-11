@@ -17,20 +17,20 @@ use crate::fixture::{
     ControlMessage, EmitStateChange, FixtureControlMessage, FixtureStateChange, StateChange,
 };
 use crate::master::MasterControls;
+use anyhow::bail;
+use anyhow::Result;
 use control_message::OscControlMessage;
 use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
-use simple_error::bail;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt::Display;
 use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
+use thiserror::Error;
 
 pub use self::animation::AnimationControls;
 pub use self::animation_target::AnimationTargetControls;
@@ -66,7 +66,7 @@ pub struct OscController {
 }
 
 impl OscController {
-    pub fn new(receive_port: u16, send_host: &str, send_port: u16) -> Result<Self, Box<dyn Error>> {
+    pub fn new(receive_port: u16, send_host: &str, send_port: u16) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
         let send_adr = SocketAddr::from_str(&format!("{}:{}", send_host, send_port))?;
         let control_recv = start_listener(recv_addr)?;
@@ -78,7 +78,7 @@ impl OscController {
         })
     }
 
-    pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>, Box<dyn Error>> {
+    pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>> {
         let msg = match self.recv.recv_timeout(timeout) {
             Ok(msg) => msg,
             Err(RecvTimeoutError::Timeout) => {
@@ -140,8 +140,7 @@ impl EmitStateChange for OscController {
     }
 }
 
-type ControlMessageCreator<C> =
-    Box<dyn Fn(&OscControlMessage) -> Result<Option<C>, Box<dyn Error>>>;
+type ControlMessageCreator<C> = Box<dyn Fn(&OscControlMessage) -> Result<Option<C>>>;
 
 pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
 
@@ -150,7 +149,7 @@ impl<C> ControlMap<C> {
         Self(HashMap::new())
     }
 
-    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<C>, Box<dyn Error>> {
+    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<C>> {
         let key = msg.key();
         match self.0.get(key) {
             None => {
@@ -162,7 +161,7 @@ impl<C> ControlMap<C> {
 
     pub fn add<F>(&mut self, group: &str, control: &str, handler: F)
     where
-        F: Fn(&OscControlMessage) -> Result<Option<C>, Box<dyn Error>> + 'static,
+        F: Fn(&OscControlMessage) -> Result<Option<C>> + 'static,
     {
         let key = format!("/{}/{}", group, control);
         match self.0.entry(key) {
@@ -258,13 +257,13 @@ impl<C> ControlMap<C> {
 
 /// Forward OSC messages to the provided sender.
 /// Spawns a new thread to handle listening for messages.
-fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>, Box<dyn Error>> {
+fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
     let (send, recv) = unbounded();
     let socket = UdpSocket::bind(addr)?;
 
     let mut buf = [0u8; rosc::decoder::MTU];
 
-    let mut recv_packet = move || -> Result<OscPacket, Box<dyn Error>> {
+    let mut recv_packet = move || -> Result<OscPacket> {
         let size = socket.recv(&mut buf)?;
         let (_, packet) = rosc::decoder::decode_udp(&buf[..size])?;
         Ok(packet)
@@ -287,11 +286,11 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>, Box<d
 
 /// Drain a control channel of OSC messages and send them.
 /// Assumes we only have one controller.
-fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>, Box<dyn Error>> {
+fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
     let (send, recv) = unbounded();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
 
-    let send_packet = move |msg| -> Result<(), Box<dyn Error>> {
+    let send_packet = move |msg| -> Result<()> {
         let msg_buf = encoder::encode(&OscPacket::Message(msg))?;
         socket.send_to(&msg_buf, addr)?;
         Ok(())
@@ -332,19 +331,12 @@ fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
+#[error("{addr}: {msg}")]
 pub struct OscError {
     pub addr: String,
     pub msg: String,
 }
-
-impl Display for OscError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self.addr, self.msg)
-    }
-}
-
-impl Error for OscError {}
 
 /// Get a single float argument from the provided OSC message.
 fn get_float(v: &OscControlMessage) -> Result<f64, OscError> {

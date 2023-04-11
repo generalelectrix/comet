@@ -4,8 +4,7 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::starlight::{Starlight, StateChange};
 use crate::fixture::FixtureControlMessage;
 use crate::osc::fixture::generic::map_strobe;
-use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::HandleStateChange;
 use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 

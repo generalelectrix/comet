@@ -1,7 +1,7 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
-
-use std::{collections::HashMap, error::Error, time::Duration};
+use anyhow::Result;
+use std::{collections::HashMap, time::Duration};
 
 use number::UnipolarFloat;
 
@@ -21,7 +21,7 @@ impl PatchFixture for Radiance {
         2
     }
 
-    fn new(options: &HashMap<String, String>) -> Result<Self, Box<dyn Error>> {
+    fn new(options: &HashMap<String, String>) -> Result<Self> {
         let mut s = Self::default();
         if options.contains_key("use_timer") {
             s.timer = Some(Timer::from_options(options)?);

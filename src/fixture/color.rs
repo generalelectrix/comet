@@ -1,9 +1,9 @@
 //! Flexible control profile for a single-color fixture.
 
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
+use anyhow::{bail, Result};
 use number::{Phase, UnipolarFloat};
-use simple_error::bail;
 
 use crate::master::MasterControls;
 
@@ -23,7 +23,7 @@ impl PatchFixture for Color {
         self.model.channel_count()
     }
 
-    fn new(options: &HashMap<String, String>) -> Result<Self, Box<dyn Error>> {
+    fn new(options: &HashMap<String, String>) -> Result<Self> {
         let mut c = Self::default();
         if let Some(kind) = options.get("kind") {
             c.model = match kind.to_lowercase().as_str() {

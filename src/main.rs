@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clock_service::prompt_start_clock_service;
 use local_ip_address::local_ip;
 use log::info;
@@ -5,7 +6,6 @@ use log::LevelFilter;
 use rust_dmx::select_port;
 use simplelog::{Config as LogConfig, SimpleLogger};
 use std::env;
-use std::error::Error;
 use zmq::Context;
 
 use crate::config::Config;
@@ -21,7 +21,7 @@ mod osc;
 mod show;
 mod util;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     let config_path = env::args()
         .nth(1)
         .expect("Provide config path as first arg.");

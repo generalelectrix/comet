@@ -7,8 +7,8 @@ use super::{
     EmitFixtureStateChange as EmitShowStateChange, Fixture, FixtureControlMessage, PatchFixture,
 };
 use crate::master::MasterControls;
+use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
-use crate::util::{bipolar_to_range, bipolar_to_split_range};
 
 #[derive(Default, Debug)]
 pub struct Starlight {

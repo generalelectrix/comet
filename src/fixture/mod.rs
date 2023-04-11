@@ -1,14 +1,14 @@
+use anyhow::Result;
 use std::collections::HashMap;
-use std::error::Error;
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use std::time::Duration;
 
+use anyhow::bail;
 use lazy_static::lazy_static;
 use log::{debug, info};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
-use simple_error::bail;
 
 use tunnels::animation::{
     ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
@@ -411,11 +411,11 @@ impl Patch {
         }
     }
 
-    pub fn patch(&mut self, cfg: FixtureConfig) -> Result<(), Box<dyn Error>> {
+    pub fn patch(&mut self, cfg: FixtureConfig) -> Result<()> {
         let mut candidates = PATCHERS
             .iter()
             .flat_map(|p| p(&cfg))
-            .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+            .collect::<Result<Vec<_>>>()?;
         let candidate = match candidates.len() {
             0 => bail!("unable to patch {cfg:?}"),
             1 => candidates.pop().unwrap(),
@@ -471,7 +471,7 @@ impl Patch {
         &self,
         candidate: &PatchCandidate,
         cfg: &FixtureConfig,
-    ) -> Result<UsedAddrs, Box<dyn Error>> {
+    ) -> Result<UsedAddrs> {
         let mut used_addrs = self.used_addrs.clone();
         let dmx_index = cfg.addr.dmx_index();
         for addr in dmx_index..dmx_index + candidate.channel_count {
@@ -513,8 +513,7 @@ pub struct PatchCandidate {
     fixture: Box<dyn Fixture>,
 }
 
-pub type Patcher =
-    Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate, Box<dyn Error>>> + Sync>;
+pub type Patcher = Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate>> + Sync>;
 
 /// Fixture constructor trait to handle patching fixtures.
 pub trait PatchFixture: Fixture + Default + 'static {
@@ -543,7 +542,7 @@ pub trait PatchFixture: Fixture + Default + 'static {
     /// Create a new instance of the fixture from the provided options.
     /// Non-customizable fixtures will fall back to using default.
     /// This can be overridden for fixtures that are customizable.
-    fn new(_options: &Options) -> Result<Self, Box<dyn Error>> {
+    fn new(_options: &Options) -> Result<Self> {
         Ok(Self::default())
     }
 }
