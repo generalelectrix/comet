@@ -4,7 +4,8 @@ use std::{collections::VecDeque, time::Duration};
 
 use super::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};
 
@@ -76,17 +77,18 @@ impl Comet {
     }
 }
 
-impl Fixture for Comet {
-    fn update(&mut self, delta_t: Duration) {
-        self.trigger_state.update(delta_t);
-    }
-
+impl NonAnimatedFixture for Comet {
     fn render(&self, _master_controls: &MasterControls, dmx_univ: &mut [u8]) {
         dmx_univ[0] = self.render_shutter();
         dmx_univ[1] = Self::GAME_DMX_VALS[self.macro_pattern];
         dmx_univ[2] = self.render_mspeed();
         dmx_univ[3] = self.trigger_state.render();
         dmx_univ[4] = if self.reset { 255 } else { 0 };
+    }
+}
+impl ControllableFixture for Comet {
+    fn update(&mut self, delta_t: Duration) {
+        self.trigger_state.update(delta_t);
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {

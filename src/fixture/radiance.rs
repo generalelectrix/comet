@@ -5,7 +5,10 @@ use std::{collections::HashMap, time::Duration};
 
 use number::UnipolarFloat;
 
-use super::{generic::Timer, EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    generic::Timer, ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -41,12 +44,7 @@ impl Radiance {
     }
 }
 
-impl Fixture for Radiance {
-    fn update(&mut self, delta_t: Duration) {
-        if let Some(timer) = self.timer.as_mut() {
-            timer.update(delta_t);
-        }
-    }
+impl NonAnimatedFixture for Radiance {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         if let Some(timer) = self.timer.as_ref() {
             if !timer.is_on() {
@@ -57,6 +55,14 @@ impl Fixture for Radiance {
         }
         dmx_buf[0] = unipolar_to_range(0, 255, self.haze);
         dmx_buf[1] = unipolar_to_range(0, 255, self.fan);
+    }
+}
+
+impl ControllableFixture for Radiance {
+    fn update(&mut self, delta_t: Duration) {
+        if let Some(timer) = self.timer.as_mut() {
+            timer.update(delta_t);
+        }
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {

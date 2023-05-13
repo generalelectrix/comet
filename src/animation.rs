@@ -5,8 +5,9 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
     fixture::{
-        animation_target::TargetedAnimation, EmitStateChange, FixtureControlMessage,
-        FixtureGroupKey, FixtureStateChange, GroupName, Patch, StateChange, N_ANIM,
+        animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
+        EmitStateChange, FixtureGroupKey, FixtureStateChange, GroupName, Patch,
+        StateChange as FixtureStateChangeWithGroup, N_ANIM,
     },
     osc::OscController,
 };
@@ -26,11 +27,11 @@ impl AnimationUIState {
     ) -> Result<()> {
         let (ta, index) = self.current_animation_with_index(patch)?;
         ta.animation.emit_state(osc_controller);
-        osc_controller.emit(StateChange {
+        osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
             sc: FixtureStateChange::AnimationTarget(ta.target),
         });
-        osc_controller.emit(StateChange {
+        osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
             sc: FixtureStateChange::AnimationSelect(index),
         });
@@ -40,40 +41,37 @@ impl AnimationUIState {
     /// Handle a control message.
     pub fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: ControlMessage,
         patch: &mut Patch,
         osc_controller: &mut OscController,
-    ) -> Result<()> {
+    ) {
         match msg {
-            FixtureControlMessage::Animation(msg) => {
+            ControlMessage::Animation(msg) => {
                 self.current_animation(patch)?
                     .animation
                     .control(msg, osc_controller);
             }
-            FixtureControlMessage::AnimationTarget(msg) => {
+            ControlMessage::Target(msg) => {
                 self.current_animation(patch)?.target = msg;
-                osc_controller.emit(StateChange {
+                osc_controller.emit(FixtureStateChangeWithGroup {
                     group: GroupName::none(),
                     sc: crate::fixture::FixtureStateChange::AnimationTarget(msg),
                 });
             }
-            FixtureControlMessage::AnimationSelect(n) => {
+            ControlMessage::Select(n) => {
                 if self.animation_index_for_key(self.current_group()?)? == n {
-                    return Ok(());
+                    return;
                 }
                 self.set_current_animation(n)?;
                 self.emit_state(patch, osc_controller)?;
             }
-            _ => bail!("FIXME make this impossible: unexpected control message passed to animation UI: {msg:?}")
         }
-
-        Ok(())
     }
 
     fn current_animation_with_index<'a>(
         &self,
         patch: &'a mut Patch,
-    ) -> Result<(&'a mut TargetedAnimation, usize)> {
+    ) -> Result<(&mut dyn ControllableTargetedAnimation, usize)> {
         let key = self.current_group()?;
         let animation_index = self.animation_index_for_key(key)?;
         let group = patch
@@ -87,7 +85,10 @@ impl AnimationUIState {
         ))
     }
 
-    fn current_animation<'a>(&self, patch: &'a mut Patch) -> Result<&'a mut TargetedAnimation> {
+    fn current_animation<'a>(
+        &self,
+        patch: &'a mut Patch,
+    ) -> Result<&mut dyn ControllableTargetedAnimation> {
         let (ta, _) = self.current_animation_with_index(patch)?;
         Ok(ta)
     }
@@ -129,9 +130,21 @@ impl AnimationUIState {
 
 impl EmitAnimationStateChange for OscController {
     fn emit_animation_state_change(&mut self, sc: tunnels::animation::StateChange) {
-        self.emit(StateChange {
+        self.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
             sc: FixtureStateChange::Animation(sc),
         });
     }
+}
+
+pub enum ControlMessage {
+    Animation(tunnels::animation::ControlMessage),
+    Target(AnimationTargetIndex),
+    Select(usize),
+}
+
+pub enum StateChange {
+    Animation(tunnels::animation::StateChange),
+    Target(AnimationTargetIndex),
+    Select(usize),
 }

@@ -275,6 +275,8 @@ dependencies = [
  "lazy_static",
  "local-ip-address",
  "log 0.4.17",
+ "num-derive",
+ "num-traits",
  "number",
  "regex",
  "rosc",

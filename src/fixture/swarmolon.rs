@@ -5,7 +5,10 @@ use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::master::{Autopilot, MasterControls};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
@@ -116,7 +119,7 @@ impl Swarmolon {
     }
 }
 
-impl Fixture for Swarmolon {
+impl NonAnimatedFixture for Swarmolon {
     fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
         if master.autopilot().on() {
             self.render_autopilot(master.autopilot(), dmx_buf);
@@ -186,7 +189,9 @@ impl Fixture for Swarmolon {
             slice[4] = 0;
         }
     }
+}
 
+impl ControllableFixture for Swarmolon {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);

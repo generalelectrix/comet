@@ -2,7 +2,10 @@
 
 use number::BipolarFloat;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -29,12 +32,14 @@ impl Aquarius {
     }
 }
 
-impl Fixture for Aquarius {
+impl NonAnimatedFixture for Aquarius {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = bipolar_to_split_range(self.rotation, 130, 8, 132, 255, 0);
         dmx_buf[1] = if self.lamp_on { 255 } else { 0 };
     }
+}
 
+impl ControllableFixture for Aquarius {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_aquarius(LampOn(self.lamp_on));

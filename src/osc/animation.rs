@@ -1,10 +1,8 @@
-
 use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
-
-use crate::fixture::{FixtureControlMessage};
-use crate::osc::{HandleStateChange};
+use crate::fixture::FixtureControlMessage;
+use crate::osc::HandleStateChange;
 use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};

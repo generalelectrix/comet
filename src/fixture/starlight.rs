@@ -4,7 +4,8 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    EmitFixtureStateChange as EmitShowStateChange, Fixture, FixtureControlMessage, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange as EmitShowStateChange, Fixture,
+    FixtureControlMessage, NonAnimatedFixture, PatchFixture,
 };
 use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;
@@ -36,7 +37,7 @@ impl Starlight {
     }
 }
 
-impl Fixture for Starlight {
+impl NonAnimatedFixture for Starlight {
     fn render(&self, master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = 255; // DMX mode
         dmx_buf[1] = unipolar_to_range(0, 255, self.dimmer);
@@ -45,7 +46,9 @@ impl Fixture for Starlight {
             .render_range_with_master(master_controls.strobe(), 0, 10, 255);
         dmx_buf[3] = bipolar_to_split_range(self.rotation, 0, 127, 255, 128, 0);
     }
+}
 
+impl ControllableFixture for Starlight {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
