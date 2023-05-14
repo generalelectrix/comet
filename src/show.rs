@@ -9,7 +9,7 @@ use crate::{
     config::Config,
     fixture::{FixtureControlMessage, Patch},
     master::MasterControls,
-    osc::{AnimationControls, AnimationTargetControls, OscController},
+    osc::{AnimationControls, OscController},
 };
 
 use anyhow::{bail, Result};
@@ -63,7 +63,6 @@ impl Show {
         if animated_groups.len() == 1 {
             // FIXME clean this up
             osc_controller.map_controls(&AnimationControls);
-            osc_controller.map_controls(&AnimationTargetControls);
             let key = animated_groups[0].key().clone();
             animation_ui_state.current_group = Some(key.clone());
             animation_ui_state.selected_animator_by_group.insert(key, 0);

@@ -33,11 +33,9 @@ use std::time::Duration;
 use thiserror::Error;
 
 pub use self::animation::AnimationControls;
-pub use self::animation_target::AnimationTargetControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;
-mod animation_target;
 mod control_message;
 mod fixture;
 mod label_array;
@@ -130,9 +128,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
-            FixtureStateChange::Animation(sc) => {
-                AnimationTargetControls::emit_state_change(sc, send)
-            }
+            FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
         }
     }
 }
@@ -301,7 +297,7 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
             }
             Ok(m) => m,
         };
-        info!("Sending OSC message: {:?}", msg);
+        // info!("Sending OSC message: {:?}", msg);
         if let Err(e) = send_packet(msg) {
             error!("OSC send error: {}.", e);
         }
