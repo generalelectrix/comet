@@ -1,4 +1,3 @@
-//! Roll up all possible fixture animation targets into one type.
 use std::fmt::Debug;
 use std::fmt::Display;
 
@@ -22,6 +21,7 @@ pub struct TargetedAnimation<T: AnimationTarget> {
     pub target: T,
 }
 
+/// An animation target should be an enum with a unit variant for each option.
 pub trait AnimationTarget:
     ToPrimitive + FromPrimitive + IntoEnumIterator + Display + Clone + Copy + Default + Debug
 {
@@ -32,11 +32,19 @@ impl<T> AnimationTarget for T where
 {
 }
 
+/// Interface to a targeted animation.
+/// Targets are handled as numeric indices.
 pub trait ControllableTargetedAnimation {
+    /// Get an immutable reference to the inner animation.
     fn anim(&self) -> &Animation;
+    /// Get a mutable reference to the inner animation.
     fn anim_mut(&mut self) -> &mut Animation;
+    /// Get the current animation target as an index.
     fn target(&self) -> AnimationTargetIndex;
+    /// Set the current animation target to the provided index.
+    /// Return an error if the index is invalid for this target type.
     fn set_target(&mut self, index: AnimationTargetIndex) -> Result<()>;
+    /// Return the labels for the animation target type.
     fn target_labels(&self) -> Vec<String>;
 }
 
