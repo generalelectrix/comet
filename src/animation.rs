@@ -56,7 +56,11 @@ impl AnimationUIState {
                     .control(msg, osc_controller);
             }
             ControlMessage::Target(msg) => {
-                self.current_animation(patch)?.set_target(msg)?;
+                let anim = self.current_animation(patch)?;
+                if anim.target() == msg {
+                    return Ok(());
+                }
+                anim.set_target(msg)?;
                 osc_controller.emit(FixtureStateChangeWithGroup {
                     group: GroupName::none(),
                     sc: crate::fixture::FixtureStateChange::Animation(StateChange::Target(msg)),

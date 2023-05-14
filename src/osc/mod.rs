@@ -241,13 +241,13 @@ impl<C> ControlMap<C> {
 
     pub fn add_radio_button_array<F>(&mut self, rb: RadioButton, process: F)
     where
-        F: Fn(usize) -> C + 'static,
+        F: Fn(usize) -> C + 'static + Copy,
     {
         self.add_fetch_process(
             rb.group,
             rb.control,
             move |m| rb.parse(m),
-            move |x| Some(process(x)),
+            move |x| x.map(process),
         )
     }
 }
@@ -301,6 +301,7 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
             }
             Ok(m) => m,
         };
+        info!("Sending OSC message: {:?}", msg);
         if let Err(e) = send_packet(msg) {
             error!("OSC send error: {}.", e);
         }
@@ -312,6 +313,7 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
 fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result<(), OscError> {
     match packet {
         OscPacket::Message(m) => {
+            // info!("Received OSC message: {:?}", m);
             // Set TouchOSC pages to send this message, and ignore them all here.
             if m.addr == "/page" {
                 return Ok(());

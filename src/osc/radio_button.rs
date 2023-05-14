@@ -23,7 +23,7 @@ pub struct RadioButton {
 
 impl RadioButton {
     /// Get a index from a collection of radio buttons, mapped to numeric addresses.
-    pub fn parse(&self, v: &OscControlMessage) -> Result<usize, OscError> {
+    pub fn parse(&self, v: &OscControlMessage) -> Result<Option<usize>, OscError> {
         let (x, y) = match parse_radio_button_indices(v.addr_payload()) {
             Ok(indices) => indices,
             Err(err) => {
@@ -47,7 +47,11 @@ impl RadioButton {
                 secondary
             )));
         }
-        Ok(primary)
+        // Ignore button release messages.
+        if v.arg == OscType::Float(0.0) {
+            return Ok(None);
+        }
+        Ok(Some(primary))
     }
 
     /// Send OSC messages to set the current state of the button.
