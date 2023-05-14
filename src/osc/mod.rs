@@ -9,6 +9,7 @@ use crate::fixture::lumasphere::Lumasphere;
 use crate::fixture::radiance::Radiance;
 use crate::fixture::rotosphere_q3::RotosphereQ3;
 use crate::fixture::rush_wizard::RushWizard;
+use crate::fixture::solar_system::SolarSystem;
 use crate::fixture::starlight::Starlight;
 use crate::fixture::swarmolon::Swarmolon;
 use crate::fixture::venus::Venus;
@@ -103,7 +104,7 @@ impl EmitStateChange for OscController {
         let send = &mut |mut msg: OscMessage| {
             if let Some(g) = sc.group.inner() {
                 // If a group is set, prepend the ID to the address.
-                // FIXME: would be nice to thing through this a bit and see if
+                // FIXME: would be nice to think through this a bit and see if
                 // we can avoid this allocation by somehow transparently threading
                 // the group into the send call via something like constructor
                 // injection.
@@ -125,6 +126,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Faderboard(sc) => Faderboard::emit_state_change(sc, send),
             FixtureStateChange::RushWizard(sc) => RushWizard::emit_state_change(sc, send),
             FixtureStateChange::WizardExtreme(sc) => WizardExtreme::emit_state_change(sc, send),
+            FixtureStateChange::SolarSystem(sc) => SolarSystem::emit_state_change(sc, send),
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
