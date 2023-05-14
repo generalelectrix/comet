@@ -1,6 +1,6 @@
 use rosc::OscMessage;
 
-use crate::animation::StateChange;
+use crate::animation::{ControlMessage, StateChange};
 use crate::fixture::animation_target::{AnimationTarget, AnimationTargetIndex};
 use crate::fixture::wizard_extreme::AnimationTarget as WizardExtremeAnimationTarget;
 use crate::fixture::{FixtureControlMessage, N_ANIM};
@@ -32,10 +32,14 @@ pub struct AnimationTargetControls;
 
 impl MapControls for AnimationTargetControls {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use FixtureControlMessage::{AnimationSelect, AnimationTarget};
+        use FixtureControlMessage::Animation;
 
-        map.add_radio_button_array(ANIMATION_TARGET_SELECT, AnimationTarget);
-        map.add_radio_button_array(ANIMATION_SELECT, AnimationSelect);
+        map.add_radio_button_array(ANIMATION_TARGET_SELECT, |msg| {
+            Animation(ControlMessage::Target(msg))
+        });
+        map.add_radio_button_array(ANIMATION_SELECT, |msg| {
+            Animation(ControlMessage::Select(msg))
+        });
     }
 }
 

@@ -129,11 +129,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
-            FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
-            FixtureStateChange::AnimationSelect(sc) => {
-                AnimationTargetControls::emit_state_change(sc, send)
-            }
-            FixtureStateChange::AnimationTarget(sc) => {
+            FixtureStateChange::Animation(sc) => {
                 AnimationTargetControls::emit_state_change(sc, send)
             }
         }

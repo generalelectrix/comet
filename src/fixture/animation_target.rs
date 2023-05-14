@@ -49,11 +49,11 @@ impl<T: AnimationTarget> ControllableTargetedAnimation for TargetedAnimation<T> 
     }
 
     fn target(&self) -> AnimationTargetIndex {
-        self.target.to_u8().unwrap()
+        self.target.to_usize().unwrap()
     }
 
     fn set_target(&mut self, index: AnimationTargetIndex) -> Result<()> {
-        let Some(target) = T::from_u8(index) else {
+        let Some(target) = T::from_usize(index) else {
             bail!("animation index {index} out of range for {}", std::any::type_name::<T>());
         };
         self.target = target;

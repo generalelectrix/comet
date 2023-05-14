@@ -1,6 +1,7 @@
 use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
+use crate::animation::ControlMessage::Animation as WrapAnimation;
 use crate::fixture::FixtureControlMessage;
 use crate::osc::HandleStateChange;
 use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
@@ -47,7 +48,7 @@ pub struct AnimationControls;
 impl MapControls for AnimationControls {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use ControlMessage::*;
-        use FixtureControlMessage::{Animation, Error as ControlError};
+        use FixtureControlMessage::{Animation as FixtureAnimation, Error as ControlError};
         use StateChange::*;
         map.add_radio_button_array(WAVEFORM_SELECT, |v| {
             match v {
@@ -57,28 +58,50 @@ impl MapControls for AnimationControls {
                 3 => Some(Sawtooth),
                 _ => None,
             }
-            .map(|waveform| Animation(Set(Waveform(waveform))))
+            .map(|waveform| FixtureAnimation(WrapAnimation(Set(Waveform(waveform)))))
             .unwrap_or_else(|| ControlError(format!("waveform select out of range: {v}")))
         });
 
-        map.add_bipolar(GROUP, SPEED, |v| Animation(Set(Speed(v))));
-        map.add_unipolar(GROUP, SIZE, |v| Animation(Set(Size(v))));
-        map.add_unipolar(GROUP, DUTY_CYCLE, |v| Animation(Set(DutyCycle(v))));
-        map.add_unipolar(GROUP, SMOOTHING, |v| Animation(Set(Smoothing(v))));
+        map.add_bipolar(GROUP, SPEED, |v| {
+            FixtureAnimation(WrapAnimation(Set(Speed(v))))
+        });
+        map.add_unipolar(GROUP, SIZE, |v| {
+            FixtureAnimation(WrapAnimation(Set(Size(v))))
+        });
+        map.add_unipolar(GROUP, DUTY_CYCLE, |v| {
+            FixtureAnimation(WrapAnimation(Set(DutyCycle(v))))
+        });
+        map.add_unipolar(GROUP, SMOOTHING, |v| {
+            FixtureAnimation(WrapAnimation(Set(Smoothing(v))))
+        });
 
-        map.add_radio_button_array(N_PERIODS_SELECT, |v| Animation(Set(NPeriods(v))));
+        map.add_radio_button_array(N_PERIODS_SELECT, |v| {
+            FixtureAnimation(WrapAnimation(Set(NPeriods(v))))
+        });
         map.add_radio_button_array(CLOCK_SOURCE, |v| {
             if v == 0 {
-                Animation(SetClockSource(None))
+                FixtureAnimation(WrapAnimation(SetClockSource(None)))
             } else {
-                Animation(SetClockSource(Some(ClockIdxExt(v - 1))))
+                FixtureAnimation(WrapAnimation(SetClockSource(Some(ClockIdxExt(v - 1)))))
             }
         });
-        map.add_trigger(GROUP, PULSE, Animation(TogglePulse));
-        map.add_trigger(GROUP, INVERT, Animation(ToggleInvert));
-        map.add_trigger(GROUP, STANDING, Animation(ToggleStanding));
-        map.add_trigger(GROUP, USE_AUDIO_SPEED, Animation(ToggleUseAudioSpeed));
-        map.add_trigger(GROUP, USE_AUDIO_SIZE, Animation(ToggleUseAudioSize));
+        map.add_trigger(GROUP, PULSE, FixtureAnimation(WrapAnimation(TogglePulse)));
+        map.add_trigger(GROUP, INVERT, FixtureAnimation(WrapAnimation(ToggleInvert)));
+        map.add_trigger(
+            GROUP,
+            STANDING,
+            FixtureAnimation(WrapAnimation(ToggleStanding)),
+        );
+        map.add_trigger(
+            GROUP,
+            USE_AUDIO_SPEED,
+            FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)),
+        );
+        map.add_trigger(
+            GROUP,
+            USE_AUDIO_SIZE,
+            FixtureAnimation(WrapAnimation(ToggleUseAudioSize)),
+        );
     }
 }
 

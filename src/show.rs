@@ -7,7 +7,7 @@ use crate::{
     animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
-    fixture::{FixtureControlMessage, Patch},
+    fixture::{FixtureControlMessage, FixtureGroup, Patch},
     master::MasterControls,
     osc::{AnimationControls, AnimationTargetControls, OscController},
 };
@@ -58,10 +58,7 @@ impl Show {
         // Configure animation controls.
         // For now, assert that we only have one animatable group.
         let mut animation_ui_state = AnimationUIState::default();
-        let animated_groups = patch
-            .iter()
-            .filter(|g| g.animations().is_some())
-            .collect::<Vec<_>>();
+        let animated_groups: Vec<_> = patch.iter().filter(|g| g.is_animated()).collect();
         #[allow(clippy::comparison_chain)]
         if animated_groups.len() == 1 {
             // FIXME clean this up
@@ -131,17 +128,10 @@ impl Show {
             return Ok(());
         }
 
-        if matches!(
-            msg.msg,
-            FixtureControlMessage::Animation(_)
-                | FixtureControlMessage::AnimationSelect(_)
-                | FixtureControlMessage::AnimationTarget(_)
-        ) {
-            return self.animation_ui_state.control(
-                msg.msg,
-                &mut self.patch,
-                &mut self.osc_controller,
-            );
+        if let FixtureControlMessage::Animation(msg) = msg.msg {
+            return self
+                .animation_ui_state
+                .control(msg, &mut self.patch, &mut self.osc_controller);
         }
 
         // "Option dance" to pass ownership into/back out of handlers.

@@ -10,10 +10,6 @@ use log::{debug, info};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
-use tunnels::animation::{
-    ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
-};
-
 use self::animation_target::{
     AnimationTargetIndex, ControllableTargetedAnimation, TargetedAnimation, TargetedAnimations,
 };
@@ -56,6 +52,9 @@ use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusSta
 use self::wizard_extreme::{
     ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
     WizardExtreme,
+};
+use crate::animation::{
+    ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
 };
 use crate::config::{FixtureConfig, Options};
 use crate::fixture::animation_target::AnimationTarget;
@@ -219,8 +218,6 @@ pub enum FixtureStateChange {
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
     Animation(AnimationStateChange),
-    AnimationTarget(usize),
-    AnimationSelect(usize),
 }
 
 #[derive(Clone, Debug)]
@@ -248,8 +245,6 @@ pub enum FixtureControlMessage {
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
     Animation(AnimationControlMessage),
-    AnimationTarget(usize),
-    AnimationSelect(usize),
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
 }
@@ -286,6 +281,10 @@ impl FixtureGroup {
         index: usize,
     ) -> Option<&mut dyn ControllableTargetedAnimation> {
         self.fixture.get_animation(index)
+    }
+
+    pub fn is_animated(&self) -> bool {
+        self.fixture.is_animated()
     }
 
     /// Emit the current state of all controls.
@@ -596,6 +595,9 @@ pub trait Fixture: ControllableFixture + Debug {
     /// An animation phase offset is provided.
     fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
 
+    /// Return true if this fixture has animations.
+    fn is_animated(&self) -> bool;
+
     /// Get the animation with the provided index.
     fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation>;
 }
@@ -606,6 +608,10 @@ where
 {
     fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]) {
         self.render(master_controls, dmx_buffer)
+    }
+
+    fn is_animated(&self) -> bool {
+        false
     }
 
     fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
@@ -662,6 +668,10 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
         }
         self.fixture
             .render_with_animations(master_controls, &animation_vals, dmx_buffer);
+    }
+
+    fn is_animated(&self) -> bool {
+        true
     }
 
     fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
