@@ -8,7 +8,7 @@ use super::animation_target::TargetedAnimations;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture, PatchFixture,
+    PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};

@@ -2,10 +2,8 @@ use rosc::OscMessage;
 
 use crate::animation::{ControlMessage, StateChange};
 
-
 use crate::fixture::{FixtureControlMessage, N_ANIM};
-use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{HandleStateChange};
+use crate::osc::HandleStateChange;
 use crate::osc::{ControlMap, MapControls, RadioButton};
 
 use super::AnimationControls;
