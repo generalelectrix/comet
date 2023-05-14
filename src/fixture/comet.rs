@@ -4,8 +4,8 @@ use std::{collections::VecDeque, time::Duration};
 
 use super::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};
 
