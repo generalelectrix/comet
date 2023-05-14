@@ -42,6 +42,9 @@ use self::rotosphere_q3::{
 use self::rush_wizard::{
     ControlMessage as RushWizardControlMessage, RushWizard, StateChange as RushWizardStateChange,
 };
+use self::solar_system::{
+    ControlMessage as SolarSystemControlMessage, SolarSystem, StateChange as SolarSystemStateChange,
+};
 use self::starlight::{
     ControlMessage as StarlightControlMessage, Starlight, StateChange as StarlightStateChange,
 };
@@ -76,6 +79,7 @@ pub mod lumasphere;
 pub mod radiance;
 pub mod rotosphere_q3;
 pub mod rush_wizard;
+pub mod solar_system;
 pub mod starlight;
 pub mod swarmolon;
 pub mod venus;
@@ -180,6 +184,10 @@ pub trait EmitFixtureStateChange {
         self.emit(FixtureStateChange::WizardExtreme(sc));
     }
 
+    fn emit_solar_system(&mut self, sc: SolarSystemStateChange) {
+        self.emit(FixtureStateChange::SolarSystem(sc));
+    }
+
     fn emit_color(&mut self, sc: ColorStateChange) {
         self.emit(FixtureStateChange::Color(sc));
     }
@@ -214,6 +222,7 @@ pub enum FixtureStateChange {
     RushWizard(RushWizardStateChange),
     Starlight(StarlightStateChange),
     WizardExtreme(WizardExtremeStateChange),
+    SolarSystem(SolarSystemStateChange),
     Color(ColorStateChange),
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
@@ -241,6 +250,7 @@ pub enum FixtureControlMessage {
     Faderboard(FaderboardControlMessage),
     RushWizard(RushWizardControlMessage),
     WizardExtreme(WizardExtremeControlMessage),
+    SolarSystem(SolarSystemControlMessage),
     Color(ColorControlMessage),
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
@@ -376,6 +386,7 @@ lazy_static! {
         Radiance::patcher(),
         RotosphereQ3::patcher(),
         RushWizard::patcher(),
+        SolarSystem::patcher(),
         Swarmolon::patcher(),
         Starlight::patcher(),
         Venus::patcher(),

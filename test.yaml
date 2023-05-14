@@ -3,5 +3,6 @@ send_host: 192.168.1.248
 send_port: 9000
 debug: True
 fixtures:
-  - name: starlight
+  - name: solar_system
     addr: 1
+    animations: True
