@@ -105,8 +105,8 @@ impl AnimatedFixture for SolarSystem {
         }
         dmx_buf[0] = render_gobo_select(self.front_gobo);
         render_rotation(BipolarFloat::new(front_rotation), &mut dmx_buf[1..3]);
-        dmx_buf[3] = render_gobo_select(self.front_gobo);
-        render_rotation(BipolarFloat::new(front_rotation), &mut dmx_buf[4..6]);
+        dmx_buf[3] = render_gobo_select(self.rear_gobo);
+        render_rotation(BipolarFloat::new(rear_rotation), &mut dmx_buf[4..6]);
         dmx_buf[6] = if !self.shutter_open {
             0
         } else if self.auto_shutter {

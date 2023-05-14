@@ -386,6 +386,7 @@ lazy_static! {
         Radiance::patcher(),
         RotosphereQ3::patcher(),
         RushWizard::patcher(),
+        SolarSystem::patcher(),
         Swarmolon::patcher(),
         Starlight::patcher(),
         Venus::patcher(),
