@@ -1,13 +1,15 @@
 //! Martin Wizard Extreme - the one that Goes Slow
 
 use log::{debug, error};
+use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::animation_target::{
-    AnimationTarget::WizardExtreme as WizardAnimation, TargetedAnimations,
-};
+use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
+};
 use crate::master::MasterControls;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -25,7 +27,7 @@ pub struct WizardExtreme {
     reflector_rotation: BipolarFloat,
 }
 
-impl PatchFixture for WizardExtreme {
+impl PatchAnimatedFixture for WizardExtreme {
     const NAME: &'static str = "wizard_extreme";
     fn channel_count(&self) -> usize {
         11
@@ -58,34 +60,62 @@ impl WizardExtreme {
     }
 }
 
-impl Fixture for WizardExtreme {
-    fn default_animation_target(&self) -> Option<super::animation_target::AnimationTarget> {
-        Some(WizardAnimation(AnimationTarget::default()))
+impl ControllableFixture for WizardExtreme {
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+        use StateChange::*;
+        emitter.emit_wizard_extreme(Dimmer(self.dimmer));
+        let mut emit_strobe = |ssc| {
+            emitter.emit_wizard_extreme(Strobe(ssc));
+        };
+        self.strobe.emit_state(&mut emit_strobe);
+        emitter.emit_wizard_extreme(Color(self.color));
+        emitter.emit_wizard_extreme(Twinkle(self.twinkle));
+        emitter.emit_wizard_extreme(TwinkleSpeed(self.twinkle_speed));
+        emitter.emit_wizard_extreme(Gobo(self.gobo));
+        emitter.emit_wizard_extreme(DrumRotation(self.drum_rotation));
+        emitter.emit_wizard_extreme(DrumSwivel(self.drum_swivel));
+        emitter.emit_wizard_extreme(ReflectorRotation(self.reflector_rotation));
     }
+
+    fn control(
+        &mut self,
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
+        match msg {
+            FixtureControlMessage::WizardExtreme(msg) => {
+                self.handle_state_change(msg, emitter);
+                None
+            }
+            other => Some(other),
+        }
+    }
+}
+
+impl AnimatedFixture for WizardExtreme {
+    type Target = AnimationTarget;
 
     fn render_with_animations(
         &self,
         master: &MasterControls,
-        animations: &TargetedAnimations,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        debug!("{:?}", animations);
+        debug!("{:?}", animation_vals);
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
         let mut reflector_rotation = self.reflector_rotation.val();
         let mut dimmer = self.dimmer.val();
         let mut twinkle_speed = self.twinkle_speed.val();
-        for (val, target) in animations {
-            if let WizardAnimation(t) = target {
-                use AnimationTarget::*;
-                match t {
-                    DrumSwivel => drum_swivel += val,
-                    DrumRotation => drum_rotation += val,
-                    ReflectorRotation => reflector_rotation += val,
-                    // FIXME: might want to do something nicer for unipolar values
-                    Dimmer => dimmer += val,
-                    TwinkleSpeed => twinkle_speed += val,
-                }
+        for (val, target) in animation_vals {
+            use AnimationTarget::*;
+            match target {
+                DrumSwivel => drum_swivel += val,
+                DrumRotation => drum_rotation += val,
+                ReflectorRotation => reflector_rotation += val,
+                // FIXME: might want to do something nicer for unipolar values
+                Dimmer => dimmer += val,
+                TwinkleSpeed => twinkle_speed += val,
             }
         }
         dmx_buf[0] = {
@@ -116,36 +146,6 @@ impl Fixture for WizardExtreme {
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
         dmx_buf[10] = 0;
-    }
-
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
-        use StateChange::*;
-        emitter.emit_wizard_extreme(Dimmer(self.dimmer));
-        let mut emit_strobe = |ssc| {
-            emitter.emit_wizard_extreme(Strobe(ssc));
-        };
-        self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_wizard_extreme(Color(self.color));
-        emitter.emit_wizard_extreme(Twinkle(self.twinkle));
-        emitter.emit_wizard_extreme(TwinkleSpeed(self.twinkle_speed));
-        emitter.emit_wizard_extreme(Gobo(self.gobo));
-        emitter.emit_wizard_extreme(DrumRotation(self.drum_rotation));
-        emitter.emit_wizard_extreme(DrumSwivel(self.drum_swivel));
-        emitter.emit_wizard_extreme(ReflectorRotation(self.reflector_rotation));
-    }
-
-    fn control(
-        &mut self,
-        msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::WizardExtreme(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
     }
 }
 
@@ -193,7 +193,18 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, EnumString, EnumIter, EnumDisplay)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    EnumDisplay,
+    FromPrimitive,
+    ToPrimitive,
+)]
 pub enum AnimationTarget {
     #[default]
     Dimmer,

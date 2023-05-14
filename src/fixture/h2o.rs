@@ -2,8 +2,9 @@
 
 use number::{BipolarFloat, UnipolarFloat};
 
+use super::{ControllableFixture, NonAnimatedFixture};
 use super::{
-    EmitFixtureStateChange as EmitShowStateChange, Fixture, FixtureControlMessage, PatchFixture,
+    EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage, PatchFixture,
 };
 use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;
@@ -40,7 +41,7 @@ impl H2O {
     }
 }
 
-impl Fixture for H2O {
+impl NonAnimatedFixture for H2O {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
         dmx_buf[1] = bipolar_to_split_range(self.rotation, 120, 10, 135, 245, 0);
@@ -50,7 +51,9 @@ impl Fixture for H2O {
             dmx_buf[2] = self.fixed_color.as_dmx();
         }
     }
+}
 
+impl ControllableFixture for H2O {
     fn control(
         &mut self,
         msg: FixtureControlMessage,

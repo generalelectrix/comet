@@ -4,7 +4,10 @@ use std::time::Duration;
 
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::{
     master::MasterControls,
     util::{unipolar_to_range, RampingParameter},
@@ -71,14 +74,7 @@ impl Venus {
     }
 }
 
-impl Fixture for Venus {
-    fn update(&mut self, delta_t: Duration) {
-        self.base_rotation.update(delta_t);
-        self.cradle_motion.update(delta_t);
-        self.head_rotation.update(delta_t);
-        self.color_rotation.update(delta_t);
-    }
-
+impl NonAnimatedFixture for Venus {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         render_bipolar_to_dir_and_val(self.base_rotation.current(), &mut dmx_buf[0..2]);
         dmx_buf[2] = unipolar_to_range(0, 255, self.cradle_motion.current());
@@ -90,6 +86,15 @@ impl Fixture for Venus {
             &mut dmx_buf[5..7],
         );
         dmx_buf[7] = if self.lamp_on { 255 } else { 0 };
+    }
+}
+
+impl ControllableFixture for Venus {
+    fn update(&mut self, delta_t: Duration) {
+        self.base_rotation.update(delta_t);
+        self.cradle_motion.update(delta_t);
+        self.head_rotation.update(delta_t);
+        self.color_rotation.update(delta_t);
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {

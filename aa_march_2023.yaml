@@ -1,5 +1,5 @@
 receive_port: 8000
-send_host: 10.0.1.6
+send_host: 192.168.1.248
 send_port: 9000
 debug: False
 fixtures:

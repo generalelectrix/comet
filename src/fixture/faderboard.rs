@@ -3,7 +3,10 @@
 use log::error;
 use number::UnipolarFloat;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Debug)]
@@ -42,13 +45,15 @@ impl Faderboard {
     }
 }
 
-impl Fixture for Faderboard {
+impl NonAnimatedFixture for Faderboard {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         for (i, v) in self.vals.iter().enumerate() {
             dmx_buf[i] = unipolar_to_range(0, 255, *v);
         }
     }
+}
 
+impl ControllableFixture for Faderboard {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         for (i, v) in self.vals.iter().enumerate() {
             emitter.emit_faderboard((i, *v));

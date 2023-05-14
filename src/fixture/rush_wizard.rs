@@ -4,7 +4,10 @@ use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::master::{Autopilot, MasterControls};
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -74,7 +77,7 @@ impl RushWizard {
     }
 }
 
-impl Fixture for RushWizard {
+impl NonAnimatedFixture for RushWizard {
     fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
         if master.autopilot().on() {
             self.render_autopilot(master.autopilot(), dmx_buf);
@@ -99,7 +102,9 @@ impl Fixture for RushWizard {
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
     }
+}
 
+impl ControllableFixture for RushWizard {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_rush_wizard(Dimmer(self.dimmer));

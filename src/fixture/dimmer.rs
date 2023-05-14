@@ -2,7 +2,10 @@
 
 use number::UnipolarFloat;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 use crate::{master::MasterControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -22,11 +25,13 @@ impl Dimmer {
     }
 }
 
-impl Fixture for Dimmer {
+impl NonAnimatedFixture for Dimmer {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.0);
     }
+}
 
+impl ControllableFixture for Dimmer {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         emitter.emit_dimmer(self.0);
     }

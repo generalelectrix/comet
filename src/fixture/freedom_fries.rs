@@ -9,7 +9,8 @@ use number::UnipolarFloat;
 use super::{
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};
 
@@ -54,7 +55,7 @@ impl FreedomFries {
     }
 }
 
-impl Fixture for FreedomFries {
+impl NonAnimatedFixture for FreedomFries {
     fn render(&self, master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
         self.color.render(master_controls, &mut dmx_buf[1..4]);
@@ -79,7 +80,9 @@ impl Fixture for FreedomFries {
         };
         dmx_buf[7] = unipolar_to_range(0, 255, self.speed);
     }
+}
 
+impl ControllableFixture for FreedomFries {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         emitter.emit_freedom_fries(Dimmer(self.dimmer));

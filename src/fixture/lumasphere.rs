@@ -3,7 +3,10 @@ use std::time::Duration;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
+};
 use crate::master::MasterControls;
 use crate::util::{unipolar_to_range, RampingParameter};
 
@@ -108,11 +111,7 @@ impl Lumasphere {
     }
 }
 
-impl Fixture for Lumasphere {
-    fn update(&mut self, delta_t: Duration) {
-        self.ball_rotation.update(delta_t);
-    }
-
+impl NonAnimatedFixture for Lumasphere {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         self.render_ball_rotation(&mut dmx_buf[0..2]);
         dmx_buf[2] = self.render_color_rotation();
@@ -120,6 +119,12 @@ impl Fixture for Lumasphere {
         self.strobe_2.render(&mut dmx_buf[5..7]);
         dmx_buf[7] = unipolar_to_range(0, 255, self.lamp_1_intensity);
         dmx_buf[8] = unipolar_to_range(0, 255, self.lamp_2_intensity);
+    }
+}
+
+impl ControllableFixture for Lumasphere {
+    fn update(&mut self, delta_t: Duration) {
+        self.ball_rotation.update(delta_t);
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {

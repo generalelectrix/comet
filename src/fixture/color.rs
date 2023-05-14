@@ -7,7 +7,10 @@ use number::{Phase, UnipolarFloat};
 
 use crate::master::MasterControls;
 
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
+};
 
 #[derive(Default, Debug)]
 pub struct Color {
@@ -80,11 +83,13 @@ impl Color {
     }
 }
 
-impl Fixture for Color {
+impl NonAnimatedFixture for Color {
     fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
         dmx_buf.copy_from_slice(self.model.vals());
     }
+}
 
+impl ControllableFixture for Color {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         self.state(&mut |sc| emitter.emit_color(sc));
     }

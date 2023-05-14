@@ -33,13 +33,12 @@ use std::time::Duration;
 use thiserror::Error;
 
 pub use self::animation::AnimationControls;
-pub use self::animation_target::AnimationTargetControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;
-mod animation_target;
 mod control_message;
 mod fixture;
+mod label_array;
 mod master;
 mod radio_button;
 
@@ -130,12 +129,6 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
             FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
-            FixtureStateChange::AnimationSelect(sc) => {
-                AnimationTargetControls::emit_state_change(sc, send)
-            }
-            FixtureStateChange::AnimationTarget(sc) => {
-                AnimationTargetControls::emit_state_change(sc, send)
-            }
         }
     }
 }
@@ -244,13 +237,13 @@ impl<C> ControlMap<C> {
 
     pub fn add_radio_button_array<F>(&mut self, rb: RadioButton, process: F)
     where
-        F: Fn(usize) -> C + 'static,
+        F: Fn(usize) -> C + 'static + Copy,
     {
         self.add_fetch_process(
             rb.group,
             rb.control,
             move |m| rb.parse(m),
-            move |x| Some(process(x)),
+            move |x| x.map(process),
         )
     }
 }
@@ -304,6 +297,7 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
             }
             Ok(m) => m,
         };
+        // info!("Sending OSC message: {:?}", msg);
         if let Err(e) = send_packet(msg) {
             error!("OSC send error: {}.", e);
         }
@@ -315,6 +309,7 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
 fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result<(), OscError> {
     match packet {
         OscPacket::Message(m) => {
+            // info!("Received OSC message: {:?}", m);
             // Set TouchOSC pages to send this message, and ignore them all here.
             if m.addr == "/page" {
                 return Ok(());

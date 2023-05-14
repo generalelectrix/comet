@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
@@ -10,11 +10,9 @@ use log::{debug, info};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
-use tunnels::animation::{
-    ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
+use self::animation_target::{
+    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
 };
-
-use self::animation_target::{TargetedAnimation, TargetedAnimations};
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
@@ -54,6 +52,9 @@ use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusSta
 use self::wizard_extreme::{
     ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
     WizardExtreme,
+};
+use crate::animation::{
+    ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
 };
 use crate::config::{FixtureConfig, Options};
 use crate::fixture::animation_target::AnimationTarget;
@@ -217,8 +218,6 @@ pub enum FixtureStateChange {
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
     Animation(AnimationStateChange),
-    AnimationTarget(AnimationTarget),
-    AnimationSelect(usize),
 }
 
 #[derive(Clone, Debug)]
@@ -246,14 +245,12 @@ pub enum FixtureControlMessage {
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
     Animation(AnimationControlMessage),
-    AnimationTarget(AnimationTarget),
-    AnimationSelect(usize),
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
 }
 
 pub const N_ANIM: usize = 4;
-pub type TargetedAnimationss = [TargetedAnimation; N_ANIM];
+pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
 
 #[derive(Debug)]
 pub struct FixtureGroup {
@@ -265,8 +262,6 @@ pub struct FixtureGroup {
     channel_count: usize,
     /// The inner implementation of the fixture.
     fixture: Box<dyn Fixture>,
-    /// Optional collection of animations.
-    animations: Option<TargetedAnimationss>,
 }
 
 impl FixtureGroup {
@@ -281,12 +276,15 @@ impl FixtureGroup {
         &self.key.group
     }
 
-    pub fn animations(&self) -> Option<&TargetedAnimationss> {
-        self.animations.as_ref()
+    pub fn get_animation(
+        &mut self,
+        index: usize,
+    ) -> Option<&mut dyn ControllableTargetedAnimation> {
+        self.fixture.get_animation(index)
     }
 
-    pub fn animations_mut(&mut self) -> Option<&mut TargetedAnimationss> {
-        self.animations.as_mut()
+    pub fn is_animated(&self) -> bool {
+        self.fixture.is_animated()
     }
 
     /// Emit the current state of all controls.
@@ -320,36 +318,18 @@ impl FixtureGroup {
             })
     }
 
-    pub fn update(&mut self, delta_t: Duration, audio_envelope: UnipolarFloat) {
+    pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {
         self.fixture.update(delta_t);
-        for animation in self.animations.iter_mut().flatten() {
-            animation.animation.update_state(delta_t, audio_envelope);
-        }
     }
 
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
     pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
         let phase_offset_per_fixture = Phase::new(1.0 / self.dmx_indexes.len() as f64);
-        let mut animation_vals = [(0.0, AnimationTarget::None); N_ANIM];
         for (i, dmx_index) in self.dmx_indexes.iter().enumerate() {
             let phase_offset = phase_offset_per_fixture * i as f64;
-            // FIXME: implement unipolar variant of animations
-            if let Some(animations) = self.animations.as_ref() {
-                for (i, ta) in animations.iter().enumerate() {
-                    animation_vals[i] = (
-                        ta.animation.get_value(
-                            phase_offset,
-                            &master_controls.clock_state,
-                            UnipolarFloat::ZERO,
-                        ),
-                        ta.target,
-                    );
-                }
-            }
             let dmx_buf = &mut dmx_univ[*dmx_index..*dmx_index + self.channel_count];
-            self.fixture
-                .render_with_animations(master_controls, &animation_vals, dmx_buf);
+            self.fixture.render(phase_offset, master_controls, dmx_buf);
             debug!("{} ({}): {:?}", self.fixture_type(), self.name(), dmx_buf);
         }
     }
@@ -443,23 +423,11 @@ impl Patch {
             return Ok(());
         }
         // No existing group; create a new one.
-        let animations = if cfg.animations {
-            match TargetedAnimation::default_for_fixture(&*candidate.fixture) {
-                Some(ta) => {
-                    // FIXME: would be nice to populate this less literally.
-                    Some([ta.clone(), ta.clone(), ta.clone(), ta])
-                }
-                None => bail!("{} is unable to be animated", candidate.fixture_type),
-            }
-        } else {
-            None
-        };
         self.fixtures.push(FixtureGroup {
             key,
             dmx_indexes: vec![cfg.addr.dmx_index()],
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
-            animations,
         });
 
         Ok(())
@@ -515,8 +483,8 @@ pub struct PatchCandidate {
 
 pub type Patcher = Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate>> + Sync>;
 
-/// Fixture constructor trait to handle patching fixtures.
-pub trait PatchFixture: Fixture + Default + 'static {
+/// Fixture constructor trait to handle patching non-animating fixtures.
+pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
     const NAME: &'static str;
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
@@ -524,6 +492,9 @@ pub trait PatchFixture: Fixture + Default + 'static {
         Box::new(|cfg| {
             if cfg.name != Self::NAME {
                 return None;
+            }
+            if cfg.animations {
+                return Some(Err(anyhow!("{} cannot be animated", Self::NAME)));
             }
             match Self::new(&cfg.options) {
                 Ok(fixture) => Some(Ok(PatchCandidate {
@@ -547,7 +518,42 @@ pub trait PatchFixture: Fixture + Default + 'static {
     }
 }
 
-pub trait Fixture: MapControls + Debug {
+/// Fixture constructor trait to handle patching non-animating fixtures.
+pub trait PatchAnimatedFixture: AnimatedFixture + Default + 'static {
+    const NAME: &'static str;
+
+    /// Return a closure that will try to patch a fixture if it has the appropriate name.
+    fn patcher() -> Patcher {
+        Box::new(|cfg| {
+            if cfg.name != Self::NAME {
+                return None;
+            }
+            match Self::new(&cfg.options) {
+                Ok(fixture) => Some(Ok(PatchCandidate {
+                    fixture_type: Self::NAME,
+                    channel_count: fixture.channel_count(),
+                    fixture: Box::new(FixtureWithAnimations {
+                        fixture,
+                        animations: Default::default(),
+                    }),
+                })),
+                Err(e) => Some(Err(e)),
+            }
+        })
+    }
+
+    /// The number of contiguous DMX channels used by the fixture.
+    fn channel_count(&self) -> usize;
+
+    /// Create a new instance of the fixture from the provided options.
+    /// Non-customizable fixtures will fall back to using default.
+    /// This can be overridden for fixtures that are customizable.
+    fn new(_options: &Options) -> Result<Self> {
+        Ok(Self::default())
+    }
+}
+
+pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange);
 
@@ -560,29 +566,121 @@ pub trait Fixture: MapControls + Debug {
     ) -> Option<FixtureControlMessage>;
 
     fn update(&mut self, _: Duration) {}
+}
 
-    /// Return the default animation target for this fixture, if it has one.
-    fn default_animation_target(&self) -> Option<AnimationTarget> {
-        None
-    }
-
-    /// Render into the provided DMX buffer, including animations.
-    /// This default implementation ignores animations.
-    fn render_with_animations(
-        &self,
-        master_controls: &MasterControls,
-        _animations: &TargetedAnimations,
-        dmx_buffer: &mut [u8],
-    ) {
-        self.render(master_controls, dmx_buffer);
-    }
-
+pub trait NonAnimatedFixture: ControllableFixture + Debug {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
     /// The master controls are provided to potentially alter the render process.
-    fn render(&self, _master_controls: &MasterControls, _dmx_buffer: &mut [u8]) {
-        // FIXME: no-op default to allow implementing either render or
-        // render_with_animations...
+    fn render(&self, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
+}
+
+pub trait AnimatedFixture: ControllableFixture + Debug {
+    type Target: AnimationTarget;
+
+    fn render_with_animations(
+        &self,
+        master: &MasterControls,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    );
+}
+
+pub trait Fixture: ControllableFixture + Debug {
+    /// Render into the provided DMX buffer.
+    /// The buffer will be pre-sized to the fixture's channel count and offset
+    /// to the fixture's start address.
+    /// The master controls are provided to potentially alter the render process.
+    /// An animation phase offset is provided.
+    fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
+
+    /// Return true if this fixture has animations.
+    fn is_animated(&self) -> bool;
+
+    /// Get the animation with the provided index.
+    fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation>;
+}
+
+impl<T> Fixture for T
+where
+    T: NonAnimatedFixture,
+{
+    fn render(
+        &self,
+        _phase_offset: Phase,
+        master_controls: &MasterControls,
+        dmx_buffer: &mut [u8],
+    ) {
+        self.render(master_controls, dmx_buffer)
+    }
+
+    fn is_animated(&self) -> bool {
+        false
+    }
+
+    fn get_animation(&mut self, _index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
+        None
+    }
+}
+
+#[derive(Debug)]
+pub struct FixtureWithAnimations<F: AnimatedFixture> {
+    fixture: F,
+    animations: TargetedAnimations<F::Target>,
+}
+
+impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
+    fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
+        self.fixture.map_controls(map)
+    }
+}
+
+impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
+    fn control(
+        &mut self,
+        msg: FixtureControlMessage,
+        emitter: &mut dyn EmitFixtureStateChange,
+    ) -> Option<FixtureControlMessage> {
+        self.fixture.control(msg, emitter)
+    }
+
+    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+        self.fixture.emit_state(emitter);
+    }
+
+    fn update(&mut self, dt: Duration) {
+        self.fixture.update(dt);
+        for ta in &mut self.animations {
+            ta.animation.update_state(dt, UnipolarFloat::ZERO);
+        }
+    }
+}
+
+impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
+    fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]) {
+        let mut animation_vals = [(0.0, F::Target::default()); N_ANIM];
+        // FIXME: implement unipolar variant of animations
+        for (i, ta) in self.animations.iter().enumerate() {
+            animation_vals[i] = (
+                ta.animation.get_value(
+                    phase_offset,
+                    &master_controls.clock_state,
+                    UnipolarFloat::ZERO,
+                ),
+                ta.target,
+            );
+        }
+        self.fixture
+            .render_with_animations(master_controls, &animation_vals, dmx_buffer);
+    }
+
+    fn is_animated(&self) -> bool {
+        true
+    }
+
+    fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
+        let Some(animation) = self.animations.get_mut(index) else { return None; };
+        Some(&mut *animation)
     }
 }

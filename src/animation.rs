@@ -5,8 +5,9 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
     fixture::{
-        animation_target::TargetedAnimation, EmitStateChange, FixtureControlMessage,
-        FixtureGroupKey, FixtureStateChange, GroupName, Patch, StateChange, N_ANIM,
+        animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
+        EmitStateChange, FixtureGroupKey, FixtureStateChange, GroupName, Patch,
+        StateChange as FixtureStateChangeWithGroup, N_ANIM,
     },
     osc::OscController,
 };
@@ -25,14 +26,18 @@ impl AnimationUIState {
         osc_controller: &mut OscController, // FIXME this ought to be generic
     ) -> Result<()> {
         let (ta, index) = self.current_animation_with_index(patch)?;
-        ta.animation.emit_state(osc_controller);
-        osc_controller.emit(StateChange {
+        ta.anim().emit_state(osc_controller);
+        osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::AnimationTarget(ta.target),
+            sc: FixtureStateChange::Animation(StateChange::Target(ta.target())),
         });
-        osc_controller.emit(StateChange {
+        osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::AnimationSelect(index),
+            sc: FixtureStateChange::Animation(StateChange::Select(index)),
+        });
+        osc_controller.emit(FixtureStateChangeWithGroup {
+            group: GroupName::none(),
+            sc: FixtureStateChange::Animation(StateChange::Labels(ta.target_labels())),
         });
         Ok(())
     }
@@ -40,54 +45,59 @@ impl AnimationUIState {
     /// Handle a control message.
     pub fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: ControlMessage,
         patch: &mut Patch,
         osc_controller: &mut OscController,
     ) -> Result<()> {
         match msg {
-            FixtureControlMessage::Animation(msg) => {
+            ControlMessage::Animation(msg) => {
                 self.current_animation(patch)?
-                    .animation
+                    .anim_mut()
                     .control(msg, osc_controller);
             }
-            FixtureControlMessage::AnimationTarget(msg) => {
-                self.current_animation(patch)?.target = msg;
-                osc_controller.emit(StateChange {
+            ControlMessage::Target(msg) => {
+                let anim = self.current_animation(patch)?;
+                if anim.target() == msg {
+                    return Ok(());
+                }
+                anim.set_target(msg)?;
+                osc_controller.emit(FixtureStateChangeWithGroup {
                     group: GroupName::none(),
-                    sc: crate::fixture::FixtureStateChange::AnimationTarget(msg),
+                    sc: crate::fixture::FixtureStateChange::Animation(StateChange::Target(msg)),
                 });
             }
-            FixtureControlMessage::AnimationSelect(n) => {
+            ControlMessage::Select(n) => {
                 if self.animation_index_for_key(self.current_group()?)? == n {
                     return Ok(());
                 }
                 self.set_current_animation(n)?;
                 self.emit_state(patch, osc_controller)?;
             }
-            _ => bail!("FIXME make this impossible: unexpected control message passed to animation UI: {msg:?}")
         }
-
         Ok(())
     }
 
     fn current_animation_with_index<'a>(
         &self,
         patch: &'a mut Patch,
-    ) -> Result<(&'a mut TargetedAnimation, usize)> {
+    ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
         let key = self.current_group()?;
         let animation_index = self.animation_index_for_key(key)?;
         let group = patch
             .group_mut(key)
             .ok_or_else(|| anyhow!("no group found for {key:?}"))?;
         Ok((
-            &mut group
-                .animations_mut()
-                .ok_or_else(|| anyhow!("{key:?} does not have animations"))?[animation_index],
+            group
+                .get_animation(animation_index)
+                .ok_or_else(|| anyhow!("{key:?} does not have animations"))?,
             animation_index,
         ))
     }
 
-    fn current_animation<'a>(&self, patch: &'a mut Patch) -> Result<&'a mut TargetedAnimation> {
+    fn current_animation<'a>(
+        &self,
+        patch: &'a mut Patch,
+    ) -> Result<&'a mut dyn ControllableTargetedAnimation> {
         let (ta, _) = self.current_animation_with_index(patch)?;
         Ok(ta)
     }
@@ -129,9 +139,24 @@ impl AnimationUIState {
 
 impl EmitAnimationStateChange for OscController {
     fn emit_animation_state_change(&mut self, sc: tunnels::animation::StateChange) {
-        self.emit(StateChange {
+        self.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::Animation(sc),
+            sc: FixtureStateChange::Animation(StateChange::Animation(sc)),
         });
     }
+}
+
+#[derive(Clone, Debug)]
+pub enum ControlMessage {
+    Animation(tunnels::animation::ControlMessage),
+    Target(AnimationTargetIndex),
+    Select(usize),
+}
+
+#[derive(Clone, Debug)]
+pub enum StateChange {
+    Animation(tunnels::animation::StateChange),
+    Target(AnimationTargetIndex),
+    Select(usize),
+    Labels(Vec<String>),
 }

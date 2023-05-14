@@ -4,7 +4,10 @@ use number::BipolarFloat;
 
 use super::color::{Color, Model as ColorModel, StateChange as ColorStateChange};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{EmitFixtureStateChange, Fixture, FixtureControlMessage, PatchFixture};
+use super::{
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
+};
 use crate::master::{Autopilot, MasterControls};
 use crate::util::bipolar_to_split_range;
 
@@ -67,7 +70,7 @@ impl RotosphereQ3 {
     }
 }
 
-impl Fixture for RotosphereQ3 {
+impl NonAnimatedFixture for RotosphereQ3 {
     fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
         if master.autopilot().on() {
             self.render_autopilot(master.autopilot(), dmx_buf);
@@ -82,7 +85,9 @@ impl Fixture for RotosphereQ3 {
         dmx_buf[7] = 0;
         dmx_buf[8] = 0;
     }
+}
 
+impl ControllableFixture for RotosphereQ3 {
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
         let mut emit_color = |sc| {
