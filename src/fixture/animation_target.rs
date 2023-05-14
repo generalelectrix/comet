@@ -13,7 +13,7 @@ use tunnels::animation::Animation;
 pub type AnimationTargetIndex = usize;
 
 /// A collection of animation values paired with targets.
-pub type TargetedAnimations<T: AnimationTarget> = [(f64, T)];
+pub type TargetedAnimations<T> = [(f64, T)];
 
 /// A pairing of an animation and a target.
 #[derive(Debug, Clone, Default)]

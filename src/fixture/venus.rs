@@ -5,7 +5,7 @@ use std::time::Duration;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 use crate::{

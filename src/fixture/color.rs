@@ -8,7 +8,7 @@ use number::{Phase, UnipolarFloat};
 use crate::master::MasterControls;
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 

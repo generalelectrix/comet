@@ -4,7 +4,7 @@ use log::error;
 use number::UnipolarFloat;
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};

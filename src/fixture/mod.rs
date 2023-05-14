@@ -1,4 +1,4 @@
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
@@ -11,7 +11,7 @@ use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
 use self::animation_target::{
-    AnimationTargetIndex, ControllableTargetedAnimation, TargetedAnimation, TargetedAnimations,
+    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimations,
 };
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
@@ -250,7 +250,7 @@ pub enum FixtureControlMessage {
 }
 
 pub const N_ANIM: usize = 4;
-pub type TargetedAnimationss<T: AnimationTarget> = [TargetedAnimation<T>; N_ANIM];
+pub type TargetedAnimationss<T> = [TargetedAnimation<T>; N_ANIM];
 
 #[derive(Debug)]
 pub struct FixtureGroup {
@@ -318,7 +318,7 @@ impl FixtureGroup {
             })
     }
 
-    pub fn update(&mut self, delta_t: Duration, audio_envelope: UnipolarFloat) {
+    pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {
         self.fixture.update(delta_t);
     }
 
@@ -606,7 +606,7 @@ impl<T> Fixture for T
 where
     T: NonAnimatedFixture,
 {
-    fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]) {
+    fn render(&self, _phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]) {
         self.render(master_controls, dmx_buffer)
     }
 
@@ -614,7 +614,7 @@ where
         false
     }
 
-    fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
+    fn get_animation(&mut self, _index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
         None
     }
 }

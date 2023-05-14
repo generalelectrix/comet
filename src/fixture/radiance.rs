@@ -6,7 +6,7 @@ use std::{collections::HashMap, time::Duration};
 use number::UnipolarFloat;
 
 use super::{
-    generic::Timer, ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    generic::Timer, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};

@@ -1,11 +1,11 @@
 use rosc::OscMessage;
 
 use crate::animation::{ControlMessage, StateChange};
-use crate::fixture::animation_target::{AnimationTarget, AnimationTargetIndex};
-use crate::fixture::wizard_extreme::AnimationTarget as WizardExtremeAnimationTarget;
+
+
 use crate::fixture::{FixtureControlMessage, N_ANIM};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::{HandleStateChange};
 use crate::osc::{ControlMap, MapControls, RadioButton};
 
 use super::AnimationControls;
@@ -25,7 +25,7 @@ const ANIMATION_SELECT: RadioButton = RadioButton {
 const ANIMATION_TARGET_SELECT: RadioButton = RadioButton {
     group: GROUP,
     control: TARGET,
-    n: N_ANIM_TARGET as usize,
+    n: N_ANIM_TARGET,
     x_primary_coordinate: false,
 };
 pub struct AnimationTargetControls;

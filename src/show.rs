@@ -7,7 +7,7 @@ use crate::{
     animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
-    fixture::{FixtureControlMessage, FixtureGroup, Patch},
+    fixture::{FixtureControlMessage, Patch},
     master::MasterControls,
     osc::{AnimationControls, AnimationTargetControls, OscController},
 };

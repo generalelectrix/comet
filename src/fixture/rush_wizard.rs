@@ -5,7 +5,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControllableFixture, EmitFixtureStateChange, Fixture, FixtureControlMessage,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 use crate::master::{Autopilot, MasterControls};

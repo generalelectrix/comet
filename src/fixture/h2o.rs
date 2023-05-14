@@ -4,7 +4,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::{ControllableFixture, NonAnimatedFixture};
 use super::{
-    EmitFixtureStateChange as EmitShowStateChange, Fixture, FixtureControlMessage, PatchFixture,
+    EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage, PatchFixture,
 };
 use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;

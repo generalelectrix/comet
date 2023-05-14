@@ -4,7 +4,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControllableFixture, EmitFixtureStateChange as EmitShowStateChange, Fixture,
+    ControllableFixture, EmitFixtureStateChange as EmitShowStateChange,
     FixtureControlMessage, NonAnimatedFixture, PatchFixture,
 };
 use crate::master::MasterControls;
