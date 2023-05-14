@@ -40,6 +40,7 @@ mod animation;
 mod animation_target;
 mod control_message;
 mod fixture;
+mod label_array;
 mod master;
 mod radio_button;
 

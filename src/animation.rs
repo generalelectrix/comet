@@ -35,6 +35,10 @@ impl AnimationUIState {
             group: GroupName::none(),
             sc: FixtureStateChange::Animation(StateChange::Select(index)),
         });
+        osc_controller.emit(FixtureStateChangeWithGroup {
+            group: GroupName::none(),
+            sc: FixtureStateChange::Animation(StateChange::Labels(ta.target_labels())),
+        });
         Ok(())
     }
 
@@ -150,4 +154,5 @@ pub enum StateChange {
     Animation(tunnels::animation::StateChange),
     Target(AnimationTargetIndex),
     Select(usize),
+    Labels(Vec<String>),
 }

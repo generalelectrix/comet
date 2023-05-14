@@ -11,7 +11,7 @@ use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
 use self::animation_target::{
-    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimations,
+    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
 };
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
@@ -250,7 +250,7 @@ pub enum FixtureControlMessage {
 }
 
 pub const N_ANIM: usize = 4;
-pub type TargetedAnimationss<T> = [TargetedAnimation<T>; N_ANIM];
+pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
 
 #[derive(Debug)]
 pub struct FixtureGroup {
@@ -582,7 +582,7 @@ pub trait AnimatedFixture: ControllableFixture + Debug {
     fn render_with_animations(
         &self,
         master: &MasterControls,
-        animations: &TargetedAnimations<Self::Target>,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     );
 }
@@ -606,7 +606,12 @@ impl<T> Fixture for T
 where
     T: NonAnimatedFixture,
 {
-    fn render(&self, _phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]) {
+    fn render(
+        &self,
+        _phase_offset: Phase,
+        master_controls: &MasterControls,
+        dmx_buffer: &mut [u8],
+    ) {
         self.render(master_controls, dmx_buffer)
     }
 
@@ -622,7 +627,7 @@ where
 #[derive(Debug)]
 pub struct FixtureWithAnimations<F: AnimatedFixture> {
     fixture: F,
-    animations: TargetedAnimationss<F::Target>,
+    animations: TargetedAnimations<F::Target>,
 }
 
 impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
@@ -641,7 +646,7 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
-        self.fixture.emit_state(emitter)
+        self.fixture.emit_state(emitter);
     }
 
     fn update(&mut self, dt: Duration) {

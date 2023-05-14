@@ -13,7 +13,7 @@ use tunnels::animation::Animation;
 pub type AnimationTargetIndex = usize;
 
 /// A collection of animation values paired with targets.
-pub type TargetedAnimations<T> = [(f64, T)];
+pub type TargetedAnimationValues<T> = [(f64, T)];
 
 /// A pairing of an animation and a target.
 #[derive(Debug, Clone, Default)]
@@ -37,6 +37,7 @@ pub trait ControllableTargetedAnimation {
     fn anim_mut(&mut self) -> &mut Animation;
     fn target(&self) -> AnimationTargetIndex;
     fn set_target(&mut self, index: AnimationTargetIndex) -> Result<()>;
+    fn target_labels(&self) -> Vec<String>;
 }
 
 impl<T: AnimationTarget> ControllableTargetedAnimation for TargetedAnimation<T> {
@@ -58,5 +59,9 @@ impl<T: AnimationTarget> ControllableTargetedAnimation for TargetedAnimation<T> 
         };
         self.target = target;
         Ok(())
+    }
+
+    fn target_labels(&self) -> Vec<String> {
+        T::iter().map(|t| t.to_string()).collect()
     }
 }

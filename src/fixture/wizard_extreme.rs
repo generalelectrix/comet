@@ -4,7 +4,7 @@ use log::{debug, error};
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::animation_target::TargetedAnimations;
+use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
@@ -98,16 +98,16 @@ impl AnimatedFixture for WizardExtreme {
     fn render_with_animations(
         &self,
         master: &MasterControls,
-        animations: &TargetedAnimations<Self::Target>,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        debug!("{:?}", animations);
+        debug!("{:?}", animation_vals);
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
         let mut reflector_rotation = self.reflector_rotation.val();
         let mut dimmer = self.dimmer.val();
         let mut twinkle_speed = self.twinkle_speed.val();
-        for (val, target) in animations {
+        for (val, target) in animation_vals {
             use AnimationTarget::*;
             match target {
                 DrumSwivel => drum_swivel += val,

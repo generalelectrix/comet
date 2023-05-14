@@ -6,6 +6,7 @@ use crate::fixture::{FixtureControlMessage, N_ANIM};
 use crate::osc::HandleStateChange;
 use crate::osc::{ControlMap, MapControls, RadioButton};
 
+use super::label_array::LabelArray;
 use super::AnimationControls;
 
 const N_ANIM_TARGET: usize = 11;
@@ -25,6 +26,13 @@ const ANIMATION_TARGET_SELECT: RadioButton = RadioButton {
     control: TARGET,
     n: N_ANIM_TARGET,
     x_primary_coordinate: false,
+};
+
+const ANIMATION_LABELS: LabelArray = LabelArray {
+    group: GROUP,
+    control: "TargetLabel",
+    n: N_ANIM_TARGET,
+    empty_label: "XXXXXX",
 };
 pub struct AnimationTargetControls;
 
@@ -50,6 +58,7 @@ impl HandleStateChange<StateChange> for AnimationTargetControls {
             StateChange::Animation(msg) => AnimationControls::emit_state_change(msg, send),
             StateChange::Select(msg) => ANIMATION_SELECT.set(msg, send),
             StateChange::Target(msg) => ANIMATION_TARGET_SELECT.set(msg, send),
+            StateChange::Labels(labels) => ANIMATION_LABELS.set(labels.into_iter(), send),
         }
     }
 }
