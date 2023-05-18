@@ -1,9 +1,9 @@
 use rosc::OscMessage;
 
 use crate::fixture::solar_system::SolarSystem;
-use crate::fixture::solar_system::{ControlMessage, StateChange};
+use crate::fixture::solar_system::{StateChange};
 use crate::fixture::FixtureControlMessage;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::{HandleStateChange};
 use crate::osc::{ControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
