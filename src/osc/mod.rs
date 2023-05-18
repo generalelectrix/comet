@@ -82,7 +82,7 @@ impl OscSenderConfig {
 }
 
 impl OscController {
-    pub fn new(receive_port: u16, send_configs: &Vec<OscSenderConfig>) -> Result<Self> {
+    pub fn new(receive_port: u16, send_configs: &[OscSenderConfig]) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
         let send_addrs = send_configs
             .iter()
