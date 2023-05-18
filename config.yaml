@@ -1,6 +1,7 @@
 receive_port: 8000
-send_host: 192.168.1.213
-send_port: 9000
+controllers:
+  - host: 192.168.1.248
+    port: 9000
 debug: False
 fixtures:
   - name: comet

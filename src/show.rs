@@ -32,8 +32,7 @@ impl Show {
     pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
         let mut patch = Patch::new();
 
-        let mut osc_controller =
-            OscController::new(cfg.receive_port, &cfg.send_host, cfg.send_port)?;
+        let mut osc_controller = OscController::new(cfg.receive_port, &cfg.controllers)?;
 
         for fixture in cfg.fixtures.into_iter() {
             patch.patch(fixture)?;
