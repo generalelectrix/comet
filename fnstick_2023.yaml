@@ -1,0 +1,7 @@
+receive_port: 8000
+send_host: 10.0.1.4
+send_port: 9000
+debug: True
+fixtures:
+  - name: comet
+    addr: 1
