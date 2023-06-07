@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -23,6 +22,9 @@ const GOBO_SELECT: RadioButton = RadioButton {
 impl EnumRadioButton for Color {}
 
 impl MapControls for RushWizard {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::RushWizard;
         use StateChange::*;

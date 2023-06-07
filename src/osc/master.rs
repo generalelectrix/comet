@@ -10,6 +10,9 @@ use super::{ControlMap, HandleStateChange, MapControls};
 const GROUP: &str = "Master";
 
 impl MapControls for MasterControls {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
         map.add_bool(GROUP, "UseMasterStrobeRate", |v| {

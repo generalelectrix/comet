@@ -7,6 +7,9 @@ use crate::osc::{get_unipolar, ControlMap, HandleStateChange, MapControls};
 const GROUP: &str = "Faderboard";
 
 impl MapControls for Faderboard {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Faderboard;
         map.add(GROUP, "Fader", |msg| {

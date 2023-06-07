@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -23,6 +22,9 @@ const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
 impl EnumRadioButton for DerbyColor {}
 
 impl MapControls for Swarmolon {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use ControlMessage::*;
         use FixtureControlMessage::Swarmolon;

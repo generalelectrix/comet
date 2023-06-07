@@ -43,10 +43,18 @@ mod label_array;
 mod master;
 mod radio_button;
 
+const ENABLE: &str = "Enable";
+
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
+    fn group(&self) -> &'static str;
     /// Add OSC control mappings to the provided control map.
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>);
+
+    // /// Add OSC control mapping for fixture enable.
+    // fn map_enable(&self, map: &mut ControlMap<FixtureControlMessage>) {
+    //     map.add_trigger(self.group(), ENABLE, FixtureControlMessage::ToggleEnable);
+    // }
 }
 
 /// Process a state change message into OSC messages.
@@ -66,11 +74,10 @@ pub struct OscController {
 }
 
 impl OscController {
-    pub fn new(receive_port: u16, send_host: &str, send_port: u16) -> Result<Self> {
+    pub fn new(receive_port: u16, send_addrs: Vec<SocketAddr>) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
-        let send_adr = SocketAddr::from_str(&format!("{}:{}", send_host, send_port))?;
         let control_recv = start_listener(recv_addr)?;
-        let response_send = start_sender(send_adr)?;
+        let response_send = start_sender(send_addrs)?;
         Ok(Self {
             control_map: ControlMap::new(),
             recv: control_recv,
@@ -96,6 +103,7 @@ impl OscController {
 
     pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
         fixture.map_controls(&mut self.control_map);
+        // fixture.map_enable(&mut self.control_map);
     }
 }
 
@@ -131,6 +139,10 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
             FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
+            // FixtureStateChange::Enable((fixture, enable)) => send(OscMessage {
+            //     addr: format!("/{fixture}/Enable"),
+            //     args: vec![OscType::Float(if enable { 1.0 } else { 0.0 })],
+            // }),
         }
     }
 }
@@ -281,13 +293,18 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
 
 /// Drain a control channel of OSC messages and send them.
 /// Assumes we only have one controller.
-fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
+fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
     let (send, recv) = unbounded();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
 
     let send_packet = move |msg| -> Result<()> {
+        // println!("send osc message: {msg:?}");
         let msg_buf = encoder::encode(&OscPacket::Message(msg))?;
-        socket.send_to(&msg_buf, addr)?;
+        for addr in &addrs {
+            if let Err(e) = socket.send_to(&msg_buf, addr) {
+                error!("OSC send error: {e}.");
+            }
+        }
         Ok(())
     };
 
@@ -317,6 +334,7 @@ fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result
                 return Ok(());
             }
             let cm = OscControlMessage::new(m)?;
+            // println!("got osc message: {cm:?}");
             send.send(cm).unwrap();
         }
         OscPacket::Bundle(msgs) => {

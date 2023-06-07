@@ -25,6 +25,7 @@ pub struct WizardExtreme {
     drum_rotation: BipolarFloat,
     drum_swivel: BipolarFloat,
     reflector_rotation: BipolarFloat,
+    disable: bool,
 }
 
 impl PatchAnimatedFixture for WizardExtreme {
@@ -55,6 +56,7 @@ impl WizardExtreme {
             DrumRotation(v) => self.drum_rotation = v,
             DrumSwivel(v) => self.drum_swivel = v,
             ReflectorRotation(v) => self.reflector_rotation = v,
+            Disable(v) => self.disable = v,
         };
         emitter.emit_wizard_extreme(sc);
     }
@@ -101,6 +103,12 @@ impl AnimatedFixture for WizardExtreme {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
+        if self.disable {
+            for chan in dmx_buf {
+                *chan = 0;
+            }
+            return;
+        }
         debug!("{:?}", animation_vals);
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
@@ -160,6 +168,7 @@ pub enum StateChange {
     DrumRotation(BipolarFloat),
     DrumSwivel(BipolarFloat),
     ReflectorRotation(BipolarFloat),
+    Disable(bool),
 }
 
 pub type ControlMessage = StateChange;

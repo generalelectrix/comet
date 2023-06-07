@@ -5,6 +5,9 @@ use crate::osc::{ControlMap, HandleStateChange, MapControls};
 const GROUP: &str = "Radiance";
 
 impl MapControls for Radiance {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Radiance;
         use StateChange::*;

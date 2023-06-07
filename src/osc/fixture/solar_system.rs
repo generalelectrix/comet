@@ -24,6 +24,9 @@ const REAR_GOBO_SELECT: RadioButton = RadioButton {
 };
 
 impl MapControls for SolarSystem {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::SolarSystem;
         use StateChange::*;

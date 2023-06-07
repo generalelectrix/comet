@@ -13,6 +13,9 @@ const FIXED_COLOR: &str = "FixedColor";
 impl EnumRadioButton for FixedColor {}
 
 impl MapControls for H2O {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::H2O;
         use StateChange::*;

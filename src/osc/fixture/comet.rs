@@ -20,12 +20,15 @@ const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
 };
 
 impl MapControls for Comet {
+    fn group(&self) -> &'static str {
+        CONTROLS
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use ControlMessage::*;
         use FixtureControlMessage::Comet;
         use StateChange::*;
         map.add_bool(CONTROLS, "Shutter", |v| Comet(Set(Shutter(v))));
-        map.add_bool(CONTROLS, "StrobeOn", |v| {
+        map.add_bool(CONTROLS, "Strobe", |v| {
             Comet(Set(Strobe(GenericStrobeStateChange::On(v))))
         });
         map.add_unipolar(CONTROLS, "StrobeRate", |v| {

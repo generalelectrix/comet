@@ -5,6 +5,9 @@ use crate::osc::{ControlMap, HandleStateChange, MapControls};
 const GROUP: &str = "Color";
 
 impl MapControls for Color {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         map_color(map, GROUP, &wrap_color);
     }

@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -23,6 +22,9 @@ const GOBO_SELECT: RadioButton = RadioButton {
 impl EnumRadioButton for Color {}
 
 impl MapControls for WizardExtreme {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::WizardExtreme;
         use StateChange::*;
@@ -39,6 +41,7 @@ impl MapControls for WizardExtreme {
         map.add_bipolar(GROUP, "ReflectorRotation", |v| {
             WizardExtreme(ReflectorRotation(bipolar_fader_with_detent(v)))
         });
+        map.add_bool(GROUP, "Disable", |v| WizardExtreme(Disable(v)));
     }
 }
 

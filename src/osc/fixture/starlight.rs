@@ -11,6 +11,9 @@ use crate::util::bipolar_fader_with_detent;
 const GROUP: &str = "Starlight";
 
 impl MapControls for Starlight {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Starlight;
         use StateChange::*;

@@ -4,12 +4,12 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
+use std::net::SocketAddr;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub receive_port: u16,
-    pub send_host: String,
-    pub send_port: u16,
+    pub send_hosts: Vec<SocketAddr>,
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,
 }

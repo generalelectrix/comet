@@ -6,6 +6,9 @@ use crate::util::bipolar_fader_with_detent;
 const GROUP: &str = "Aquarius";
 
 impl MapControls for Aquarius {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Aquarius;
         use StateChange::*;

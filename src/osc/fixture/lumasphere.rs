@@ -9,6 +9,9 @@ use crate::util::unipolar_fader_with_detent;
 const GROUP: &str = "Lumasphere";
 
 impl MapControls for Lumasphere {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Lumasphere;
         use StateChange::*;

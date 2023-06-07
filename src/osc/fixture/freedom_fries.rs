@@ -10,6 +10,9 @@ use crate::util::unipolar_to_range;
 const GROUP: &str = "FreedomFries";
 
 impl MapControls for FreedomFriesFixture {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::FreedomFries;
         use StateChange::*;

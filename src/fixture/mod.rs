@@ -226,6 +226,7 @@ pub enum FixtureStateChange {
     Color(ColorStateChange),
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
+    // Enable((&'static str, bool)),
     Animation(AnimationStateChange),
 }
 
@@ -255,6 +256,7 @@ pub enum FixtureControlMessage {
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
     Animation(AnimationControlMessage),
+    // ToggleEnable,
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
 }
@@ -272,6 +274,8 @@ pub struct FixtureGroup {
     channel_count: usize,
     /// The inner implementation of the fixture.
     fixture: Box<dyn Fixture>,
+    /// Whether the fixture should render or not.
+    enable: bool,
 }
 
 impl FixtureGroup {
@@ -304,6 +308,10 @@ impl FixtureGroup {
             group: self.name().clone(),
         };
         self.fixture.emit_state(&mut emitter);
+        // emitter.emit(FixtureStateChange::Enable((
+        //     self.fixture.group(),
+        //     self.enable,
+        // )));
     }
 
     /// Potentially process the provided control message.
@@ -320,6 +328,15 @@ impl FixtureGroup {
             emitter,
             group: self.name().clone(),
         };
+        // if let FixtureControlMessage::ToggleEnable = msg.msg {
+        //     println!("toggle enable");
+        //     self.enable = !self.enable;
+        //     emitter.emit(FixtureStateChange::Enable((
+        //         self.fixture.group(),
+        //         self.enable,
+        //     )));
+        //     return None;
+        // }
         self.fixture
             .control(msg.msg, &mut emitter)
             .map(|m| ControlMessage {
@@ -335,6 +352,12 @@ impl FixtureGroup {
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
     pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
+        if !self.enable {
+            for chan in dmx_univ {
+                *chan = 0;
+            }
+            return;
+        }
         let phase_offset_per_fixture = Phase::new(1.0 / self.dmx_indexes.len() as f64);
         for (i, dmx_index) in self.dmx_indexes.iter().enumerate() {
             let phase_offset = phase_offset_per_fixture * i as f64;
@@ -361,6 +384,9 @@ impl<'a> EmitFixtureStateChange for StateChangeWithGroupEmitter<'a> {
 }
 
 impl MapControls for FixtureGroup {
+    fn group(&self) -> &'static str {
+        self.fixture.group()
+    }
     fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
         self.fixture.map_controls(map);
     }
@@ -439,6 +465,7 @@ impl Patch {
             dmx_indexes: vec![cfg.addr.dmx_index()],
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
+            enable: true,
         });
 
         Ok(())
@@ -642,6 +669,9 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
 }
 
 impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
+    fn group(&self) -> &'static str {
+        self.fixture.group()
+    }
     fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
         self.fixture.map_controls(map)
     }

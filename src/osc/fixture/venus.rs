@@ -8,6 +8,9 @@ const CONTROLS: &str = "Controls";
 const LAMP: &str = "Lamp";
 
 impl MapControls for Venus {
+    fn group(&self) -> &'static str {
+        CONTROLS
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Venus;
         use StateChange::*;

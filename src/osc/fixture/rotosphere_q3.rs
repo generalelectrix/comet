@@ -10,6 +10,9 @@ use crate::util::bipolar_fader_with_detent;
 const GROUP: &str = "RotosphereQ3";
 
 impl MapControls for RotosphereQ3 {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::RotosphereQ3;
         use StateChange::*;

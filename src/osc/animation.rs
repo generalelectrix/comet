@@ -51,6 +51,9 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
 pub struct AnimationControls;
 
 impl MapControls for AnimationControls {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use ControlMessage::*;
         use FixtureControlMessage::{Animation as FixtureAnimation, Error as ControlError};
@@ -140,6 +143,9 @@ const ANIMATION_LABELS: LabelArray = LabelArray {
 struct TargetAndSelectControls;
 
 impl MapControls for TargetAndSelectControls {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use crate::animation::ControlMessage;
         use FixtureControlMessage::Animation;
