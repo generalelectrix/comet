@@ -1,0 +1,7 @@
+receive_port: 8001
+send_hosts:
+  - "10.0.1.6:9001"
+debug: False
+fixtures:
+  - name: color
+    addr: 29
