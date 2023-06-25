@@ -1,5 +1,6 @@
 use crate::fixture::aquarius::Aquarius;
 use crate::fixture::color::Color;
+use crate::fixture::colordynamic::Colordynamic;
 use crate::fixture::comet::Comet;
 use crate::fixture::dimmer::Dimmer;
 use crate::fixture::faderboard::Faderboard;
@@ -147,6 +148,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::WizardExtreme(sc) => WizardExtreme::emit_state_change(sc, send),
             FixtureStateChange::SolarSystem(sc) => SolarSystem::emit_state_change(sc, send),
             FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
+            FixtureStateChange::Colordynamic(sc) => Colordynamic::emit_state_change(sc, send),
             FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
             FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
             FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),

@@ -1,5 +1,6 @@
 mod aquarius;
 mod color;
+mod colordynamic;
 mod comet;
 mod dimmer;
 mod faderboard;
