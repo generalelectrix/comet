@@ -1,8 +1,8 @@
 //! Optikinetics Solar System - the grand champion gobo rotator
 
-use log::{debug, error};
+use log::{error};
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{BipolarFloat, UnipolarFloat};
+use number::{BipolarFloat};
 
 use super::animation_target::TargetedAnimationValues;
 use super::{
@@ -10,7 +10,7 @@ use super::{
     PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
-use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
+use crate::util::{unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]

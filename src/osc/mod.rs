@@ -25,6 +25,7 @@ use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
@@ -65,12 +66,30 @@ pub struct OscController {
     send: Sender<OscMessage>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OscSenderConfig {
+    host: String,
+    port: u16,
+}
+
+impl OscSenderConfig {
+    pub fn as_socket_addr(&self) -> Result<SocketAddr> {
+        Ok(SocketAddr::from_str(&format!(
+            "{}:{}",
+            self.host, self.port
+        ))?)
+    }
+}
+
 impl OscController {
-    pub fn new(receive_port: u16, send_host: &str, send_port: u16) -> Result<Self> {
+    pub fn new(receive_port: u16, send_configs: &[OscSenderConfig]) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
-        let send_adr = SocketAddr::from_str(&format!("{}:{}", send_host, send_port))?;
+        let send_addrs = send_configs
+            .iter()
+            .map(OscSenderConfig::as_socket_addr)
+            .collect::<Result<_>>()?;
         let control_recv = start_listener(recv_addr)?;
-        let response_send = start_sender(send_adr)?;
+        let response_send = start_sender(send_addrs)?;
         Ok(Self {
             control_map: ControlMap::new(),
             recv: control_recv,
@@ -280,16 +299,10 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
 }
 
 /// Drain a control channel of OSC messages and send them.
-/// Assumes we only have one controller.
-fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
+/// Sends each message to every provided address.
+fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
     let (send, recv) = unbounded();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
-
-    let send_packet = move |msg| -> Result<()> {
-        let msg_buf = encoder::encode(&OscPacket::Message(msg))?;
-        socket.send_to(&msg_buf, addr)?;
-        Ok(())
-    };
 
     thread::spawn(move || loop {
         let msg = match recv.recv() {
@@ -299,9 +312,20 @@ fn start_sender(addr: SocketAddr) -> Result<Sender<OscMessage>> {
             }
             Ok(m) => m,
         };
+        // Encode the message.
+        let packet = OscPacket::Message(msg);
+        let msg_buf = match encoder::encode(&packet) {
+            Ok(buf) => buf,
+            Err(err) => {
+                error!("Error encoding OSC packet {packet:?}: {err}.");
+                continue;
+            }
+        };
         // info!("Sending OSC message: {:?}", msg);
-        if let Err(e) = send_packet(msg) {
-            error!("OSC send error: {}.", e);
+        for addr in &addrs {
+            if let Err(err) = socket.send_to(&msg_buf, addr) {
+                error!("OSC send error to address {addr}: {}.", err);
+            }
         }
     });
     Ok(send)

@@ -1,5 +1,6 @@
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
+use crate::osc::OscSenderConfig;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,8 +9,7 @@ use std::fs::File;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub receive_port: u16,
-    pub send_host: String,
-    pub send_port: u16,
+    pub controllers: Vec<OscSenderConfig>,
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,
 }
