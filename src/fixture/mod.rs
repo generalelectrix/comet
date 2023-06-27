@@ -17,6 +17,9 @@ use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
 use self::color::{Color, ControlMessage as ColorControlMessage, StateChange as ColorStateChange};
+use self::colordynamic::{
+    ControlMessage as ColordynamicControlMessage, StateChange as ColordynamicStateChange,
+};
 use self::comet::{Comet, ControlMessage as CometControlMessage, StateChange as CometStateChange};
 use self::dimmer::{
     ControlMessage as DimmerControlMessage, Dimmer, StateChange as DimmerStateChange,
@@ -69,6 +72,7 @@ use crate::osc::MapControls;
 pub mod animation_target;
 pub mod aquarius;
 pub mod color;
+pub mod colordynamic;
 pub mod comet;
 pub mod dimmer;
 pub mod faderboard;
@@ -138,6 +142,10 @@ pub trait EmitFixtureStateChange {
 
     fn emit_comet(&mut self, sc: CometStateChange) {
         self.emit(FixtureStateChange::Comet(sc));
+    }
+
+    fn emit_colordynamic(&mut self, sc: ColordynamicStateChange) {
+        self.emit(FixtureStateChange::Colordynamic(sc));
     }
 
     fn emit_lumasphere(&mut self, sc: LumasphereStateChange) {
@@ -224,6 +232,7 @@ pub enum FixtureStateChange {
     WizardExtreme(WizardExtremeStateChange),
     SolarSystem(SolarSystemStateChange),
     Color(ColorStateChange),
+    Colordynamic(ColordynamicStateChange),
     Dimmer(DimmerControlMessage),
     Master(MasterStateChange),
     Animation(AnimationStateChange),
@@ -252,6 +261,7 @@ pub enum FixtureControlMessage {
     WizardExtreme(WizardExtremeControlMessage),
     SolarSystem(SolarSystemControlMessage),
     Color(ColorControlMessage),
+    Colordynamic(ColordynamicControlMessage),
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
     Animation(AnimationControlMessage),
