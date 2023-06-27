@@ -1,7 +1,7 @@
 //! Maintain UI state for animations.
 use anyhow::{anyhow, bail, Result};
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
@@ -16,13 +16,23 @@ use crate::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
 pub struct GroupSelection(pub usize);
 
-#[derive(Default)]
 pub struct AnimationUIState {
-    pub current_group: Option<GroupSelection>,
-    pub selected_animator_by_group: HashMap<GroupSelection, usize>,
+    current_group: Option<GroupSelection>,
+    selected_animator_by_group: HashMap<GroupSelection, usize>,
 }
 
 impl AnimationUIState {
+    pub fn new(initial_selection: Option<GroupSelection>) -> Self {
+        let mut state = Self {
+            current_group: initial_selection,
+            selected_animator_by_group: Default::default(),
+        };
+        if let Some(selector) = initial_selection {
+            state.selected_animator_by_group.insert(selector, 0);
+        }
+        state
+    }
+
     /// Emit all current animation state, including target and selection.
     pub fn emit_state(
         &self,
@@ -43,6 +53,12 @@ impl AnimationUIState {
             group: GroupName::none(),
             sc: FixtureStateChange::Animation(StateChange::TargetLabels(ta.target_labels())),
         });
+        if let Some(selector) = self.current_group {
+            osc_controller.emit(FixtureStateChangeWithGroup {
+                group: GroupName::none(),
+                sc: FixtureStateChange::Animation(StateChange::SelectGroup(selector)),
+            });
+        }
         // FIXME this really should belong to the show
         osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
@@ -86,10 +102,12 @@ impl AnimationUIState {
             }
             ControlMessage::SelectGroup(g) => {
                 // Validate the group.
-                if !patch.valid_selector(g) {
-                    bail!("selector {g} out of range");
+                let selector = patch.validate_selector(g)?;
+                if self.current_group == Some(selector) {
+                    // Group is not changed, ignore.
+                    return Ok(());
                 }
-                self.current_group = Some(GroupSelection(g));
+                self.current_group = Some(selector);
                 self.emit_state(patch, osc_controller)?;
             }
         }

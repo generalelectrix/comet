@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, ensure, Result};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
@@ -456,6 +456,14 @@ impl Patch {
             group.dmx_indexes.push(cfg.addr.dmx_index());
             return Ok(());
         }
+        // Add selector mapping index if provided.  Ensure this is an animatable fixture.
+        if cfg.selector {
+            ensure!(
+                candidate.fixture.is_animated(),
+                "cannot assign non-animatable fixture {} to a selector",
+                candidate.fixture_type
+            );
+        }
         // No existing group; create a new one.
         self.fixtures.push(FixtureGroup {
             key,
@@ -463,7 +471,6 @@ impl Patch {
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
         });
-        // Add selector mapping index if provided.
         if cfg.selector {
             self.selector_index.push(self.fixtures.len() - 1);
         }
@@ -521,8 +528,12 @@ impl Patch {
         }
     }
 
-    pub fn valid_selector(&self, selector: usize) -> bool {
-        selector < self.selector_index.len()
+    pub fn validate_selector(&self, selector: usize) -> Result<GroupSelection> {
+        if selector < self.selector_index.len() {
+            Ok(GroupSelection(selector))
+        } else {
+            bail!("group selector {selector} out of range");
+        }
     }
 
     pub fn selector_labels(&self) -> impl Iterator<Item = String> + '_ {
