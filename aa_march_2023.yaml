@@ -6,22 +6,16 @@ debug: False
 fixtures:
   - name: wizard_extreme
     addr: 1
-    animations: True
   - name: wizard_extreme
     addr: 12
-    animations: True
   - name: wizard_extreme
     addr: 23
-    animations: True
   - name: wizard_extreme
     addr: 34
-    animations: True
   - name: wizard_extreme
     addr: 45
-    animations: True
   - name: wizard_extreme
     addr: 56
-    animations: True
   - name: starlight
     addr: 400
   - name: radiance

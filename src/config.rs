@@ -40,9 +40,6 @@ pub struct FixtureConfig {
     /// Additional key-value string options for configuring specific fixture types.
     #[serde(default)]
     pub options: Options,
-    /// If true, use animations.
-    #[serde(default)]
-    pub animations: bool,
     /// If present, assign to a group selector.
     #[serde(default)]
     pub selector: bool,

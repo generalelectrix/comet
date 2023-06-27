@@ -565,9 +565,6 @@ pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
             if cfg.name != Self::NAME {
                 return None;
             }
-            if cfg.animations {
-                return Some(Err(anyhow!("{} cannot be animated", Self::NAME)));
-            }
             match Self::new(&cfg.options) {
                 Ok(fixture) => Some(Ok(PatchCandidate {
                     fixture_type: Self::NAME,
