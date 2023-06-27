@@ -37,11 +37,11 @@ impl AnimationUIState {
         });
         osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::Animation(StateChange::Select(index)),
+            sc: FixtureStateChange::Animation(StateChange::SelectAnimation(index)),
         });
         osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::Animation(StateChange::Labels(ta.target_labels())),
+            sc: FixtureStateChange::Animation(StateChange::TargetLabels(ta.target_labels())),
         });
         Ok(())
     }
@@ -70,11 +70,18 @@ impl AnimationUIState {
                     sc: crate::fixture::FixtureStateChange::Animation(StateChange::Target(msg)),
                 });
             }
-            ControlMessage::Select(n) => {
+            ControlMessage::SelectAnimation(n) => {
                 if self.animation_index_for_selector(self.current_group()?)? == n {
                     return Ok(());
                 }
                 self.set_current_animation(n)?;
+                self.emit_state(patch, osc_controller)?;
+            }
+            ControlMessage::SelectGroup(g) => {
+                if patch.group_by_selector_mut(&g).is_none() {
+                    bail!("group selector {:?} is not defined", g.0);
+                }
+                self.current_group = Some(g);
                 self.emit_state(patch, osc_controller)?;
             }
         }
@@ -153,13 +160,16 @@ impl EmitAnimationStateChange for OscController {
 pub enum ControlMessage {
     Animation(tunnels::animation::ControlMessage),
     Target(AnimationTargetIndex),
-    Select(usize),
+    SelectAnimation(usize),
+    SelectGroup(GroupSelection),
 }
 
 #[derive(Clone, Debug)]
 pub enum StateChange {
     Animation(tunnels::animation::StateChange),
     Target(AnimationTargetIndex),
-    Select(usize),
-    Labels(Vec<String>),
+    SelectAnimation(usize),
+    SelectGroup(GroupSelection),
+    TargetLabels(Vec<String>),
+    GroupLabels(Vec<String>),
 }
