@@ -115,7 +115,7 @@ impl MapControls for AnimationControls {
 
 // Targeting/selection
 
-const N_ANIM_TARGET: usize = 11;
+const N_ANIM_TARGET: usize = 8;
 const N_ANIM_GROUP: usize = 8;
 
 const ANIMATION_SELECT: RadioButton = RadioButton {
