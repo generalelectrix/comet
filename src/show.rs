@@ -58,17 +58,17 @@ impl Show {
         // For now, assert that we only have one animatable group.
         let mut animation_ui_state = AnimationUIState::default();
         let animated_groups: Vec<_> = patch.iter().filter(|g| g.is_animated()).collect();
-        #[allow(clippy::comparison_chain)]
-        if animated_groups.len() == 1 {
-            // FIXME clean this up
-            osc_controller.map_controls(&AnimationControls);
-            let key = animated_groups[0].key().clone();
-            animation_ui_state.current_group = Some(key.clone());
-            animation_ui_state.selected_animator_by_group.insert(key, 0);
-            animation_ui_state.emit_state(&mut patch, &mut osc_controller)?;
-        } else if animated_groups.len() > 1 {
-            bail!("I only hacked in one animation group, sorry future self");
-        }
+        // #[allow(clippy::comparison_chain)]
+        // if animated_groups.len() == 1 {
+        //     // FIXME clean this up
+        //     osc_controller.map_controls(&AnimationControls);
+        //     let key = animated_groups[0].key().clone();
+        //     animation_ui_state.current_group = Some(key.clone());
+        //     animation_ui_state.selected_animator_by_group.insert(key, 0);
+        //     animation_ui_state.emit_state(&mut patch, &mut osc_controller)?;
+        // } else if animated_groups.len() > 1 {
+        //     bail!("I only hacked in one animation group, sorry future self");
+        // }
 
         Ok(Self {
             patch,

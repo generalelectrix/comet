@@ -63,7 +63,7 @@ use self::wizard_extreme::{
     WizardExtreme,
 };
 use crate::animation::{
-    ControlMessage as AnimationControlMessage, StateChange as AnimationStateChange,
+    ControlMessage as AnimationControlMessage, GroupSelection, StateChange as AnimationStateChange,
 };
 use crate::config::{FixtureConfig, Options};
 use crate::fixture::animation_target::AnimationTarget;
@@ -394,7 +394,7 @@ pub struct Patch {
     fixtures: Vec<FixtureGroup>,
     used_addrs: UsedAddrs,
     // Mapping from consecutive selector IDs to the index into the fixtures.
-    selector_map: HashMap<usize, usize>,
+    selector_map: HashMap<GroupSelection, usize>,
 }
 
 lazy_static! {
@@ -462,7 +462,7 @@ impl Patch {
         // Add selector mapping index if provided.
         if let Some(selector_index) = cfg.selector {
             if self.selector_map.contains_key(&selector_index) {
-                bail!("duplicate selector index {selector_index}");
+                bail!("duplicate selector index {}", selector_index.0);
             }
             self.selector_map
                 .insert(selector_index, self.fixtures.len() - 1);
@@ -502,6 +502,13 @@ impl Patch {
 
     pub fn group_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
         self.fixtures.iter_mut().find(|g| g.key == *key)
+    }
+
+    pub fn group_by_selector_mut(
+        &mut self,
+        selection: &GroupSelection,
+    ) -> Option<&mut FixtureGroup> {
+        self.fixtures.get_mut(selection.0)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {

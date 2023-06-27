@@ -1,3 +1,4 @@
+use crate::animation::GroupSelection;
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
 use crate::osc::OscSenderConfig;
@@ -6,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub receive_port: u16,
     pub controllers: Vec<OscSenderConfig>,
@@ -28,7 +29,7 @@ impl Config {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct FixtureConfig {
     pub name: String,
     pub addr: DmxAddr,
@@ -44,7 +45,7 @@ pub struct FixtureConfig {
     pub animations: bool,
     /// If present, assign to this selector index.
     #[serde(default)]
-    pub selector: Option<usize>,
+    pub selector: Option<GroupSelection>,
 }
 
 pub type Options = HashMap<String, String>;

@@ -1,5 +1,6 @@
 //! Maintain UI state for animations.
 use anyhow::{anyhow, bail, Result};
+use serde::Deserialize;
 use std::collections::HashMap;
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
@@ -12,10 +13,13 @@ use crate::{
     osc::OscController,
 };
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
+pub struct GroupSelection(pub usize);
+
 #[derive(Default)]
 pub struct AnimationUIState {
-    pub current_group: Option<FixtureGroupKey>,
-    pub selected_animator_by_group: HashMap<FixtureGroupKey, usize>,
+    pub current_group: Option<GroupSelection>,
+    pub selected_animator_by_group: HashMap<GroupSelection, usize>,
 }
 
 impl AnimationUIState {
@@ -67,7 +71,7 @@ impl AnimationUIState {
                 });
             }
             ControlMessage::Select(n) => {
-                if self.animation_index_for_key(self.current_group()?)? == n {
+                if self.animation_index_for_selector(self.current_group()?)? == n {
                     return Ok(());
                 }
                 self.set_current_animation(n)?;
@@ -81,17 +85,16 @@ impl AnimationUIState {
         &self,
         patch: &'a mut Patch,
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
-        let key = self.current_group()?;
-        let animation_index = self.animation_index_for_key(key)?;
+        let selector = self.current_group()?;
+        let animation_index = self.animation_index_for_selector(selector)?;
         let group = patch
-            .group_mut(key)
-            .ok_or_else(|| anyhow!("no group found for {key:?}"))?;
-        Ok((
-            group
-                .get_animation(animation_index)
-                .ok_or_else(|| anyhow!("{key:?} does not have animations"))?,
-            animation_index,
-        ))
+            .group_by_selector_mut(selector)
+            .ok_or_else(|| anyhow!("no group found for selector {selector:?}"))?;
+        let key = group.key().clone();
+        if let Some(anim) = group.get_animation(animation_index) {
+            return Ok((anim, animation_index));
+        }
+        bail!("{key:?} does not have animations");
     }
 
     fn current_animation<'a>(
@@ -102,7 +105,7 @@ impl AnimationUIState {
         Ok(ta)
     }
 
-    fn current_group(&self) -> Result<&FixtureGroupKey> {
+    fn current_group(&self) -> Result<&GroupSelection> {
         let group = self
             .current_group
             .as_ref()
@@ -110,7 +113,7 @@ impl AnimationUIState {
         Ok(group)
     }
 
-    fn animation_index_for_key(&self, key: &FixtureGroupKey) -> Result<usize> {
+    fn animation_index_for_selector(&self, key: &GroupSelection) -> Result<usize> {
         let index = self
             .selected_animator_by_group
             .get(key)
@@ -124,7 +127,7 @@ impl AnimationUIState {
         if n > N_ANIM {
             bail!("animator index {n} out of range");
         }
-        let group = self.current_group()?.clone();
+        let group = *self.current_group()?;
         match self.selected_animator_by_group.get_mut(&group) {
             Some(selected_animation) => {
                 *selected_animation = n;
