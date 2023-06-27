@@ -58,6 +58,12 @@ impl AnimatedFixture for Hypnotic {
             (false, true, true) => 98,
             (true, true, true) => 188,
         };
+        let mut rotation = self.rotation;
+        for (val, target) in animation_vals {
+            match target {
+                AnimationTarget::Rotation => rotation += *val,
+            }
+        }
         dmx_buf[1] = bipolar_to_split_range(self.rotation, 135, 245, 120, 10, 0);
     }
 }
