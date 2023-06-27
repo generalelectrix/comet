@@ -389,9 +389,12 @@ impl MapControls for FixtureGroup {
 
 type UsedAddrs = HashMap<usize, FixtureConfig>;
 
+#[derive(Default)]
 pub struct Patch {
     fixtures: Vec<FixtureGroup>,
     used_addrs: UsedAddrs,
+    // Mapping from consecutive selector IDs to the index into the fixtures.
+    selector_map: HashMap<usize, usize>,
 }
 
 lazy_static! {
@@ -418,13 +421,6 @@ lazy_static! {
 }
 
 impl Patch {
-    pub fn new() -> Self {
-        Self {
-            fixtures: Vec::new(),
-            used_addrs: HashMap::new(),
-        }
-    }
-
     pub fn patch(&mut self, cfg: FixtureConfig) -> Result<()> {
         let mut candidates = PATCHERS
             .iter()
@@ -463,6 +459,14 @@ impl Patch {
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
         });
+        // Add selector mapping index if provided.
+        if let Some(selector_index) = cfg.selector {
+            if self.selector_map.contains_key(&selector_index) {
+                bail!("duplicate selector index {selector_index}");
+            }
+            self.selector_map
+                .insert(selector_index, self.fixtures.len() - 1);
+        }
 
         Ok(())
     }

@@ -30,7 +30,7 @@ const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
     pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
-        let mut patch = Patch::new();
+        let mut patch = Patch::default();
 
         let mut osc_controller = OscController::new(cfg.receive_port, &cfg.controllers)?;
 
