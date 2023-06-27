@@ -94,7 +94,7 @@ impl AnimationUIState {
                 });
             }
             ControlMessage::SelectAnimation(n) => {
-                if self.animation_index_for_selector(self.current_group()?)? == n {
+                if self.animation_index_for_selector(self.current_group()?) == n {
                     return Ok(());
                 }
                 self.set_current_animation(n)?;
@@ -119,7 +119,7 @@ impl AnimationUIState {
         patch: &'a mut Patch,
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
         let selector = self.current_group()?;
-        let animation_index = self.animation_index_for_selector(selector)?;
+        let animation_index = self.animation_index_for_selector(selector);
         let group = patch.group_by_selector_mut(selector)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation(animation_index) {
@@ -144,13 +144,11 @@ impl AnimationUIState {
         Ok(group)
     }
 
-    fn animation_index_for_selector(&self, key: &GroupSelection) -> Result<usize> {
-        let index = self
-            .selected_animator_by_group
+    fn animation_index_for_selector(&self, key: &GroupSelection) -> usize {
+        self.selected_animator_by_group
             .get(key)
             .cloned()
-            .ok_or_else(|| anyhow!("no current animation set for {key:?}"))?;
-        Ok(index)
+            .unwrap_or_default()
     }
 
     /// Set the current animation for the current group to the provided value.
@@ -159,14 +157,7 @@ impl AnimationUIState {
             bail!("animator index {n} out of range");
         }
         let group = *self.current_group()?;
-        match self.selected_animator_by_group.get_mut(&group) {
-            Some(selected_animation) => {
-                *selected_animation = n;
-            }
-            None => {
-                bail!("no selected animator state for {group:?}");
-            }
-        }
+        self.selected_animator_by_group.insert(group, n);
         Ok(())
     }
 }
