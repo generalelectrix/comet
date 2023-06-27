@@ -46,7 +46,9 @@ impl AnimationUIState {
         // FIXME this really should belong to the show
         osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::Animation(StateChange::GroupLabels(patch.selector_labels())),
+            sc: FixtureStateChange::Animation(StateChange::GroupLabels(
+                patch.selector_labels().collect(),
+            )),
         });
         Ok(())
     }
@@ -83,10 +85,11 @@ impl AnimationUIState {
                 self.emit_state(patch, osc_controller)?;
             }
             ControlMessage::SelectGroup(g) => {
-                if patch.group_by_selector_mut(&g).is_none() {
-                    bail!("group selector {:?} is not defined", g.0);
+                // Validate the group.
+                if !patch.valid_selector(g) {
+                    bail!("selector {g} out of range");
                 }
-                self.current_group = Some(g);
+                self.current_group = Some(GroupSelection(g));
                 self.emit_state(patch, osc_controller)?;
             }
         }
@@ -99,9 +102,7 @@ impl AnimationUIState {
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
         let selector = self.current_group()?;
         let animation_index = self.animation_index_for_selector(selector)?;
-        let group = patch
-            .group_by_selector_mut(selector)
-            .ok_or_else(|| anyhow!("no group found for selector {selector:?}"))?;
+        let group = patch.group_by_selector_mut(selector)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation(animation_index) {
             return Ok((anim, animation_index));
@@ -166,7 +167,7 @@ pub enum ControlMessage {
     Animation(tunnels::animation::ControlMessage),
     Target(AnimationTargetIndex),
     SelectAnimation(usize),
-    SelectGroup(GroupSelection),
+    SelectGroup(usize),
 }
 
 #[derive(Clone, Debug)]

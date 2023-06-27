@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use lazy_static::lazy_static;
-use log::{debug, info};
+use log::{debug, error, info, warn};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
@@ -101,6 +101,10 @@ pub struct GroupName(Option<Arc<String>>);
 impl GroupName {
     pub fn none() -> Self {
         Self(None)
+    }
+
+    pub fn is_none(&self) -> bool {
+        self.0.is_none()
     }
 
     pub fn new<S: Into<String>>(v: S) -> Self {
@@ -393,8 +397,8 @@ type UsedAddrs = HashMap<usize, FixtureConfig>;
 pub struct Patch {
     fixtures: Vec<FixtureGroup>,
     used_addrs: UsedAddrs,
-    // Mapping from consecutive selector IDs to the index into the fixtures.
-    selector_map: HashMap<GroupSelection, usize>,
+    // Lookup from selector index to the fixture index assigned to that selector.
+    selector_index: Vec<usize>,
 }
 
 lazy_static! {
@@ -460,12 +464,8 @@ impl Patch {
             fixture: candidate.fixture,
         });
         // Add selector mapping index if provided.
-        if let Some(selector_index) = cfg.selector {
-            if self.selector_map.contains_key(&selector_index) {
-                bail!("duplicate selector index {}", selector_index.0);
-            }
-            self.selector_map
-                .insert(selector_index, self.fixtures.len() - 1);
+        if cfg.selector {
+            self.selector_index.push(self.fixtures.len() - 1);
         }
 
         Ok(())
@@ -507,8 +507,35 @@ impl Patch {
     pub fn group_by_selector_mut(
         &mut self,
         selection: &GroupSelection,
-    ) -> Option<&mut FixtureGroup> {
-        self.fixtures.get_mut(selection.0)
+    ) -> Result<&mut FixtureGroup> {
+        let Some(fixture_index) = self.selector_index.get(selection.0) else {
+            bail!("tried to get out-of-range selector {}.", selection.0);
+        };
+        if let Some(fixture) = self.fixtures.get_mut(*fixture_index) {
+            Ok(fixture)
+        } else {
+            bail!(
+                "selector ID {} mapped to out-of-range fixture index {fixture_index}",
+                selection.0
+            );
+        }
+    }
+
+    pub fn valid_selector(&self, selector: usize) -> bool {
+        selector < self.selector_index.len()
+    }
+
+    pub fn selector_labels(&self) -> impl Iterator<Item = String> + '_ {
+        self.selector_index
+            .iter()
+            .filter_map(|i| self.fixtures.get(*i))
+            .map(|f| {
+                if f.key.group.is_none() {
+                    f.key.fixture.to_string()
+                } else {
+                    format!("{}({})", f.key.fixture, f.key.group)
+                }
+            })
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {

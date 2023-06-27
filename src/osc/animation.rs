@@ -161,7 +161,7 @@ impl MapControls for TargetAndSelectControls {
         use FixtureControlMessage::Animation;
 
         map.add_radio_button_array(ANIMATION_GROUP_SELECT, |msg| {
-            Animation(ControlMessage::SelectGroup(GroupSelection(msg)))
+            Animation(ControlMessage::SelectGroup(msg))
         });
         map.add_radio_button_array(ANIMATION_TARGET_SELECT, |msg| {
             Animation(ControlMessage::Target(msg))

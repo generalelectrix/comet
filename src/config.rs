@@ -43,9 +43,9 @@ pub struct FixtureConfig {
     /// If true, use animations.
     #[serde(default)]
     pub animations: bool,
-    /// If present, assign to this selector index.
+    /// If present, assign to a group selector.
     #[serde(default)]
-    pub selector: Option<GroupSelection>,
+    pub selector: bool,
 }
 
 pub type Options = HashMap<String, String>;
