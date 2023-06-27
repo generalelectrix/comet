@@ -6,6 +6,7 @@ use crate::fixture::dimmer::Dimmer;
 use crate::fixture::faderboard::Faderboard;
 use crate::fixture::freedom_fries::FreedomFries;
 use crate::fixture::h2o::H2O;
+use crate::fixture::hypnotic::Hypnotic;
 use crate::fixture::lumasphere::Lumasphere;
 use crate::fixture::radiance::Radiance;
 use crate::fixture::rotosphere_q3::RotosphereQ3;
@@ -137,6 +138,7 @@ impl EmitStateChange for OscController {
             FixtureStateChange::Lumasphere(sc) => Lumasphere::emit_state_change(sc, send),
             FixtureStateChange::Venus(sc) => Venus::emit_state_change(sc, send),
             FixtureStateChange::H2O(sc) => H2O::emit_state_change(sc, send),
+            FixtureStateChange::Hypnotic(sc) => Hypnotic::emit_state_change(sc, send),
             FixtureStateChange::Aquarius(sc) => Aquarius::emit_state_change(sc, send),
             FixtureStateChange::Radiance(sc) => Radiance::emit_state_change(sc, send),
             FixtureStateChange::Swarmolon(sc) => Swarmolon::emit_state_change(sc, send),

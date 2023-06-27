@@ -32,6 +32,9 @@ use self::freedom_fries::{
     StateChange as FreedomFriesStateChange,
 };
 use self::h2o::{ControlMessage as H2OControlMessage, StateChange as H2OStateChange, H2O};
+use self::hypnotic::{
+    ControlMessage as HypnoticControlMessage, Hypnotic, StateChange as HypnoticStateChange,
+};
 use self::lumasphere::{
     ControlMessage as LumasphereControlMessage, Lumasphere, StateChange as LumasphereStateChange,
 };
@@ -64,6 +67,7 @@ use crate::animation::{
 };
 use crate::config::{FixtureConfig, Options};
 use crate::fixture::animation_target::AnimationTarget;
+use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{
     ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
 };
@@ -79,6 +83,7 @@ pub mod faderboard;
 pub mod freedom_fries;
 pub mod generic;
 pub mod h2o;
+pub mod hypnotic;
 pub mod lumasphere;
 pub mod radiance;
 pub mod rotosphere_q3;
@@ -160,6 +165,10 @@ pub trait EmitFixtureStateChange {
         self.emit(FixtureStateChange::H2O(sc));
     }
 
+    fn emit_hypnotic(&mut self, sc: HypnoticStateChange) {
+        self.emit(FixtureStateChange::Hypnotic(sc));
+    }
+
     fn emit_aquarius(&mut self, sc: AquariusStateChange) {
         self.emit(FixtureStateChange::Aquarius(sc));
     }
@@ -221,6 +230,7 @@ pub enum FixtureStateChange {
     Lumasphere(LumasphereStateChange),
     Venus(VenusStateChange),
     H2O(H2OStateChange),
+    Hypnotic(HypnoticStateChange),
     Aquarius(AquariusStateChange),
     Radiance(RadianceStateChange),
     Swarmolon(SwarmolonStateChange),
@@ -250,6 +260,7 @@ pub enum FixtureControlMessage {
     Lumasphere(LumasphereControlMessage),
     Venus(VenusControlMessage),
     H2O(H2OControlMessage),
+    Hypnotic(HypnoticControlMessage),
     Aquarius(AquariusControlMessage),
     Radiance(RadianceControlMessage),
     Swarmolon(SwarmolonControlMessage),
@@ -387,11 +398,13 @@ lazy_static! {
     static ref PATCHERS: Vec<Patcher> = vec![
         Aquarius::patcher(),
         Color::patcher(),
+        Colordynamic::patcher(),
         Comet::patcher(),
         Dimmer::patcher(),
         Faderboard::patcher(),
         FreedomFries::patcher(),
         H2O::patcher(),
+        Hypnotic::patcher(),
         Lumasphere::patcher(),
         Radiance::patcher(),
         RotosphereQ3::patcher(),

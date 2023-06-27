@@ -7,6 +7,7 @@ mod faderboard;
 mod freedom_fries;
 pub mod generic;
 mod h2o;
+mod hypnotic;
 mod lumasphere;
 mod radiance;
 mod rotosphere_q3;
