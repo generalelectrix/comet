@@ -43,6 +43,11 @@ impl AnimationUIState {
             group: GroupName::none(),
             sc: FixtureStateChange::Animation(StateChange::TargetLabels(ta.target_labels())),
         });
+        // FIXME this really should belong to the show
+        osc_controller.emit(FixtureStateChangeWithGroup {
+            group: GroupName::none(),
+            sc: FixtureStateChange::Animation(StateChange::GroupLabels(patch.selector_labels())),
+        });
         Ok(())
     }
 
