@@ -4,7 +4,7 @@ use number::BipolarFloat;
 
 use super::{
     animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
-    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture, PatchFixture,
+    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 use num_derive::{FromPrimitive, ToPrimitive};

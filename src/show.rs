@@ -12,7 +12,7 @@ use crate::{
     osc::{AnimationControls, OscController},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use log::{error, warn};
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;

@@ -1,4 +1,4 @@
-use crate::animation::GroupSelection;
+
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
 use crate::osc::OscSenderConfig;

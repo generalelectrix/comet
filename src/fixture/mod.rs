@@ -1,4 +1,4 @@
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{ensure, Result};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use lazy_static::lazy_static;
-use log::{debug, error, info, warn};
+use log::{debug, info};
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 

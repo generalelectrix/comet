@@ -2,7 +2,7 @@ use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
 use crate::animation::ControlMessage::Animation as WrapAnimation;
-use crate::animation::GroupSelection;
+
 use crate::fixture::{FixtureControlMessage, N_ANIM};
 use crate::osc::HandleStateChange;
 use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
