@@ -4,7 +4,7 @@ use number::BipolarFloat;
 
 use super::{
     animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
-    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture, PatchFixture,
+    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -58,6 +58,12 @@ impl AnimatedFixture for Hypnotic {
             (false, true, true) => 98,
             (true, true, true) => 188,
         };
+        let mut rotation = self.rotation;
+        for (val, target) in animation_vals {
+            match target {
+                AnimationTarget::Rotation => rotation += *val,
+            }
+        }
         dmx_buf[1] = bipolar_to_split_range(self.rotation, 135, 245, 120, 10, 0);
     }
 }

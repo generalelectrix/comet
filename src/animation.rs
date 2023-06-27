@@ -1,24 +1,38 @@
 //! Maintain UI state for animations.
 use anyhow::{anyhow, bail, Result};
-use std::collections::HashMap;
+use serde::Deserialize;
+use std::{collections::HashMap, hash::Hash};
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
-        EmitStateChange, FixtureGroupKey, FixtureStateChange, GroupName, Patch,
+        EmitStateChange, FixtureStateChange, GroupName, Patch,
         StateChange as FixtureStateChangeWithGroup, N_ANIM,
     },
     osc::OscController,
 };
 
-#[derive(Default)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
+pub struct GroupSelection(pub usize);
+
 pub struct AnimationUIState {
-    pub current_group: Option<FixtureGroupKey>,
-    pub selected_animator_by_group: HashMap<FixtureGroupKey, usize>,
+    current_group: Option<GroupSelection>,
+    selected_animator_by_group: HashMap<GroupSelection, usize>,
 }
 
 impl AnimationUIState {
+    pub fn new(initial_selection: Option<GroupSelection>) -> Self {
+        let mut state = Self {
+            current_group: initial_selection,
+            selected_animator_by_group: Default::default(),
+        };
+        if let Some(selector) = initial_selection {
+            state.selected_animator_by_group.insert(selector, 0);
+        }
+        state
+    }
+
     /// Emit all current animation state, including target and selection.
     pub fn emit_state(
         &self,
@@ -33,11 +47,24 @@ impl AnimationUIState {
         });
         osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::Animation(StateChange::Select(index)),
+            sc: FixtureStateChange::Animation(StateChange::SelectAnimation(index)),
         });
         osc_controller.emit(FixtureStateChangeWithGroup {
             group: GroupName::none(),
-            sc: FixtureStateChange::Animation(StateChange::Labels(ta.target_labels())),
+            sc: FixtureStateChange::Animation(StateChange::TargetLabels(ta.target_labels())),
+        });
+        if let Some(selector) = self.current_group {
+            osc_controller.emit(FixtureStateChangeWithGroup {
+                group: GroupName::none(),
+                sc: FixtureStateChange::Animation(StateChange::SelectGroup(selector)),
+            });
+        }
+        // FIXME this really should belong to the show
+        osc_controller.emit(FixtureStateChangeWithGroup {
+            group: GroupName::none(),
+            sc: FixtureStateChange::Animation(StateChange::GroupLabels(
+                patch.selector_labels().collect(),
+            )),
         });
         Ok(())
     }
@@ -66,11 +93,21 @@ impl AnimationUIState {
                     sc: crate::fixture::FixtureStateChange::Animation(StateChange::Target(msg)),
                 });
             }
-            ControlMessage::Select(n) => {
-                if self.animation_index_for_key(self.current_group()?)? == n {
+            ControlMessage::SelectAnimation(n) => {
+                if self.animation_index_for_selector(self.current_group()?) == n {
                     return Ok(());
                 }
                 self.set_current_animation(n)?;
+                self.emit_state(patch, osc_controller)?;
+            }
+            ControlMessage::SelectGroup(g) => {
+                // Validate the group.
+                let selector = patch.validate_selector(g)?;
+                if self.current_group == Some(selector) {
+                    // Group is not changed, ignore.
+                    return Ok(());
+                }
+                self.current_group = Some(selector);
                 self.emit_state(patch, osc_controller)?;
             }
         }
@@ -81,17 +118,14 @@ impl AnimationUIState {
         &self,
         patch: &'a mut Patch,
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
-        let key = self.current_group()?;
-        let animation_index = self.animation_index_for_key(key)?;
-        let group = patch
-            .group_mut(key)
-            .ok_or_else(|| anyhow!("no group found for {key:?}"))?;
-        Ok((
-            group
-                .get_animation(animation_index)
-                .ok_or_else(|| anyhow!("{key:?} does not have animations"))?,
-            animation_index,
-        ))
+        let selector = self.current_group()?;
+        let animation_index = self.animation_index_for_selector(selector);
+        let group = patch.group_by_selector_mut(selector)?;
+        let key = group.key().clone();
+        if let Some(anim) = group.get_animation(animation_index) {
+            return Ok((anim, animation_index));
+        }
+        bail!("{key:?} does not have animations");
     }
 
     fn current_animation<'a>(
@@ -102,7 +136,7 @@ impl AnimationUIState {
         Ok(ta)
     }
 
-    fn current_group(&self) -> Result<&FixtureGroupKey> {
+    fn current_group(&self) -> Result<&GroupSelection> {
         let group = self
             .current_group
             .as_ref()
@@ -110,13 +144,11 @@ impl AnimationUIState {
         Ok(group)
     }
 
-    fn animation_index_for_key(&self, key: &FixtureGroupKey) -> Result<usize> {
-        let index = self
-            .selected_animator_by_group
+    fn animation_index_for_selector(&self, key: &GroupSelection) -> usize {
+        self.selected_animator_by_group
             .get(key)
             .cloned()
-            .ok_or_else(|| anyhow!("no current animation set for {key:?}"))?;
-        Ok(index)
+            .unwrap_or_default()
     }
 
     /// Set the current animation for the current group to the provided value.
@@ -124,15 +156,8 @@ impl AnimationUIState {
         if n > N_ANIM {
             bail!("animator index {n} out of range");
         }
-        let group = self.current_group()?.clone();
-        match self.selected_animator_by_group.get_mut(&group) {
-            Some(selected_animation) => {
-                *selected_animation = n;
-            }
-            None => {
-                bail!("no selected animator state for {group:?}");
-            }
-        }
+        let group = *self.current_group()?;
+        self.selected_animator_by_group.insert(group, n);
         Ok(())
     }
 }
@@ -150,13 +175,16 @@ impl EmitAnimationStateChange for OscController {
 pub enum ControlMessage {
     Animation(tunnels::animation::ControlMessage),
     Target(AnimationTargetIndex),
-    Select(usize),
+    SelectAnimation(usize),
+    SelectGroup(usize),
 }
 
 #[derive(Clone, Debug)]
 pub enum StateChange {
     Animation(tunnels::animation::StateChange),
     Target(AnimationTargetIndex),
-    Select(usize),
-    Labels(Vec<String>),
+    SelectAnimation(usize),
+    SelectGroup(GroupSelection),
+    TargetLabels(Vec<String>),
+    GroupLabels(Vec<String>),
 }

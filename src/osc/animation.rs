@@ -2,6 +2,7 @@ use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
 use crate::animation::ControlMessage::Animation as WrapAnimation;
+
 use crate::fixture::{FixtureControlMessage, N_ANIM};
 use crate::osc::HandleStateChange;
 use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
@@ -114,7 +115,8 @@ impl MapControls for AnimationControls {
 
 // Targeting/selection
 
-const N_ANIM_TARGET: usize = 11;
+const N_ANIM_TARGET: usize = 8;
+const N_ANIM_GROUP: usize = 8;
 
 const ANIMATION_SELECT: RadioButton = RadioButton {
     group: GROUP,
@@ -130,10 +132,24 @@ const ANIMATION_TARGET_SELECT: RadioButton = RadioButton {
     x_primary_coordinate: false,
 };
 
-const ANIMATION_LABELS: LabelArray = LabelArray {
+const ANIMATION_TARGET_LABELS: LabelArray = LabelArray {
     group: GROUP,
     control: "TargetLabel",
     n: N_ANIM_TARGET,
+    empty_label: "XXXXXX",
+};
+
+const ANIMATION_GROUP_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "Group",
+    n: N_ANIM_GROUP,
+    x_primary_coordinate: false,
+};
+
+const ANIMATION_GROUP_LABELS: LabelArray = LabelArray {
+    group: GROUP,
+    control: "GroupLabel",
+    n: N_ANIM_GROUP,
     empty_label: "XXXXXX",
 };
 
@@ -144,11 +160,14 @@ impl MapControls for TargetAndSelectControls {
         use crate::animation::ControlMessage;
         use FixtureControlMessage::Animation;
 
+        map.add_radio_button_array(ANIMATION_GROUP_SELECT, |msg| {
+            Animation(ControlMessage::SelectGroup(msg))
+        });
         map.add_radio_button_array(ANIMATION_TARGET_SELECT, |msg| {
             Animation(ControlMessage::Target(msg))
         });
         map.add_radio_button_array(ANIMATION_SELECT, |msg| {
-            Animation(ControlMessage::Select(msg))
+            Animation(ControlMessage::SelectAnimation(msg))
         });
     }
 }
@@ -162,10 +181,16 @@ impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
             crate::animation::StateChange::Animation(msg) => {
                 AnimationControls::emit_state_change(msg, send)
             }
-            crate::animation::StateChange::Select(msg) => ANIMATION_SELECT.set(msg, send),
+            crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
+            crate::animation::StateChange::SelectGroup(msg) => {
+                ANIMATION_GROUP_SELECT.set(msg.0, send)
+            }
             crate::animation::StateChange::Target(msg) => ANIMATION_TARGET_SELECT.set(msg, send),
-            crate::animation::StateChange::Labels(labels) => {
-                ANIMATION_LABELS.set(labels.into_iter(), send)
+            crate::animation::StateChange::TargetLabels(labels) => {
+                ANIMATION_TARGET_LABELS.set(labels.into_iter(), send)
+            }
+            crate::animation::StateChange::GroupLabels(labels) => {
+                ANIMATION_GROUP_LABELS.set(labels.into_iter(), send)
             }
         }
     }

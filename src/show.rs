@@ -7,12 +7,12 @@ use crate::{
     animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
-    fixture::{FixtureControlMessage, Patch},
+    fixture::{FixtureControlMessage, FixtureGroup, Patch},
     master::MasterControls,
     osc::{AnimationControls, OscController},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use log::{error, warn};
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
@@ -30,7 +30,7 @@ const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
     pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
-        let mut patch = Patch::new();
+        let mut patch = Patch::default();
 
         let mut osc_controller = OscController::new(cfg.receive_port, &cfg.controllers)?;
 
@@ -55,20 +55,14 @@ impl Show {
         master_controls.emit_state(&mut osc_controller);
 
         // Configure animation controls.
-        // For now, assert that we only have one animatable group.
-        let mut animation_ui_state = AnimationUIState::default();
-        let animated_groups: Vec<_> = patch.iter().filter(|g| g.is_animated()).collect();
-        #[allow(clippy::comparison_chain)]
-        if animated_groups.len() == 1 {
-            // FIXME clean this up
-            osc_controller.map_controls(&AnimationControls);
-            let key = animated_groups[0].key().clone();
-            animation_ui_state.current_group = Some(key.clone());
-            animation_ui_state.selected_animator_by_group.insert(key, 0);
-            animation_ui_state.emit_state(&mut patch, &mut osc_controller)?;
-        } else if animated_groups.len() > 1 {
-            bail!("I only hacked in one animation group, sorry future self");
-        }
+        osc_controller.map_controls(&AnimationControls);
+        let animation_ui_state = if patch.iter().any(FixtureGroup::is_animated) {
+            let state = AnimationUIState::new(Some(patch.validate_selector(0)?));
+            state.emit_state(&mut patch, &mut osc_controller)?;
+            state
+        } else {
+            AnimationUIState::new(None)
+        };
 
         Ok(Self {
             patch,
