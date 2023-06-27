@@ -11,7 +11,7 @@ use super::{
     PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
-use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
+use crate::util::{bipolar_to_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]

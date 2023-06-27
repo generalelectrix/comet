@@ -4,9 +4,9 @@ use super::generic::map_strobe;
 use crate::fixture::colordynamic::{Colordynamic, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::FixtureControlMessage;
-use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
-use crate::osc::{ControlMap, MapControls, RadioButton};
+
+use crate::osc::{HandleStateChange};
+use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Colordynamic";
@@ -36,7 +36,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for Colordynamic {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(_sc: StateChange, _send: &mut S)
     where
         S: FnMut(OscMessage),
     {
