@@ -1,6 +1,6 @@
 receive_port: 8000
 controllers:
-  - host: 192.168.1.220
+  - host: 10.1.1.190
     port: 9000
 debug: True
 fixtures:
