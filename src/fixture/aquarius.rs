@@ -1,10 +1,11 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
-
+use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
 };
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 
@@ -14,7 +15,7 @@ pub struct Aquarius {
     rotation: BipolarFloat,
 }
 
-impl PatchFixture for Aquarius {
+impl PatchAnimatedFixture for Aquarius {
     const NAME: &'static str = "aquarius";
     fn channel_count(&self) -> usize {
         2
@@ -32,9 +33,22 @@ impl Aquarius {
     }
 }
 
-impl NonAnimatedFixture for Aquarius {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = bipolar_to_split_range(self.rotation, 130, 8, 132, 255, 0);
+impl AnimatedFixture for Aquarius {
+    type Target = AnimationTarget;
+    fn render_with_animations(
+        &self,
+        master: &MasterControls,
+        animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    ) {
+        let mut rotation = self.rotation.val();
+        for (val, target) in animation_vals {
+            use AnimationTarget::*;
+            match target {
+                Rotation => rotation += val,
+            }
+        }
+        dmx_buf[0] = bipolar_to_split_range(BipolarFloat::new(rotation), 130, 8, 132, 255, 0);
         dmx_buf[1] = if self.lamp_on { 255 } else { 0 };
     }
 }
@@ -69,3 +83,27 @@ pub enum StateChange {
 
 // Aquarius has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    EnumDisplay,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum AnimationTarget {
+    #[default]
+    Rotation,
+}
+
+impl AnimationTarget {
+    #[allow(unused)]
+    pub fn is_unipolar(&self) -> bool {
+        false
+    }
+}
