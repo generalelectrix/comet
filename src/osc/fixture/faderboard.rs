@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::FixtureControlMessage;
@@ -13,10 +13,12 @@ impl MapControls for Faderboard {
             let index = msg
                 .addr_payload()
                 .split('/')
-                .take(2)
-                .map(str::parse::<usize>)
+                .skip(1)
+                .take(1)
                 .next()
-                .ok_or_else(|| anyhow!("faderboard index missing"))??;
+                .ok_or_else(|| anyhow!("faderboard index missing"))?
+                .parse::<usize>()
+                .with_context(|| format!("handling message {msg:?}"))?;
             if index == 0 {
                 bail!("Faderboard index is 0.");
             }

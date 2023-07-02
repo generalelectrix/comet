@@ -1,12 +1,8 @@
 receive_port: 8000
 controllers:
-  - host: 10.1.1.190
+  - host: 10.0.1.6
     port: 9000
 debug: True
 fixtures:
-  - name: solar_system
+  - name: faderboard
     addr: 1
-    selector: True
-  - name: wizard_extreme
-    addr: 100
-    selector: True

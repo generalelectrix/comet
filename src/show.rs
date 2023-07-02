@@ -12,7 +12,7 @@ use crate::{
     osc::{AnimationControls, OscController},
 };
 
-use anyhow::{Result};
+use anyhow::Result;
 use log::{error, warn};
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
@@ -80,7 +80,7 @@ impl Show {
         loop {
             // Process a control event if one is pending.
             if let Err(err) = self.control(CONTROL_TIMEOUT) {
-                error!("A control error occurred: {}.", err);
+                error!("A control error occurred: {err:#}.");
             }
 
             // Compute updates until we're current.
@@ -101,7 +101,7 @@ impl Show {
             if should_render {
                 self.render(&mut dmx_buffer);
                 if let Err(e) = dmx_port.write(&dmx_buffer) {
-                    error!("DMX write error: {}.", e);
+                    error!("DMX write error: {e:#}.");
                 }
             }
         }
