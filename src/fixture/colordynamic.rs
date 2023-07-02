@@ -11,7 +11,7 @@ use super::{
     PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
-use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
+use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -98,11 +98,12 @@ impl AnimatedFixture for Colordynamic {
         }
         dmx_buf[0] = 0; // FIXME does this do anything?
         dmx_buf[1] = if self.color_rotation_on {
-            unipolar_to_range(128, 255, self.color_rotation_speed)
+            unipolar_to_range(128, 255, UnipolarFloat::new(color_rotation_speed))
         } else {
-            unipolar_to_range(0, 127, self.color_position)
+            unipolar_to_range(0, 127, UnipolarFloat::new(color_position))
         };
-        dmx_buf[2] = bipolar_to_split_range(self.fiber_rotation, 113, 0, 142, 255, 128);
+        dmx_buf[2] =
+            bipolar_to_split_range(BipolarFloat::new(fiber_rotation), 113, 0, 142, 255, 128);
         dmx_buf[3] = if !self.shutter_open {
             0
         } else {

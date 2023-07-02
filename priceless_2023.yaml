@@ -1,0 +1,19 @@
+receive_port: 8000
+controllers:
+  - host: 10.0.1.6
+    port: 9000
+debug: True
+fixtures:
+  - name: colordynamic
+    addr: 33
+    selector: True
+  - name: aquarius
+    addr: 400
+    selector: True
+  - name: aquarius
+    addr: 402
+  - name: h2o
+    addr: 404
+    selector: True
+  - name: h2o
+    addr: 407
