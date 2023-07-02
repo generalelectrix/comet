@@ -11,7 +11,7 @@ use super::{
     PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
-use crate::util::{bipolar_to_range, unipolar_to_range};
+use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -27,7 +27,7 @@ pub struct Colordynamic {
 impl PatchAnimatedFixture for Colordynamic {
     const NAME: &'static str = "colordynamic";
     fn channel_count(&self) -> usize {
-        4
+        3
     }
 }
 
@@ -102,14 +102,14 @@ impl AnimatedFixture for Colordynamic {
         } else {
             unipolar_to_range(0, 127, self.color_position)
         };
-        dmx_buf[2] = bipolar_to_range(0, 255, self.fiber_rotation);
+        dmx_buf[2] = bipolar_to_split_range(self.fiber_rotation, 113, 0, 142, 255, 128);
         dmx_buf[3] = if !self.shutter_open {
             0
         } else {
             let strobe_off = 0;
             let strobe = self
                 .strobe
-                .render_range_with_master(master.strobe(), strobe_off, 10, 240);
+                .render_range_with_master(master.strobe(), strobe_off, 16, 239);
             if strobe == strobe_off {
                 255
             } else {
