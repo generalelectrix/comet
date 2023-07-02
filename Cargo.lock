@@ -2009,7 +2009,6 @@ dependencies = [
 [[package]]
 name = "tunnels"
 version = "0.1.0"
-source = "git+https://github.com/generalelectrix/tunnels?branch=main#c49306a4c9c10bca62d9bd1952a4958d9ad29a06"
 dependencies = [
  "anyhow",
  "audio-processor-analysis",
@@ -2035,7 +2034,6 @@ dependencies = [
 [[package]]
 name = "tunnels_lib"
 version = "0.1.0"
-source = "git+https://github.com/generalelectrix/tunnels?branch=main#c49306a4c9c10bca62d9bd1952a4958d9ad29a06"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -2392,7 +2390,6 @@ dependencies = [
 [[package]]
 name = "zero_configure"
 version = "0.1.0"
-source = "git+https://github.com/generalelectrix/tunnels?branch=main#c49306a4c9c10bca62d9bd1952a4958d9ad29a06"
 dependencies = [
  "anyhow",
  "async-dnssd",

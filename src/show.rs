@@ -152,7 +152,8 @@ impl Show {
         }
         if let Some(ref clock_service) = self.clock_service {
             let clock_state = clock_service.get();
-            self.master_controls.clock_state = clock_state;
+            self.master_controls.clock_state = clock_state.clock_bank;
+            self.master_controls.audio_envelope = clock_state.audio_envelope;
         }
     }
 

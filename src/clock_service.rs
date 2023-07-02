@@ -7,14 +7,14 @@ use std::{
 
 use anyhow::{bail, Result};
 use log::error;
-use tunnels::clock_server::{clock_subscriber, StaticClockBank};
+use tunnels::clock_server::{clock_subscriber, SharedClockData};
 use tunnels_lib::prompt::{prompt_bool, prompt_parse};
 use zmq::Context;
 
-pub struct ClockService(Arc<Mutex<StaticClockBank>>);
+pub struct ClockService(Arc<Mutex<SharedClockData>>);
 
 impl ClockService {
-    pub fn get(&self) -> StaticClockBank {
+    pub fn get(&self) -> SharedClockData {
         let val = self.0.lock().unwrap();
         (*val).clone()
     }
@@ -42,7 +42,7 @@ pub fn prompt_start_clock_service(ctx: Context) -> Result<Option<ClockService>> 
     let provider = prompt_parse("Select a provider", |s| Ok(s.to_string()))?;
     println!("Connecting...");
     let mut receiver = service.subscribe(&provider, None)?;
-    let storage = Arc::new(Mutex::new(StaticClockBank::default()));
+    let storage = Arc::new(Mutex::new(SharedClockData::default()));
     let storage_handle = storage.clone();
     thread::spawn(move || loop {
         let msg = match receiver.receive_msg(true) {

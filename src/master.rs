@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use number::UnipolarFloat;
 use tunnels::clock_server::StaticClockBank;
 
 use crate::fixture::{
@@ -14,6 +15,7 @@ pub struct MasterControls {
     strobe: Strobe,
     autopilot: Autopilot,
     pub clock_state: StaticClockBank,
+    pub audio_envelope: UnipolarFloat,
 }
 
 impl MasterControls {

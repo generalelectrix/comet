@@ -746,7 +746,7 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
                 ta.animation.get_value(
                     phase_offset,
                     &master_controls.clock_state,
-                    UnipolarFloat::ZERO,
+                    master_controls.audio_envelope,
                 ),
                 ta.target,
             );
