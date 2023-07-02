@@ -27,7 +27,7 @@ pub struct Colordynamic {
 impl PatchAnimatedFixture for Colordynamic {
     const NAME: &'static str = "colordynamic";
     fn channel_count(&self) -> usize {
-        3
+        4
     }
 }
 

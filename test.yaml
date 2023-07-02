@@ -5,4 +5,4 @@ controllers:
 debug: True
 fixtures:
   - name: faderboard
-    addr: 1
+    addr: 33
