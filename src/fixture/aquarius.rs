@@ -4,8 +4,7 @@ use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture, PatchFixture,
 };
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 
@@ -37,7 +36,7 @@ impl AnimatedFixture for Aquarius {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
-        master: &MasterControls,
+        _master: &MasterControls,
         animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

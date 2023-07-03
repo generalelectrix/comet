@@ -3,7 +3,7 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::{AnimatedFixture, ControllableFixture, NonAnimatedFixture, PatchAnimatedFixture};
+use super::{AnimatedFixture, ControllableFixture, PatchAnimatedFixture};
 use super::{EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage, PatchFixture};
 use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;
