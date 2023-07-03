@@ -31,7 +31,7 @@ const STANDING: &str = "Standing";
 const WAVEFORM_SELECT: RadioButton = RadioButton {
     group: GROUP,
     control: "Waveform",
-    n: 4,
+    n: 5,
     x_primary_coordinate: false,
 };
 
@@ -62,6 +62,7 @@ impl MapControls for AnimationControls {
                 1 => Some(Triangle),
                 2 => Some(Square),
                 3 => Some(Sawtooth),
+                4 => Some(Constant),
                 _ => None,
             }
             .map(|waveform| FixtureAnimation(WrapAnimation(Set(Waveform(waveform)))))
@@ -209,6 +210,7 @@ impl HandleStateChange<StateChange> for AnimationControls {
                     Triangle => 1,
                     Square => 2,
                     Sawtooth => 3,
+                    Constant => 4,
                 },
                 send,
             ),
