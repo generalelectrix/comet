@@ -4,9 +4,11 @@ controllers:
     port: 9000
 debug: True
 fixtures:
-  - name: colordynamic
-    addr: 33
+  - name: solar_system
+    addr: 450
     selector: True
+  - name: solar_system
+    addr: 457
   - name: aquarius
     addr: 400
     selector: True
@@ -17,3 +19,11 @@ fixtures:
     selector: True
   - name: h2o
     addr: 407
+  - name: colordynamic
+    addr: 33
+    selector: True
+  - name: hypnotic
+    addr: 410
+    selector: True
+  - name: hypnotic
+    addr: 412
