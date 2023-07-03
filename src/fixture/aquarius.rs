@@ -4,7 +4,8 @@ use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture, PatchFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::{master::MasterControls, util::bipolar_to_split_range};
 
