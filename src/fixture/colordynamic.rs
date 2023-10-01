@@ -24,6 +24,19 @@ pub struct Colordynamic {
     fiber_rotation: BipolarFloat,
 }
 
+// impl Default for Colordynamic {
+//     fn default() -> Self {
+//         Colordynamic {
+//             shutter_open: true,
+//             strobe: GenericStrobe::default(),
+//             color_rotation_on: true,
+//             color_rotation_speed: UnipolarFloat::new(0.1),
+//             color_position: UnipolarFloat::ZERO,
+//             fiber_rotation: BipolarFloat::new(0.1),
+//         }
+//     }
+// }
+
 impl PatchAnimatedFixture for Colordynamic {
     const NAME: &'static str = "colordynamic";
     fn channel_count(&self) -> usize {

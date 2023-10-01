@@ -137,7 +137,7 @@ const ANIMATION_TARGET_LABELS: LabelArray = LabelArray {
     group: GROUP,
     control: "TargetLabel",
     n: N_ANIM_TARGET,
-    empty_label: "XXXXXX",
+    empty_label: "",
 };
 
 const ANIMATION_GROUP_SELECT: RadioButton = RadioButton {
@@ -151,7 +151,7 @@ const ANIMATION_GROUP_LABELS: LabelArray = LabelArray {
     group: GROUP,
     control: "GroupLabel",
     n: N_ANIM_GROUP,
-    empty_label: "XXXXXX",
+    empty_label: "",
 };
 
 struct TargetAndSelectControls;
