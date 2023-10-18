@@ -103,7 +103,7 @@ mod test {
         assert_eq!("/foo/bar", get_control_key("/:hello/foo/bar/baz").unwrap());
         assert_eq!("/foo/bar", get_control_key("/foo/bar/baz").unwrap());
         assert_eq!("/foo/bar", get_control_key("/foo/bar").unwrap());
-        let bad = vec!["", "foo", "foo/bar", "/bar", "/", "/:foo/bar"];
+        let bad = ["", "foo", "foo/bar", "/bar", "/", "/:foo/bar"];
         for b in bad.iter() {
             assert!(get_control_key(b).is_err());
         }
