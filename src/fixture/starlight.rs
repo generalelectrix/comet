@@ -62,7 +62,7 @@ impl AnimatedFixture for Starlight {
         dmx_buf[2] = self
             .strobe
             .render_range_with_master(master_controls.strobe(), 0, 10, 255);
-        dmx_buf[3] = bipolar_to_split_range(BipolarFloat::new(rotation), 0, 127, 255, 128, 0);
+        dmx_buf[3] = bipolar_to_split_range(BipolarFloat::new(rotation), 127, 1, 128, 255, 0);
     }
 }
 
