@@ -38,7 +38,7 @@ impl RadioButton {
     }
 
     /// Get a index from a collection of radio buttons, mapped to numeric addresses.
-    pub fn parse(&self, v: &OscControlMessage) -> Result<Option<usize>, OscError> {
+    fn parse(&self, v: &OscControlMessage) -> Result<Option<usize>, OscError> {
         let (x, y) = match parse_radio_button_indices(v.addr_payload()) {
             Ok(indices) => indices,
             Err(err) => {
