@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -36,7 +35,7 @@ impl MapControls for Swarmolon {
             Swarmolon(Set(DerbyRotation(bipolar_fader_with_detent(v))))
         });
         map_strobe(map, GROUP, "WhiteStrobe", &wrap_white_strobe);
-        map.add_radio_button_array(STROBE_PROGRAM_SELECT, |v| {
+        STROBE_PROGRAM_SELECT.map(map, |v| {
             Swarmolon(Set(WhiteStrobe(WhiteStrobeStateChange::Program(v))))
         });
 
@@ -69,7 +68,7 @@ fn wrap_laser_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for Swarmolon {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

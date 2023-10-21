@@ -46,6 +46,8 @@ mod label_array;
 mod master;
 mod radio_button;
 
+pub type TalkbackMode = bool;
+
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
     /// Add OSC control mappings to the provided control map.
@@ -55,7 +57,7 @@ pub trait MapControls {
 /// Process a state change message into OSC messages.
 pub trait HandleStateChange<SC> {
     /// Convert the provided state change into OSC messages and send them.
-    fn emit_state_change<S>(_sc: SC, _send: &mut S)
+    fn emit_state_change<S>(_sc: SC, _send: &mut S, talkback: TalkbackMode)
     where
         S: FnMut(OscMessage),
     {
@@ -64,6 +66,7 @@ pub trait HandleStateChange<SC> {
 
 pub struct OscController {
     control_map: ControlMap<FixtureControlMessage>,
+    talkback: TalkbackMode,
     recv: Receiver<OscControlMessage>,
     send: Sender<OscMessage>,
 }
@@ -94,6 +97,7 @@ impl OscController {
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
             control_map: ControlMap::new(),
+            talkback: true,
             recv: control_recv,
             send: response_send,
         })
@@ -134,26 +138,56 @@ impl EmitStateChange for OscController {
             let _ = self.send.send(msg);
         };
         match sc.sc {
-            FixtureStateChange::Comet(sc) => Comet::emit_state_change(sc, send),
-            FixtureStateChange::Lumasphere(sc) => Lumasphere::emit_state_change(sc, send),
-            FixtureStateChange::Venus(sc) => Venus::emit_state_change(sc, send),
-            FixtureStateChange::H2O(sc) => H2O::emit_state_change(sc, send),
-            FixtureStateChange::Hypnotic(sc) => Hypnotic::emit_state_change(sc, send),
-            FixtureStateChange::Aquarius(sc) => Aquarius::emit_state_change(sc, send),
-            FixtureStateChange::Radiance(sc) => Radiance::emit_state_change(sc, send),
-            FixtureStateChange::Swarmolon(sc) => Swarmolon::emit_state_change(sc, send),
-            FixtureStateChange::Starlight(sc) => Starlight::emit_state_change(sc, send),
-            FixtureStateChange::RotosphereQ3(sc) => RotosphereQ3::emit_state_change(sc, send),
-            FixtureStateChange::FreedomFries(sc) => FreedomFries::emit_state_change(sc, send),
-            FixtureStateChange::Faderboard(sc) => Faderboard::emit_state_change(sc, send),
-            FixtureStateChange::RushWizard(sc) => RushWizard::emit_state_change(sc, send),
-            FixtureStateChange::WizardExtreme(sc) => WizardExtreme::emit_state_change(sc, send),
-            FixtureStateChange::SolarSystem(sc) => SolarSystem::emit_state_change(sc, send),
-            FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send),
-            FixtureStateChange::Colordynamic(sc) => Colordynamic::emit_state_change(sc, send),
-            FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send),
-            FixtureStateChange::Master(sc) => MasterControls::emit_state_change(sc, send),
-            FixtureStateChange::Animation(sc) => AnimationControls::emit_state_change(sc, send),
+            FixtureStateChange::Comet(sc) => Comet::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Lumasphere(sc) => {
+                Lumasphere::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Venus(sc) => Venus::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::H2O(sc) => H2O::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Hypnotic(sc) => {
+                Hypnotic::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Aquarius(sc) => {
+                Aquarius::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Radiance(sc) => {
+                Radiance::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Swarmolon(sc) => {
+                Swarmolon::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Starlight(sc) => {
+                Starlight::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::RotosphereQ3(sc) => {
+                RotosphereQ3::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::FreedomFries(sc) => {
+                FreedomFries::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Faderboard(sc) => {
+                Faderboard::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::RushWizard(sc) => {
+                RushWizard::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::WizardExtreme(sc) => {
+                WizardExtreme::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::SolarSystem(sc) => {
+                SolarSystem::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Colordynamic(sc) => {
+                Colordynamic::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Master(sc) => {
+                MasterControls::emit_state_change(sc, send, self.talkback)
+            }
+            FixtureStateChange::Animation(sc) => {
+                AnimationControls::emit_state_change(sc, send, self.talkback)
+            }
         }
     }
 }
@@ -258,18 +292,6 @@ impl<C> ControlMap<C> {
                 None
             }
         })
-    }
-
-    pub fn add_radio_button_array<F>(&mut self, rb: RadioButton, process: F)
-    where
-        F: Fn(usize) -> C + 'static + Copy,
-    {
-        self.add_fetch_process(
-            rb.group,
-            rb.control,
-            move |m| rb.parse(m),
-            move |x| x.map(process),
-        )
     }
 }
 

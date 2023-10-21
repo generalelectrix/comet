@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -31,7 +30,7 @@ impl MapControls for WizardExtreme {
         map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| WizardExtreme(Color(c)));
         map.add_bool(GROUP, "Twinkle", |v| WizardExtreme(Twinkle(v)));
         map.add_unipolar(GROUP, "TwinkleSpeed", |v| WizardExtreme(TwinkleSpeed(v)));
-        map.add_radio_button_array(GOBO_SELECT, |v| WizardExtreme(Gobo(v)));
+        GOBO_SELECT.map(map, |v| WizardExtreme(Gobo(v)));
         map.add_bipolar(GROUP, "DrumRotation", |v| {
             WizardExtreme(DrumRotation(bipolar_fader_with_detent(v)))
         });
@@ -47,7 +46,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for WizardExtreme {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

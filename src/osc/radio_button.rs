@@ -4,7 +4,9 @@ use rosc::{OscMessage, OscType};
 use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;
 
-use super::{control_message::OscControlMessage, OscError};
+use crate::fixture::FixtureControlMessage;
+
+use super::{control_message::OscControlMessage, ControlMap, OscError};
 
 /// Model a 1D button grid with radio-select behavior.
 /// This implements the TouchOSC model for a button grid.
@@ -22,6 +24,19 @@ pub struct RadioButton {
 }
 
 impl RadioButton {
+    /// Wire up this radio button to a control map.
+    pub fn map<F>(self, map: &mut ControlMap<FixtureControlMessage>, process: F)
+    where
+        F: Fn(usize) -> FixtureControlMessage + 'static + Copy,
+    {
+        map.add_fetch_process(
+            self.group,
+            self.control,
+            move |m| self.parse(m),
+            move |x| x.map(process),
+        )
+    }
+
     /// Get a index from a collection of radio buttons, mapped to numeric addresses.
     pub fn parse(&self, v: &OscControlMessage) -> Result<Option<usize>, OscError> {
         let (x, y) = match parse_radio_button_indices(v.addr_payload()) {

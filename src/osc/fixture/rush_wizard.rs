@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -31,7 +30,7 @@ impl MapControls for RushWizard {
         map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| RushWizard(Color(c)));
         map.add_bool(GROUP, "Twinkle", |v| RushWizard(Twinkle(v)));
         map.add_unipolar(GROUP, "TwinkleSpeed", |v| RushWizard(TwinkleSpeed(v)));
-        map.add_radio_button_array(GOBO_SELECT, |v| RushWizard(Gobo(v)));
+        GOBO_SELECT.map(map, |v| RushWizard(Gobo(v)));
         map.add_bipolar(GROUP, "DrumRotation", |v| {
             RushWizard(DrumRotation(bipolar_fader_with_detent(v)))
         });
@@ -47,7 +46,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for RushWizard {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

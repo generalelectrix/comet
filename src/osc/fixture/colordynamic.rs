@@ -5,7 +5,7 @@ use crate::fixture::colordynamic::{Colordynamic, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::FixtureControlMessage;
 
-use crate::osc::{HandleStateChange};
+use crate::osc::HandleStateChange;
 use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
@@ -36,7 +36,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for Colordynamic {
-    fn emit_state_change<S>(_sc: StateChange, _send: &mut S)
+    fn emit_state_change<S>(_sc: StateChange, _send: &mut S, talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

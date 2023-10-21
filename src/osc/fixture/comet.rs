@@ -38,7 +38,7 @@ impl MapControls for Comet {
         map.add_trigger(CONTROLS, "StepBackwards", Comet(Step(Direction::Backward)));
         map.add_trigger(CONTROLS, "StepForwards", Comet(Step(Direction::Forward)));
 
-        map.add_radio_button_array(MACRO_SELECT_RADIO_BUTTON, |v| Comet(Set(SelectMacro(v))));
+        MACRO_SELECT_RADIO_BUTTON.map(map, |v| Comet(Set(SelectMacro(v))));
 
         map.add_bool(MUSIC, "ShutterSoundActive", |v| {
             Comet(Set(ShutterSoundActive(v)))
@@ -50,7 +50,7 @@ impl MapControls for Comet {
 }
 
 impl HandleStateChange<StateChange> for Comet {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

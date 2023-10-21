@@ -56,7 +56,7 @@ impl MapControls for AnimationControls {
         use ControlMessage::*;
         use FixtureControlMessage::{Animation as FixtureAnimation, Error as ControlError};
         use StateChange::*;
-        map.add_radio_button_array(WAVEFORM_SELECT, |v| {
+        WAVEFORM_SELECT.map(map, |v| {
             match v {
                 0 => Some(Sine),
                 1 => Some(Triangle),
@@ -82,10 +82,8 @@ impl MapControls for AnimationControls {
             FixtureAnimation(WrapAnimation(Set(Smoothing(v))))
         });
 
-        map.add_radio_button_array(N_PERIODS_SELECT, |v| {
-            FixtureAnimation(WrapAnimation(Set(NPeriods(v))))
-        });
-        map.add_radio_button_array(CLOCK_SOURCE, |v| {
+        N_PERIODS_SELECT.map(map, |v| FixtureAnimation(WrapAnimation(Set(NPeriods(v)))));
+        CLOCK_SOURCE.map(map, |v| {
             if v == 0 {
                 FixtureAnimation(WrapAnimation(SetClockSource(None)))
             } else {
@@ -161,26 +159,23 @@ impl MapControls for TargetAndSelectControls {
         use crate::animation::ControlMessage;
         use FixtureControlMessage::Animation;
 
-        map.add_radio_button_array(ANIMATION_GROUP_SELECT, |msg| {
-            Animation(ControlMessage::SelectGroup(msg))
-        });
-        map.add_radio_button_array(ANIMATION_TARGET_SELECT, |msg| {
-            Animation(ControlMessage::Target(msg))
-        });
-        map.add_radio_button_array(ANIMATION_SELECT, |msg| {
-            Animation(ControlMessage::SelectAnimation(msg))
-        });
+        ANIMATION_GROUP_SELECT.map(map, |msg| Animation(ControlMessage::SelectGroup(msg)));
+        ANIMATION_TARGET_SELECT.map(map, |msg| Animation(ControlMessage::Target(msg)));
+        ANIMATION_SELECT.map(map, |msg| Animation(ControlMessage::SelectAnimation(msg)));
     }
 }
 
 impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
-    fn emit_state_change<S>(sc: crate::animation::StateChange, send: &mut S)
-    where
+    fn emit_state_change<S>(
+        sc: crate::animation::StateChange,
+        send: &mut S,
+        talkback: crate::osc::TalkbackMode,
+    ) where
         S: FnMut(OscMessage),
     {
         match sc {
             crate::animation::StateChange::Animation(msg) => {
-                AnimationControls::emit_state_change(msg, send)
+                AnimationControls::emit_state_change(msg, send, talkback)
             }
             crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
             crate::animation::StateChange::SelectGroup(msg) => {
@@ -198,7 +193,7 @@ impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
 }
 
 impl HandleStateChange<StateChange> for AnimationControls {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {
