@@ -4,6 +4,9 @@ use crate::fixture::solar_system::SolarSystem;
 use crate::fixture::solar_system::StateChange;
 use crate::fixture::FixtureControlMessage;
 use crate::osc::HandleStateChange;
+
+use crate::osc::basic_controls::button;
+use crate::osc::basic_controls::Button;
 use crate::osc::{ControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
@@ -23,12 +26,15 @@ const REAR_GOBO_SELECT: RadioButton = RadioButton {
     x_primary_coordinate: false,
 };
 
+const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
+const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
+
 impl MapControls for SolarSystem {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::SolarSystem;
         use StateChange::*;
-        map.add_bool(GROUP, "ShutterOpen", |v| SolarSystem(ShutterOpen(v)));
-        map.add_bool(GROUP, "AutoShutter", |v| SolarSystem(AutoShutter(v)));
+        SHUTTER_OPEN.map_state(map, |v| SolarSystem(ShutterOpen(v)));
+        AUTO_SHUTTER.map_state(map, |v| SolarSystem(AutoShutter(v)));
         FRONT_GOBO_SELECT.map(map, |v| SolarSystem(FrontGobo(v)));
         map.add_bipolar(GROUP, "FrontRotation", |v| {
             SolarSystem(FrontRotation(bipolar_fader_with_detent(v)))

@@ -2,12 +2,16 @@ use crate::fixture::color::StateChange as ColorStateChange;
 use crate::fixture::freedom_fries::{FreedomFries as FreedomFriesFixture, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::FixtureControlMessage;
+use crate::osc::basic_controls::{button, Button};
 use crate::osc::fixture::color::map_color;
 use crate::osc::fixture::generic::map_strobe;
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::unipolar_to_range;
 
 const GROUP: &str = "FreedomFries";
+
+const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
+const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
 
 impl MapControls for FreedomFriesFixture {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
@@ -18,7 +22,7 @@ impl MapControls for FreedomFriesFixture {
         map_color(map, GROUP, &wrap_color);
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
         map.add_unipolar(GROUP, "Speed", |v| FreedomFries(Speed(v)));
-        map.add_bool(GROUP, "RunProgram", |v| FreedomFries(RunProgram(v)));
+        RUN_PROGRAM.map_state(map, |v| FreedomFries(RunProgram(v)));
         map.add_unipolar(GROUP, "Program", |v| {
             FreedomFries(Program(unipolar_to_range(
                 0,
@@ -26,9 +30,7 @@ impl MapControls for FreedomFriesFixture {
                 v,
             ) as usize))
         });
-        map.add_bool(GROUP, "ProgramCycleAll", |v| {
-            FreedomFries(ProgramCycleAll(v))
-        });
+        PROGRAM_CYCLE_ALL.map_state(map, |v| FreedomFries(ProgramCycleAll(v)));
     }
 }
 

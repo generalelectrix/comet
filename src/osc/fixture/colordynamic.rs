@@ -5,22 +5,24 @@ use crate::fixture::colordynamic::{Colordynamic, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::FixtureControlMessage;
 
+use crate::osc::basic_controls::{button, Button};
 use crate::osc::HandleStateChange;
 use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Colordynamic";
 
+const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
+const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
+
 impl MapControls for Colordynamic {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
         use FixtureControlMessage::Colordynamic;
         use StateChange::*;
-        map.add_bool(GROUP, "ShutterOpen", |v| Colordynamic(ShutterOpen(v)));
+        SHUTTER_OPEN.map_state(map, |v| Colordynamic(ShutterOpen(v)));
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
 
-        map.add_bool(GROUP, "ColorRotationOn", |v| {
-            Colordynamic(ColorRotationOn(v))
-        });
+        COLOR_ROTATION_ON.map_state(map, |v| Colordynamic(ColorRotationOn(v)));
         map.add_unipolar(GROUP, "ColorRotationSpeed", |v| {
             Colordynamic(ColorRotationSpeed(v))
         });

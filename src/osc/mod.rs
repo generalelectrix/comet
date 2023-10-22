@@ -17,7 +17,8 @@ use crate::fixture::swarmolon::Swarmolon;
 use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
-    ControlMessage, EmitStateChange, FixtureControlMessage, FixtureStateChange, StateChange,
+    ControlMessage, EmitStateChange, Fixture, FixtureControlMessage, FixtureStateChange,
+    StateChange,
 };
 use crate::master::MasterControls;
 use anyhow::bail;
@@ -40,6 +41,7 @@ pub use self::animation::AnimationControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;
+mod basic_controls;
 mod control_message;
 mod fixture;
 mod label_array;
@@ -196,6 +198,8 @@ type ControlMessageCreator<C> = Box<dyn Fn(&OscControlMessage) -> Result<Option<
 
 pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
 
+pub type FixtureControlMap = ControlMap<FixtureControlMessage>;
+
 impl<C> ControlMap<C> {
     pub fn new() -> Self {
         Self(HashMap::new())
@@ -278,19 +282,6 @@ impl<C> ControlMap<C> {
             let variant: EnumType = EnumType::parse(m)?;
             let val = parse(m)?;
             Ok(Some(process(variant, val)))
-        })
-    }
-
-    pub fn add_trigger(&mut self, group: &str, control: &str, event: C)
-    where
-        C: Clone + 'static,
-    {
-        self.add_fetch_process(group, control, get_bool, move |v| {
-            if v {
-                Some(event.clone())
-            } else {
-                None
-            }
         })
     }
 }
@@ -448,12 +439,4 @@ where
         addr: format!("/{group}/{control}"),
         args: vec![OscType::Float(val.into() as f32)],
     });
-}
-
-/// Send an OSC message setting the state of a button.
-fn send_button<S>(group: &str, control: &str, val: bool, send: &mut S)
-where
-    S: FnMut(OscMessage),
-{
-    send_float(group, control, if val { 1.0 } else { 0.0 }, send);
 }

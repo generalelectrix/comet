@@ -4,6 +4,7 @@ use super::generic::map_strobe;
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::rush_wizard::{Color, RushWizard, StateChange};
 use crate::fixture::FixtureControlMessage;
+use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleStateChange};
 use crate::osc::{ControlMap, MapControls, RadioButton};
@@ -19,6 +20,8 @@ const GOBO_SELECT: RadioButton = RadioButton {
     x_primary_coordinate: false,
 };
 
+const TWINKLE: Button = button(GROUP, "Twinkle");
+
 impl EnumRadioButton for Color {}
 
 impl MapControls for RushWizard {
@@ -28,7 +31,7 @@ impl MapControls for RushWizard {
         map.add_unipolar(GROUP, "Dimmer", |v| RushWizard(Dimmer(v)));
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
         map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| RushWizard(Color(c)));
-        map.add_bool(GROUP, "Twinkle", |v| RushWizard(Twinkle(v)));
+        TWINKLE.map_state(map, |v| RushWizard(Twinkle(v)));
         map.add_unipolar(GROUP, "TwinkleSpeed", |v| RushWizard(TwinkleSpeed(v)));
         GOBO_SELECT.map(map, |v| RushWizard(Gobo(v)));
         map.add_bipolar(GROUP, "DrumRotation", |v| {

@@ -1,5 +1,6 @@
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::FixtureControlMessage;
+use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleStateChange, MapControls, RadioButton};
 use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
@@ -11,6 +12,16 @@ use rosc::OscMessage;
 const CONTROLS: &str = "Controls";
 const MUSIC: &str = "Music";
 const DEBUG: &str = "Debug";
+
+// Buttons.
+const SHUTTER: Button = button(CONTROLS, "Shutter");
+const STROBE_ON: Button = button(CONTROLS, "StrobeOn");
+const AUTO_STEP: Button = button(CONTROLS, "AutoStep");
+const STEP_BACKWARDS: Button = button(CONTROLS, "StepBackwards");
+const STEP_FORWARDS: Button = button(CONTROLS, "StepForwards");
+const SHUTTER_SOUND_ACTIVE: Button = button(MUSIC, "ShutterSoundActive");
+const TRIG_SOUND_ACTIVE: Button = button(MUSIC, "TrigSoundActive");
+const RESET: Button = button(DEBUG, "Reset");
 
 const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
     group: CONTROLS,
@@ -24,28 +35,24 @@ impl MapControls for Comet {
         use ControlMessage::*;
         use FixtureControlMessage::Comet;
         use StateChange::*;
-        map.add_bool(CONTROLS, "Shutter", |v| Comet(Set(Shutter(v))));
-        map.add_bool(CONTROLS, "StrobeOn", |v| {
-            Comet(Set(Strobe(GenericStrobeStateChange::On(v))))
-        });
+        SHUTTER.map_state(map, |v| Comet(Set(Shutter(v))));
+        STROBE_ON.map_state(map, |v| Comet(Set(Strobe(GenericStrobeStateChange::On(v)))));
         map.add_unipolar(CONTROLS, "StrobeRate", |v| {
             Comet(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(v)))))
         });
         map.add_unipolar(CONTROLS, "Mspeed", |v| Comet(Set(MirrorSpeed(v))));
-        map.add_bool(CONTROLS, "AutoStep", |v| Comet(Set(AutoStep(v))));
+        AUTO_STEP.map_state(map, |v| Comet(Set(AutoStep(v))));
         map.add_unipolar(CONTROLS, "AutoStepRate", |v| Comet(Set(AutoStepRate(v))));
 
-        map.add_trigger(CONTROLS, "StepBackwards", Comet(Step(Direction::Backward)));
-        map.add_trigger(CONTROLS, "StepForwards", Comet(Step(Direction::Forward)));
+        STEP_BACKWARDS.map_trigger(map, Comet(Step(Direction::Backward)));
+        STEP_FORWARDS.map_trigger(map, Comet(Step(Direction::Forward)));
 
         MACRO_SELECT_RADIO_BUTTON.map(map, |v| Comet(Set(SelectMacro(v))));
 
-        map.add_bool(MUSIC, "ShutterSoundActive", |v| {
-            Comet(Set(ShutterSoundActive(v)))
-        });
-        map.add_bool(MUSIC, "TrigSoundActive", |v| Comet(Set(TrigSoundActive(v))));
+        SHUTTER_SOUND_ACTIVE.map_state(map, |v| Comet(Set(ShutterSoundActive(v))));
+        TRIG_SOUND_ACTIVE.map_state(map, |v| Comet(Set(TrigSoundActive(v))));
 
-        map.add_bool(DEBUG, "Reset", |v| Comet(Set(Reset(v))));
+        RESET.map_state(map, |v| Comet(Set(Reset(v))));
     }
 }
 
