@@ -4,15 +4,18 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
 use log::error;
+use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 
 use super::{
+    animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchAnimatedFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct FreedomFries {
@@ -25,7 +28,7 @@ pub struct FreedomFries {
     program_cycle_all: bool,
 }
 
-impl PatchFixture for FreedomFries {
+impl PatchAnimatedFixture for FreedomFries {
     const NAME: &'static str = "freedom_fries";
     fn channel_count(&self) -> usize {
         8
@@ -55,9 +58,23 @@ impl FreedomFries {
     }
 }
 
-impl NonAnimatedFixture for FreedomFries {
-    fn render(&self, master_controls: &MasterControls, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = unipolar_to_range(0, 255, self.dimmer);
+impl AnimatedFixture for FreedomFries {
+    type Target = AnimationTarget;
+    fn render_with_animations(
+        &self,
+        master_controls: &MasterControls,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    ) {
+        let mut dimmer = self.dimmer.val();
+        for (val, target) in animation_vals {
+            use AnimationTarget::*;
+            match target {
+                // FIXME: might want to do something nicer for unipolar values
+                Dimmer => dimmer += val,
+            }
+        }
+        dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
         self.color.render(master_controls, &mut dmx_buf[1..4]);
         dmx_buf[4] = 0;
         dmx_buf[5] = self
@@ -118,3 +135,28 @@ pub enum StateChange {
 }
 
 pub type ControlMessage = StateChange;
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    EnumDisplay,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum AnimationTarget {
+    #[default]
+    Dimmer,
+}
+
+impl AnimationTarget {
+    /// Return true if this target is unipolar instead of bipolar.
+    #[allow(unused)]
+    pub fn is_unipolar(&self) -> bool {
+        matches!(self, Self::Dimmer)
+    }
+}
