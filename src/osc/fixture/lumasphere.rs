@@ -2,11 +2,15 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::lumasphere::StrobeStateChange;
 use crate::fixture::lumasphere::{Lumasphere, StateChange};
 use crate::fixture::FixtureControlMessage;
+use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
 const GROUP: &str = "Lumasphere";
+
+const BALL_START: Button = button(GROUP, "ball_start");
+const COLOR_START: Button = button(GROUP, "color_start");
 
 impl MapControls for Lumasphere {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
@@ -22,12 +26,12 @@ impl MapControls for Lumasphere {
         map.add_bipolar(GROUP, "ball_rotation", |v| {
             Lumasphere(BallRotation(bipolar_fader_with_detent(v)))
         });
-        map.add_bool(GROUP, "ball_start", |v| Lumasphere(BallStart(v)));
+        BALL_START.map_state(map, |v| Lumasphere(BallStart(v)));
 
         map.add_unipolar(GROUP, "color_rotation", |v| {
             Lumasphere(ColorRotation(unipolar_fader_with_detent(v)))
         });
-        map.add_bool(GROUP, "color_start", |v| Lumasphere(ColorStart(v)));
+        COLOR_START.map_state(map, |v| Lumasphere(ColorStart(v)));
         map_strobe(map, 1, |inner| Lumasphere(Strobe1(inner)));
         map_strobe(map, 2, |inner| Lumasphere(Strobe2(inner)));
     }

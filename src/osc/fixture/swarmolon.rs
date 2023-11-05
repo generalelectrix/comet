@@ -1,4 +1,3 @@
-
 use rosc::OscMessage;
 
 use super::generic::map_strobe;
@@ -7,6 +6,7 @@ use crate::fixture::swarmolon::{
     ControlMessage, DerbyColor, StateChange, Swarmolon, WhiteStrobeStateChange,
 };
 use crate::fixture::FixtureControlMessage;
+use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{get_bool, ControlMap, HandleStateChange, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
@@ -19,6 +19,9 @@ const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
     n: 10,
     x_primary_coordinate: false,
 };
+
+const RED_LASER_ON: Button = button(GROUP, "RedLaserOn");
+const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
 
 impl EnumRadioButton for DerbyColor {}
 
@@ -36,12 +39,12 @@ impl MapControls for Swarmolon {
             Swarmolon(Set(DerbyRotation(bipolar_fader_with_detent(v))))
         });
         map_strobe(map, GROUP, "WhiteStrobe", &wrap_white_strobe);
-        map.add_radio_button_array(STROBE_PROGRAM_SELECT, |v| {
+        STROBE_PROGRAM_SELECT.map(map, |v| {
             Swarmolon(Set(WhiteStrobe(WhiteStrobeStateChange::Program(v))))
         });
 
-        map.add_bool(GROUP, "RedLaserOn", |v| Swarmolon(Set(RedLaserOn(v))));
-        map.add_bool(GROUP, "GreenLaserOn", |v| Swarmolon(Set(GreenLaserOn(v))));
+        RED_LASER_ON.map_state(map, |v| Swarmolon(Set(RedLaserOn(v))));
+        GREEN_LASER_ON.map_state(map, |v| Swarmolon(Set(GreenLaserOn(v))));
         map_strobe(map, GROUP, "LaserStrobe", &wrap_laser_strobe);
         map.add_bipolar(GROUP, "LaserRotation", |v| {
             Swarmolon(Set(LaserRotation(bipolar_fader_with_detent(v))))
@@ -69,7 +72,7 @@ fn wrap_laser_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for Swarmolon {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

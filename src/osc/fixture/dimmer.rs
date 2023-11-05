@@ -10,4 +10,10 @@ impl MapControls for Dimmer {
     }
 }
 
-impl HandleStateChange<StateChange> for Dimmer {}
+impl HandleStateChange<StateChange> for Dimmer {
+    fn emit_state_change<S>(_sc: StateChange, _send: &mut S, _talkback: crate::osc::TalkbackMode)
+    where
+        S: FnMut(rosc::OscMessage),
+    {
+    }
+}

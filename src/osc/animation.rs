@@ -5,10 +5,11 @@ use crate::animation::ControlMessage::Animation as WrapAnimation;
 
 use crate::fixture::{FixtureControlMessage, N_ANIM};
 use crate::osc::HandleStateChange;
-use crate::osc::{send_button, send_float, ControlMap, MapControls, RadioButton};
+use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
 
+use super::basic_controls::{button, Button};
 use super::label_array::LabelArray;
 
 const GROUP: &str = "Animation";
@@ -22,11 +23,11 @@ const DUTY_CYCLE: &str = "DutyCycle";
 const SMOOTHING: &str = "Smoothing";
 
 // assorted parameters
-const PULSE: &str = "Pulse";
-const INVERT: &str = "Invert";
-const USE_AUDIO_SIZE: &str = "UseAudioSize";
-const USE_AUDIO_SPEED: &str = "UseAudioSpeed";
-const STANDING: &str = "Standing";
+const PULSE: Button = button(GROUP, "Pulse");
+const INVERT: Button = button(GROUP, "Invert");
+const USE_AUDIO_SIZE: Button = button(GROUP, "UseAudioSize");
+const USE_AUDIO_SPEED: Button = button(GROUP, "UseAudioSpeed");
+const STANDING: Button = button(GROUP, "Standing");
 
 const WAVEFORM_SELECT: RadioButton = RadioButton {
     group: GROUP,
@@ -56,7 +57,7 @@ impl MapControls for AnimationControls {
         use ControlMessage::*;
         use FixtureControlMessage::{Animation as FixtureAnimation, Error as ControlError};
         use StateChange::*;
-        map.add_radio_button_array(WAVEFORM_SELECT, |v| {
+        WAVEFORM_SELECT.map(map, |v| {
             match v {
                 0 => Some(Sine),
                 1 => Some(Triangle),
@@ -82,33 +83,19 @@ impl MapControls for AnimationControls {
             FixtureAnimation(WrapAnimation(Set(Smoothing(v))))
         });
 
-        map.add_radio_button_array(N_PERIODS_SELECT, |v| {
-            FixtureAnimation(WrapAnimation(Set(NPeriods(v))))
-        });
-        map.add_radio_button_array(CLOCK_SOURCE, |v| {
+        N_PERIODS_SELECT.map(map, |v| FixtureAnimation(WrapAnimation(Set(NPeriods(v)))));
+        CLOCK_SOURCE.map(map, |v| {
             if v == 0 {
                 FixtureAnimation(WrapAnimation(SetClockSource(None)))
             } else {
                 FixtureAnimation(WrapAnimation(SetClockSource(Some(ClockIdxExt(v - 1)))))
             }
         });
-        map.add_trigger(GROUP, PULSE, FixtureAnimation(WrapAnimation(TogglePulse)));
-        map.add_trigger(GROUP, INVERT, FixtureAnimation(WrapAnimation(ToggleInvert)));
-        map.add_trigger(
-            GROUP,
-            STANDING,
-            FixtureAnimation(WrapAnimation(ToggleStanding)),
-        );
-        map.add_trigger(
-            GROUP,
-            USE_AUDIO_SPEED,
-            FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)),
-        );
-        map.add_trigger(
-            GROUP,
-            USE_AUDIO_SIZE,
-            FixtureAnimation(WrapAnimation(ToggleUseAudioSize)),
-        );
+        PULSE.map_trigger(map, FixtureAnimation(WrapAnimation(TogglePulse)));
+        INVERT.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleInvert)));
+        STANDING.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleStanding)));
+        USE_AUDIO_SPEED.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
+        USE_AUDIO_SIZE.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
 
         TargetAndSelectControls.map_controls(map);
     }
@@ -161,26 +148,23 @@ impl MapControls for TargetAndSelectControls {
         use crate::animation::ControlMessage;
         use FixtureControlMessage::Animation;
 
-        map.add_radio_button_array(ANIMATION_GROUP_SELECT, |msg| {
-            Animation(ControlMessage::SelectGroup(msg))
-        });
-        map.add_radio_button_array(ANIMATION_TARGET_SELECT, |msg| {
-            Animation(ControlMessage::Target(msg))
-        });
-        map.add_radio_button_array(ANIMATION_SELECT, |msg| {
-            Animation(ControlMessage::SelectAnimation(msg))
-        });
+        ANIMATION_GROUP_SELECT.map(map, |msg| Animation(ControlMessage::SelectGroup(msg)));
+        ANIMATION_TARGET_SELECT.map(map, |msg| Animation(ControlMessage::Target(msg)));
+        ANIMATION_SELECT.map(map, |msg| Animation(ControlMessage::SelectAnimation(msg)));
     }
 }
 
 impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
-    fn emit_state_change<S>(sc: crate::animation::StateChange, send: &mut S)
-    where
+    fn emit_state_change<S>(
+        sc: crate::animation::StateChange,
+        send: &mut S,
+        talkback: crate::osc::TalkbackMode,
+    ) where
         S: FnMut(OscMessage),
     {
         match sc {
             crate::animation::StateChange::Animation(msg) => {
-                AnimationControls::emit_state_change(msg, send)
+                AnimationControls::emit_state_change(msg, send, talkback)
             }
             crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
             crate::animation::StateChange::SelectGroup(msg) => {
@@ -198,7 +182,7 @@ impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
 }
 
 impl HandleStateChange<StateChange> for AnimationControls {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {
@@ -224,11 +208,11 @@ impl HandleStateChange<StateChange> for AnimationControls {
                 CLOCK_SOURCE.set(maybe_clock.map(|v| usize::from(v) + 1).unwrap_or(0), send)
             }
 
-            Pulse(v) => send_button(GROUP, PULSE, v, send),
-            Standing(v) => send_button(GROUP, STANDING, v, send),
-            Invert(v) => send_button(GROUP, INVERT, v, send),
-            UseAudioSize(v) => send_button(GROUP, USE_AUDIO_SIZE, v, send),
-            UseAudioSpeed(v) => send_button(GROUP, USE_AUDIO_SPEED, v, send),
+            Pulse(v) => PULSE.send(v, send),
+            Standing(v) => STANDING.send(v, send),
+            Invert(v) => INVERT.send(v, send),
+            UseAudioSize(v) => USE_AUDIO_SIZE.send(v, send),
+            UseAudioSpeed(v) => USE_AUDIO_SPEED.send(v, send),
         }
     }
 }
