@@ -5,11 +5,14 @@ use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::animation_target::TargetedAnimationValues;
-use super::color::{Color, Model as ColorModel, StateChange as ColorStateChange};
+use super::color::{
+    AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
+    StateChange as ColorStateChange,
+};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchAnimatedFixture,
+    PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;
@@ -24,7 +27,7 @@ pub struct RotosphereQ3 {
 impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
-            color: Color::from_model(ColorModel::rgbw()),
+            color: Color::from_model(ColorModel::Rgbw),
             strobe: GenericStrobe::default(),
             rotation: BipolarFloat::default(),
         }
@@ -60,13 +63,19 @@ impl AnimatedFixture for RotosphereQ3 {
         dmx_buf: &mut [u8],
     ) {
         let mut rotation = self.rotation.val();
+        let mut color_anim_vals = vec![];
         for (val, target) in animation_vals {
             use AnimationTarget::*;
             match target {
                 Rotation => rotation += val,
+                // FIXME: would really like to avoid allocating here.
+                Hue => color_anim_vals.push((*val, ColorAnimationTarget::Hue)),
+                Sat => color_anim_vals.push((*val, ColorAnimationTarget::Sat)),
+                Val => color_anim_vals.push((*val, ColorAnimationTarget::Val)),
             }
         }
-        self.color.render(master, &mut dmx_buf[0..4]);
+        self.color
+            .render_with_animations(master, &color_anim_vals, &mut dmx_buf[0..4]);
         dmx_buf[4] = self
             .strobe
             .render_range_with_master(master.strobe(), 0, 1, 250);
@@ -130,6 +139,9 @@ pub type ControlMessage = StateChange;
 pub enum AnimationTarget {
     #[default]
     Rotation,
+    Hue,
+    Sat,
+    Val,
 }
 
 impl AnimationTarget {

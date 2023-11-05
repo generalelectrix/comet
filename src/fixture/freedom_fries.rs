@@ -11,8 +11,7 @@ use super::{
     animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -75,7 +74,8 @@ impl AnimatedFixture for FreedomFries {
             }
         }
         dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
-        self.color.render(master_controls, &mut dmx_buf[1..4]);
+        self.color
+            .render_with_animations(master_controls, &[], &mut dmx_buf[1..4]);
         dmx_buf[4] = 0;
         dmx_buf[5] = self
             .strobe
