@@ -11,7 +11,8 @@ use super::{
     animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::{master::MasterControls, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -66,11 +67,13 @@ impl AnimatedFixture for FreedomFries {
         dmx_buf: &mut [u8],
     ) {
         let mut dimmer = self.dimmer.val();
+        let mut speed = self.speed.val();
         for (val, target) in animation_vals {
             use AnimationTarget::*;
             match target {
                 // FIXME: might want to do something nicer for unipolar values
                 Dimmer => dimmer += val,
+                Speed => speed += val,
             }
         }
         dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
@@ -95,7 +98,7 @@ impl AnimatedFixture for FreedomFries {
                 ((program * 8) + 11) as u8
             }
         };
-        dmx_buf[7] = unipolar_to_range(0, 255, self.speed);
+        dmx_buf[7] = unipolar_to_range(0, 255, UnipolarFloat::new(speed));
     }
 }
 
@@ -151,12 +154,13 @@ pub type ControlMessage = StateChange;
 pub enum AnimationTarget {
     #[default]
     Dimmer,
+    Speed,
 }
 
 impl AnimationTarget {
     /// Return true if this target is unipolar instead of bipolar.
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Dimmer)
+        matches!(self, Self::Dimmer | Self::Speed)
     }
 }
