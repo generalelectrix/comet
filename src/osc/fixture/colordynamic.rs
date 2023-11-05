@@ -38,7 +38,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
 }
 
 impl HandleStateChange<StateChange> for Colordynamic {
-    fn emit_state_change<S>(_sc: StateChange, _send: &mut S, talkback: crate::osc::TalkbackMode)
+    fn emit_state_change<S>(_sc: StateChange, _send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

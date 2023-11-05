@@ -17,7 +17,7 @@ use crate::fixture::swarmolon::Swarmolon;
 use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
-    ControlMessage, EmitStateChange, Fixture, FixtureControlMessage, FixtureStateChange,
+    ControlMessage, EmitStateChange, FixtureControlMessage, FixtureStateChange,
     StateChange,
 };
 use crate::master::MasterControls;
@@ -59,7 +59,7 @@ pub trait MapControls {
 /// Process a state change message into OSC messages.
 pub trait HandleStateChange<SC> {
     /// Convert the provided state change into OSC messages and send them.
-    fn emit_state_change<S>(_sc: SC, _send: &mut S, talkback: TalkbackMode)
+    fn emit_state_change<S>(_sc: SC, _send: &mut S, _talkback: TalkbackMode)
     where
         S: FnMut(OscMessage),
     {

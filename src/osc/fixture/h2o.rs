@@ -34,7 +34,7 @@ impl MapControls for H2O {
 }
 
 impl HandleStateChange<StateChange> for H2O {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, talkback: crate::osc::TalkbackMode)
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
         S: FnMut(OscMessage),
     {
