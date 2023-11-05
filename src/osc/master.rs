@@ -13,6 +13,7 @@ const GROUP: &str = "Master";
 const USE_MASTER_STROBE_RATE: Button = button(GROUP, "UseMasterStrobeRate");
 const AUTOPILOT_ON: Button = button(GROUP, "AutopilotOn");
 const AUTOPILOT_SOUND_ACTIVE: Button = button(GROUP, "AutopilotSoundActive");
+const REFRESH_UI: Button = button(GROUP, "RefreshUI");
 
 impl MapControls for MasterControls {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
@@ -26,6 +27,7 @@ impl MapControls for MasterControls {
         AUTOPILOT_SOUND_ACTIVE.map_state(map, |v| {
             FixtureControlMessage::Master(StateChange::AutopilotSoundActive(v))
         });
+        REFRESH_UI.map_trigger(map, FixtureControlMessage::RefreshUI)
     }
 }
 

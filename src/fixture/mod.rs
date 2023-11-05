@@ -279,6 +279,7 @@ pub enum FixtureControlMessage {
     Colordynamic(ColordynamicControlMessage),
     Dimmer(DimmerControlMessage),
     Master(MasterControlMessage),
+    RefreshUI,
     Animation(AnimationControlMessage),
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
@@ -760,7 +761,9 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
     }
 
     fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
-        let Some(animation) = self.animations.get_mut(index) else { return None; };
+        let Some(animation) = self.animations.get_mut(index) else {
+            return None;
+        };
         Some(&mut *animation)
     }
 }
