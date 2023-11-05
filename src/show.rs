@@ -126,6 +126,15 @@ impl Show {
                 .control(msg, &mut self.patch, &mut self.osc_controller);
         }
 
+        if let FixtureControlMessage::RefreshUI = msg.msg {
+            self.master_controls.emit_state(&mut self.osc_controller);
+            for group in self.patch.iter() {
+                group.emit_state(&mut self.osc_controller);
+            }
+            self.animation_ui_state
+                .emit_state(&mut self.patch, &mut self.osc_controller)?;
+        }
+
         // "Option dance" to pass ownership into/back out of handlers.
         let mut msg = Some(msg);
 
