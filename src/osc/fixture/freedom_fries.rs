@@ -5,6 +5,7 @@ use crate::fixture::FixtureControlMessage;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::fixture::color::map_color;
 use crate::osc::fixture::generic::map_strobe;
+use crate::osc::label_array::LabelArray;
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::unipolar_to_range;
 
@@ -12,6 +13,13 @@ const GROUP: &str = "FreedomFries";
 
 const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
 const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
+
+const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
+    group: GROUP,
+    control: "ProgramLabel",
+    n: 1,
+    empty_label: "",
+};
 
 impl MapControls for FreedomFriesFixture {
     fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
@@ -42,4 +50,14 @@ fn wrap_color(sc: ColorStateChange) -> FixtureControlMessage {
     FixtureControlMessage::FreedomFries(StateChange::Color(sc))
 }
 
-impl HandleStateChange<StateChange> for FreedomFriesFixture {}
+impl HandleStateChange<StateChange> for FreedomFriesFixture {
+    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+    where
+        S: FnMut(rosc::OscMessage),
+    {
+        if let StateChange::Program(v) = sc {
+            let label = v.to_string();
+            PROGRAM_SELECT_LABEL.set([label].into_iter(), send);
+        }
+    }
+}

@@ -3,14 +3,16 @@
 use std::collections::HashMap;
 
 use anyhow::{bail, Result};
+use num_derive::{FromPrimitive, ToPrimitive};
 use number::{Phase, UnipolarFloat};
 
 use crate::master::MasterControls;
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
+    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Color {
@@ -20,7 +22,7 @@ pub struct Color {
     model: Model,
 }
 
-impl PatchFixture for Color {
+impl PatchAnimatedFixture for Color {
     const NAME: &'static str = "color";
     fn channel_count(&self) -> usize {
         self.model.channel_count()
@@ -30,11 +32,11 @@ impl PatchFixture for Color {
         let mut c = Self::default();
         if let Some(kind) = options.get("kind") {
             c.model = match kind.to_lowercase().as_str() {
-                "rgb" => Model::rgb(),
-                "rgbw" => Model::rgbw(),
-                "hsv" => Model::hsv(),
-                "rgbwau" => Model::rgbwau(),
-                "sabre_spot" => Model::sabre_spot(),
+                "rgb" => Model::Rgb,
+                "rgbw" => Model::Rgbw,
+                "hsv" => Model::Hsv,
+                "rgbwau" => Model::Rgbwau,
+                "sabre_spot" => Model::SabreSpot,
                 other => {
                     bail!("unknown color model \"{}\"", other);
                 }
@@ -61,7 +63,6 @@ impl Color {
             Sat(v) => self.sat = v,
             Val(v) => self.val = v,
         };
-        self.model.update(self.hue, self.sat, self.val);
     }
 
     pub fn from_model(m: Model) -> Self {
@@ -83,9 +84,32 @@ impl Color {
     }
 }
 
-impl NonAnimatedFixture for Color {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
-        dmx_buf.copy_from_slice(self.model.vals());
+impl AnimatedFixture for Color {
+    type Target = AnimationTarget;
+    fn render_with_animations(
+        &self,
+        _master: &MasterControls,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    ) {
+        let mut hue = self.hue.val();
+        let mut sat = self.sat.val();
+        let mut val = self.val.val();
+        for (anim_val, target) in animation_vals {
+            use AnimationTarget::*;
+            match target {
+                Hue => hue += anim_val,
+                // FIXME: might want to do something nicer for unipolar values
+                Sat => sat += anim_val,
+                Val => val += anim_val,
+            }
+        }
+        self.model.render(
+            dmx_buf,
+            Phase::new(hue),
+            UnipolarFloat::new(sat),
+            UnipolarFloat::new(val),
+        );
     }
 }
 
@@ -119,87 +143,60 @@ pub enum StateChange {
 // Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Model {
-    Rgb([u8; 3]),
-    Rgbw([u8; 4]),
-    Hsv([u8; 3]),
-    Rgbwau([u8; 6]),
-    SabreSpot([u8; 3]),
+    Rgb,
+    Rgbw,
+    Hsv,
+    Rgbwau,
+    SabreSpot,
 }
 
 impl Default for Model {
     fn default() -> Self {
-        Self::rgb()
+        Self::Rgb
     }
 }
 
 impl Model {
-    pub fn rgb() -> Self {
-        Self::Rgb([0; 3])
-    }
-
-    pub fn hsv() -> Self {
-        Self::Hsv([0; 3])
-    }
-
-    pub fn rgbw() -> Self {
-        Self::Rgbw([0; 4])
-    }
-
-    pub fn rgbwau() -> Self {
-        Self::Rgbwau([0; 6])
-    }
-
-    fn sabre_spot() -> Self {
-        Self::SabreSpot([0; 3])
-    }
-
     fn channel_count(&self) -> usize {
         match self {
-            Self::Rgb(_) => 3,
-            Self::Rgbw(_) => 4,
-            Self::Hsv(_) => 3,
-            Self::Rgbwau(_) => 6,
-            Self::SabreSpot(_) => 3,
+            Self::Rgb => 3,
+            Self::Rgbw => 4,
+            Self::Hsv => 3,
+            Self::Rgbwau => 6,
+            Self::SabreSpot => 3,
         }
     }
 
-    fn update(&mut self, hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) {
+    fn render(&self, buf: &mut [u8], hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) {
         match self {
-            Self::Rgb(vals) => {
-                *vals = hsv_to_rgb(hue, sat, val);
+            Self::Rgb => {
+                let [r, g, b] = hsv_to_rgb(hue, sat, val);
+                buf[0] = r;
+                buf[1] = g;
+                buf[2] = b;
             }
-            Self::Rgbw(vals) => {
-                let rgb_slice = &mut vals[0..3];
+            Self::Rgbw => {
+                let rgb_slice = &mut buf[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
-                vals[3] = unit_to_u8((sat.invert() * val).val());
+                buf[3] = unit_to_u8((sat.invert() * val).val());
             }
-            Self::Hsv(vals) => {
-                vals[0] = unit_to_u8(hue.val());
-                vals[1] = unit_to_u8(sat.val());
-                vals[2] = unit_to_u8(val.val());
+            Self::Hsv => {
+                buf[0] = unit_to_u8(hue.val());
+                buf[1] = unit_to_u8(sat.val());
+                buf[2] = unit_to_u8(val.val());
             }
-            Self::Rgbwau(vals) => {
+            Self::Rgbwau => {
                 // TODO: decide what to do with those other diodes...
-                let rgb_slice = &mut vals[0..3];
+                let rgb_slice = &mut buf[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
             }
-            Self::SabreSpot(vals) => {
-                vals[0] = unit_to_u8((hue + 0.33333333333).val() * -1.0 + 1.0);
-                vals[1] = unit_to_u8(sat.invert().val());
-                vals[2] = unit_to_u8(val.val());
+            Self::SabreSpot => {
+                buf[0] = unit_to_u8((hue + 0.33333333333).val() * -1.0 + 1.0);
+                buf[1] = unit_to_u8(sat.invert().val());
+                buf[2] = unit_to_u8(val.val());
             }
-        }
-    }
-
-    fn vals(&self) -> &[u8] {
-        match self {
-            Self::Rgb(v) => v,
-            Self::Rgbw(v) => v,
-            Self::Hsv(v) => v,
-            Self::Rgbwau(v) => v,
-            Self::SabreSpot(v) => v,
         }
     }
 }
@@ -231,4 +228,31 @@ fn hsv_to_rgb(hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) -> ColorRgb {
 
 fn unit_to_u8(v: f64) -> u8 {
     (255. * v).round() as u8
+}
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    EnumDisplay,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum AnimationTarget {
+    #[default]
+    Hue,
+    Sat,
+    Val,
+}
+
+impl AnimationTarget {
+    /// Return true if this target is unipolar instead of bipolar.
+    #[allow(unused)]
+    pub fn is_unipolar(&self) -> bool {
+        matches!(self, Self::Sat | Self::Val)
+    }
 }

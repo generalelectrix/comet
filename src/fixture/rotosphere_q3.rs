@@ -1,14 +1,20 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
+use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::color::{Color, Model as ColorModel, StateChange as ColorStateChange};
+use super::animation_target::TargetedAnimationValues;
+use super::color::{
+    AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
+    StateChange as ColorStateChange,
+};
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
-use crate::master::{Autopilot, MasterControls};
+use crate::master::MasterControls;
 use crate::util::bipolar_to_split_range;
 
 #[derive(Debug)]
@@ -21,14 +27,14 @@ pub struct RotosphereQ3 {
 impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
-            color: Color::from_model(ColorModel::rgbw()),
+            color: Color::from_model(ColorModel::Rgbw),
             strobe: GenericStrobe::default(),
             rotation: BipolarFloat::default(),
         }
     }
 }
 
-impl PatchFixture for RotosphereQ3 {
+impl PatchAnimatedFixture for RotosphereQ3 {
     const NAME: &'static str = "rotosphere_q3";
     fn channel_count(&self) -> usize {
         9
@@ -45,42 +51,35 @@ impl RotosphereQ3 {
         };
         emitter.emit_rotosphere_q3(sc);
     }
-
-    fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = 0;
-        dmx_buf[1] = 0;
-        dmx_buf[2] = 0;
-        dmx_buf[3] = 0;
-        dmx_buf[4] = 0;
-        dmx_buf[5] = 0;
-        dmx_buf[6] = match autopilot.program() % 5 {
-            0 => 212,
-            1 => 221,
-            2 => 230,
-            3 => 239,
-            4 => 248,
-            _ => 212,
-        };
-        dmx_buf[7] = if autopilot.sound_active() {
-            255
-        } else {
-            50 // TODO is this a good value?  Too slow?
-        };
-        dmx_buf[8] = 30; // TODO is this a good value?  Too slow?
-    }
 }
 
-impl NonAnimatedFixture for RotosphereQ3 {
-    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
-        if master.autopilot().on() {
-            self.render_autopilot(master.autopilot(), dmx_buf);
-            return;
+impl AnimatedFixture for RotosphereQ3 {
+    type Target = AnimationTarget;
+
+    fn render_with_animations(
+        &self,
+        master: &MasterControls,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    ) {
+        let mut rotation = self.rotation.val();
+        let mut color_anim_vals = vec![];
+        for (val, target) in animation_vals {
+            use AnimationTarget::*;
+            match target {
+                Rotation => rotation += val,
+                // FIXME: would really like to avoid allocating here.
+                Hue => color_anim_vals.push((*val, ColorAnimationTarget::Hue)),
+                Sat => color_anim_vals.push((*val, ColorAnimationTarget::Sat)),
+                Val => color_anim_vals.push((*val, ColorAnimationTarget::Val)),
+            }
         }
-        self.color.render(master, &mut dmx_buf[0..4]);
+        self.color
+            .render_with_animations(master, &color_anim_vals, &mut dmx_buf[0..4]);
         dmx_buf[4] = self
             .strobe
             .render_range_with_master(master.strobe(), 0, 1, 250);
-        dmx_buf[5] = bipolar_to_split_range(self.rotation, 1, 127, 129, 255, 0);
+        dmx_buf[5] = bipolar_to_split_range(BipolarFloat::new(rotation), 1, 127, 129, 255, 0);
         dmx_buf[6] = 0;
         dmx_buf[7] = 0;
         dmx_buf[8] = 0;
@@ -124,3 +123,31 @@ pub enum StateChange {
 }
 
 pub type ControlMessage = StateChange;
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    EnumDisplay,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum AnimationTarget {
+    #[default]
+    Rotation,
+    Hue,
+    Sat,
+    Val,
+}
+
+impl AnimationTarget {
+    /// Return true if this target is unipolar instead of bipolar.
+    #[allow(unused)]
+    pub fn is_unipolar(&self) -> bool {
+        false
+    }
+}
