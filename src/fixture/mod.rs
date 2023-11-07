@@ -57,6 +57,9 @@ use self::starlight::{
 use self::swarmolon::{
     ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange, Swarmolon,
 };
+use self::uv_led_brick::{
+    ControlMessage as UvLedBrickControlMessage, StateChange as UvLedBrickStateChange, UvLedBrick,
+};
 use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange, Venus};
 use self::wizard_extreme::{
     ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
@@ -91,6 +94,7 @@ pub mod rush_wizard;
 pub mod solar_system;
 pub mod starlight;
 pub mod swarmolon;
+pub mod uv_led_brick;
 pub mod venus;
 pub mod wizard_extreme;
 
@@ -217,6 +221,10 @@ pub trait EmitFixtureStateChange {
         self.emit(FixtureStateChange::Dimmer(sc));
     }
 
+    fn emit_uv_led_brick(&mut self, sc: UvLedBrickStateChange) {
+        self.emit(FixtureStateChange::UvLedBrick(sc));
+    }
+
     fn emit_starlight(&mut self, sc: StarlightStateChange) {
         self.emit(FixtureStateChange::Starlight(sc));
     }
@@ -248,6 +256,7 @@ pub enum FixtureStateChange {
     Color(ColorStateChange),
     Colordynamic(ColordynamicStateChange),
     Dimmer(DimmerControlMessage),
+    UvLedBrick(UvLedBrickControlMessage),
     Master(MasterStateChange),
     Animation(AnimationStateChange),
 }
@@ -278,6 +287,7 @@ pub enum FixtureControlMessage {
     Color(ColorControlMessage),
     Colordynamic(ColordynamicControlMessage),
     Dimmer(DimmerControlMessage),
+    UvLedBrick(UvLedBrickControlMessage),
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
@@ -420,6 +430,7 @@ lazy_static! {
         SolarSystem::patcher(),
         Swarmolon::patcher(),
         Starlight::patcher(),
+        UvLedBrick::patcher(),
         Venus::patcher(),
         WizardExtreme::patcher(),
     ];
