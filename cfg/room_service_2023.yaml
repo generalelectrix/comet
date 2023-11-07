@@ -1,0 +1,35 @@
+receive_port: 8000
+controllers:
+  - host: 10.1.1.233
+    port: 9000
+debug: True
+fixtures:
+  - name: swarmolon
+    addr: 1
+    options:
+      quad_phase: yes # address 10
+      galaxian: yes # 14
+  - name: rotosphere_q3
+    addr: 20
+    selector: True
+  - name: freedom_fries
+    addr: 30
+    selector: True
+  - name: color
+    addr: 60
+    group: MirrorBall
+    options:
+      kind: sabre_spot
+    selector: True
+  - name: dimmer
+    addr: 80
+    group: UV
+  - name: starlight
+    addr: 100
+    selector: True
+  - name: aquarius
+    addr: 128
+    selector: True
+  - name: wizard_extreme
+    addr: 200
+    selector: True
