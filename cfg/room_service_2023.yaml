@@ -31,5 +31,5 @@ fixtures:
     addr: 128
     selector: True
   - name: wizard_extreme
-    addr: 200
+    addr: 256
     selector: True
