@@ -1,4 +1,5 @@
 use crate::fixture::aquarius::Aquarius;
+use crate::fixture::astroscan::Astroscan;
 use crate::fixture::color::Color;
 use crate::fixture::colordynamic::Colordynamic;
 use crate::fixture::comet::Comet;
@@ -140,6 +141,9 @@ impl EmitStateChange for OscController {
             let _ = self.send.send(msg);
         };
         match sc.sc {
+            FixtureStateChange::Astroscan(sc) => {
+                Astroscan::emit_state_change(sc, send, self.talkback)
+            }
             FixtureStateChange::Comet(sc) => Comet::emit_state_change(sc, send, self.talkback),
             FixtureStateChange::Lumasphere(sc) => {
                 Lumasphere::emit_state_change(sc, send, self.talkback)

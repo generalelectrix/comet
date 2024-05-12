@@ -35,7 +35,7 @@ impl PatchAnimatedFixture for WizardExtreme {
 }
 
 impl WizardExtreme {
-    const GOBO_COUNT: usize = 14; // includes the open position
+    pub const GOBO_COUNT: usize = 14; // includes the open position
 
     fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
         use StateChange::*;
