@@ -11,7 +11,7 @@ use super::{
     PatchAnimatedFixture,
 };
 use crate::master::MasterControls;
-use crate::util::{bipolar_to_split_range, unipolar_to_range};
+use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -126,23 +126,23 @@ impl AnimatedFixture for Astroscan {
         dmx_buf[1] = self.color.as_dmx();
         dmx_buf[2] = if self.lamp_on { 255 } else { 0 };
         dmx_buf[3] = {
-            // FIXME: need to empirically determine strobe and dimmer control range
             let strobe_off = 0;
             let strobe =
                 self.strobe
-                    .render_range_with_master(master.strobe(), strobe_off, 189, 130);
+                    .render_range_with_master(master.strobe(), strobe_off, 140, 243);
             if strobe == strobe_off {
-                unipolar_to_range(0, 129, UnipolarFloat::new(dimmer))
+                unipolar_to_range(0, 139, UnipolarFloat::new(dimmer))
             } else {
                 strobe
             }
         };
-        // FIXME: need to empirically determine DMX ranges for these parameters
-        dmx_buf[4] = bipolar_to_split_range(BipolarFloat::new(pan), 1, 2, 3, 4, 0);
-        dmx_buf[5] = bipolar_to_split_range(BipolarFloat::new(tilt), 1, 2, 3, 4, 0);
-        dmx_buf[6] = self.gobo as u8 * 50;
-        dmx_buf[7] = bipolar_to_split_range(BipolarFloat::new(gobo_rotation), 1, 2, 3, 4, 0);
-        dmx_buf[8] = bipolar_to_split_range(BipolarFloat::new(mirror_rotation), 1, 2, 3, 4, 0);
+        dmx_buf[4] = bipolar_to_range(0, 255, BipolarFloat::new(pan));
+        dmx_buf[5] = bipolar_to_range(0, 255, BipolarFloat::new(tilt));
+        dmx_buf[6] = self.gobo as u8 * 55;
+        dmx_buf[7] =
+            bipolar_to_split_range(BipolarFloat::new(gobo_rotation), 189, 128, 193, 255, 191);
+        dmx_buf[8] =
+            bipolar_to_split_range(BipolarFloat::new(mirror_rotation), 189, 128, 193, 255, 191);
     }
 }
 
@@ -180,13 +180,13 @@ impl Color {
         use Color::*;
         match self {
             Open => 0,
-            Red => 32,
-            Yellow => 64,
-            Violet => 96,
-            Green => 128,
-            Orange => 160,
-            Blue => 192,
-            Pink => 224,
+            Red => 14,
+            Yellow => 32,
+            Violet => 51,
+            Green => 67,
+            Orange => 81,
+            Blue => 98,
+            Pink => 117, // 127 back to white
         }
     }
 }
