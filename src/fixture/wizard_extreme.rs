@@ -10,7 +10,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -97,7 +97,7 @@ impl AnimatedFixture for WizardExtreme {
 
     fn render_with_animations(
         &self,
-        master: &MasterControls,
+        master: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

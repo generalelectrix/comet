@@ -9,7 +9,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -90,7 +90,7 @@ impl AnimatedFixture for SolarSystem {
 
     fn render_with_animations(
         &self,
-        _master: &MasterControls,
+        _group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

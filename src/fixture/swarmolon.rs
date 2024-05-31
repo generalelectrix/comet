@@ -9,7 +9,7 @@ use super::{
     ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
     PatchFixture,
 };
-use crate::master::{Autopilot, MasterControls};
+use crate::master::{Autopilot, FixtureGroupControls};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -120,7 +120,7 @@ impl Swarmolon {
 }
 
 impl NonAnimatedFixture for Swarmolon {
-    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render(&self, master: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         if master.autopilot().on() {
             self.render_autopilot(master.autopilot(), dmx_buf);
             return;
@@ -421,7 +421,7 @@ impl WhiteStrobe {
         Ok(())
     }
 
-    pub fn render(&self, master: &MasterControls) -> u8 {
+    pub fn render(&self, master: &FixtureGroupControls) -> u8 {
         let master_strobe = master.strobe();
         if !self.state.on() || !master_strobe.state.on() {
             return 0;

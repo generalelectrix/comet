@@ -9,7 +9,7 @@ use super::{
     NonAnimatedFixture, PatchFixture,
 };
 use crate::{
-    master::MasterControls,
+    master::FixtureGroupControls,
     util::{unipolar_to_range, RampingParameter},
 };
 
@@ -75,7 +75,7 @@ impl Venus {
 }
 
 impl NonAnimatedFixture for Venus {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         render_bipolar_to_dir_and_val(self.base_rotation.current(), &mut dmx_buf[0..2]);
         dmx_buf[2] = unipolar_to_range(0, 255, self.cradle_motion.current());
         render_bipolar_to_dir_and_val(self.head_rotation.current(), &mut dmx_buf[3..5]);

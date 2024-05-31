@@ -7,7 +7,7 @@ use super::{
     ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
-use crate::{master::MasterControls, util::unipolar_to_range};
+use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Debug)]
 pub struct Faderboard {
@@ -46,7 +46,7 @@ impl Faderboard {
 }
 
 impl NonAnimatedFixture for Faderboard {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         for (i, v) in self.vals.iter().enumerate() {
             dmx_buf[i] = unipolar_to_range(0, 255, *v);
         }

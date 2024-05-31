@@ -6,7 +6,7 @@ use super::{
     animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
     EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
-use crate::{master::MasterControls, util::bipolar_to_split_range};
+use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 use num_derive::{FromPrimitive, ToPrimitive};
 
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -44,7 +44,7 @@ impl AnimatedFixture for Hypnotic {
 
     fn render_with_animations(
         &self,
-        _master_controls: &MasterControls,
+        _group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

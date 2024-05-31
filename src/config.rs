@@ -1,4 +1,3 @@
-
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
 use crate::osc::OscSenderConfig;
@@ -33,6 +32,9 @@ impl Config {
 pub struct FixtureConfig {
     pub name: String,
     pub addr: DmxAddr,
+    /// True if this fixture's controls should be flipped when running in mirror mode.
+    #[serde(default)]
+    pub mirror: bool,
     /// For fixtures that we may want to separately control multiple instances,
     /// provide a group index.  Most fixtures do not use this.
     #[serde(default)]

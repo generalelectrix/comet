@@ -10,6 +10,8 @@ use crate::fixture::{
     EmitStateChange, FixtureStateChange, GroupName, StateChange as ShowStateChange,
 };
 
+pub use crate::fixture::FixtureGroupControls;
+
 #[derive(Debug, Default)]
 pub struct MasterControls {
     strobe: Strobe,

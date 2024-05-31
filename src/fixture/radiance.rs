@@ -9,7 +9,7 @@ use super::{
     generic::Timer, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
-use crate::{master::MasterControls, util::unipolar_to_range};
+use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Radiance {
@@ -45,7 +45,7 @@ impl Radiance {
 }
 
 impl NonAnimatedFixture for Radiance {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         if let Some(timer) = self.timer.as_ref() {
             if !timer.is_on() {
                 dmx_buf[0] = 0;

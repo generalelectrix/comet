@@ -7,7 +7,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::{master::MasterControls, util::bipolar_to_split_range};
+use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
 pub struct Aquarius {
@@ -37,7 +37,7 @@ impl AnimatedFixture for Aquarius {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
-        _master: &MasterControls,
+        _group_controls: &FixtureGroupControls,
         animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
