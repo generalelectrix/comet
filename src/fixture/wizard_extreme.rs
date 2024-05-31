@@ -97,7 +97,7 @@ impl AnimatedFixture for WizardExtreme {
 
     fn render_with_animations(
         &self,
-        master: &FixtureGroupControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -122,7 +122,7 @@ impl AnimatedFixture for WizardExtreme {
             let strobe_off = 0;
             let strobe =
                 self.strobe
-                    .render_range_with_master(master.strobe(), strobe_off, 189, 130);
+                    .render_range_with_master(group_controls.strobe(), strobe_off, 189, 130);
             if strobe == strobe_off {
                 unipolar_to_range(0, 129, UnipolarFloat::new(dimmer))
             } else {

@@ -714,7 +714,7 @@ pub trait AnimatedFixture: ControllableFixture + Debug {
 
     fn render_with_animations(
         &self,
-        master: &FixtureGroupControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     );
