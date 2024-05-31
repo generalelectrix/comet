@@ -301,7 +301,7 @@ pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
 
 #[derive(Debug)]
 struct GroupFixtureConfig {
-    /// The starting index into the DMX buffer for the a fixture in a group.
+    /// The starting index into the DMX buffer for a fixture in a group.
     dmx_addr: usize,
     /// True if the fixture should be mirrored in mirror mode.
     mirror: bool,
