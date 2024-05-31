@@ -8,9 +8,8 @@ use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
+    FixtureGroupControls, PatchAnimatedFixture,
 };
-use crate::master::MasterControls;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -100,7 +99,7 @@ impl AnimatedFixture for Astroscan {
 
     fn render_with_animations(
         &self,
-        master: &MasterControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -129,20 +128,36 @@ impl AnimatedFixture for Astroscan {
             let strobe_off = 0;
             let strobe =
                 self.strobe
-                    .render_range_with_master(master.strobe(), strobe_off, 140, 243);
+                    .render_range_with_master(group_controls.strobe(), strobe_off, 140, 243);
             if strobe == strobe_off {
                 unipolar_to_range(0, 139, UnipolarFloat::new(dimmer))
             } else {
                 strobe
             }
         };
-        dmx_buf[4] = bipolar_to_range(0, 255, BipolarFloat::new(pan));
+        dmx_buf[4] = bipolar_to_range(
+            0,
+            255,
+            BipolarFloat::new(pan).invert_if(group_controls.mirror),
+        );
         dmx_buf[5] = bipolar_to_range(0, 255, BipolarFloat::new(tilt));
         dmx_buf[6] = self.gobo as u8 * 55;
-        dmx_buf[7] =
-            bipolar_to_split_range(BipolarFloat::new(gobo_rotation), 189, 128, 193, 255, 191);
-        dmx_buf[8] =
-            bipolar_to_split_range(BipolarFloat::new(mirror_rotation), 189, 128, 193, 255, 191);
+        dmx_buf[7] = bipolar_to_split_range(
+            BipolarFloat::new(gobo_rotation).invert_if(group_controls.mirror),
+            189,
+            128,
+            193,
+            255,
+            191,
+        );
+        dmx_buf[8] = bipolar_to_split_range(
+            BipolarFloat::new(mirror_rotation).invert_if(group_controls.mirror),
+            189,
+            128,
+            193,
+            255,
+            191,
+        );
     }
 }
 
