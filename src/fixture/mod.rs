@@ -16,6 +16,9 @@ use self::animation_target::{
 use self::aquarius::{
     Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
 };
+use self::astroscan::{
+    Astroscan, ControlMessage as AstroscanControlMessage, StateChange as AstroscanStateChange,
+};
 use self::color::{Color, ControlMessage as ColorControlMessage, StateChange as ColorStateChange};
 use self::colordynamic::{
     ControlMessage as ColordynamicControlMessage, StateChange as ColordynamicStateChange,
@@ -79,6 +82,7 @@ use crate::osc::MapControls;
 
 pub mod animation_target;
 pub mod aquarius;
+pub mod astroscan;
 pub mod color;
 pub mod colordynamic;
 pub mod comet;
@@ -153,6 +157,10 @@ pub trait EmitStateChange {
 
 pub trait EmitFixtureStateChange {
     fn emit(&mut self, sc: FixtureStateChange);
+
+    fn emit_astroscan(&mut self, sc: AstroscanStateChange) {
+        self.emit(FixtureStateChange::Astroscan(sc));
+    }
 
     fn emit_comet(&mut self, sc: CometStateChange) {
         self.emit(FixtureStateChange::Comet(sc));
@@ -239,6 +247,7 @@ pub struct StateChange {
 
 #[derive(Clone, Debug)]
 pub enum FixtureStateChange {
+    Astroscan(AstroscanStateChange),
     Comet(CometStateChange),
     Lumasphere(LumasphereStateChange),
     Venus(VenusStateChange),
@@ -270,6 +279,7 @@ pub struct ControlMessage {
 
 #[derive(Clone, Debug)]
 pub enum FixtureControlMessage {
+    Astroscan(AstroscanControlMessage),
     Comet(CometControlMessage),
     Lumasphere(LumasphereControlMessage),
     Venus(VenusControlMessage),
@@ -430,6 +440,7 @@ pub struct Patch {
 
 lazy_static! {
     static ref PATCHERS: Vec<Patcher> = vec![
+        Astroscan::patcher(),
         Aquarius::patcher(),
         Color::patcher(),
         Colordynamic::patcher(),

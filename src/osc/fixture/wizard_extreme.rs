@@ -16,7 +16,7 @@ const COLOR: &str = "Color";
 const GOBO_SELECT: RadioButton = RadioButton {
     group: GROUP,
     control: "Gobo",
-    n: 14,
+    n: WizardExtreme::GOBO_COUNT,
     x_primary_coordinate: false,
 };
 
