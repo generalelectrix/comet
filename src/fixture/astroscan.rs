@@ -186,7 +186,7 @@ impl Color {
             Green => 67,
             Orange => 81,
             Blue => 98,
-            Pink => 117, // 127 back to white
+            Pink => 115, // 127 back to white
         }
     }
 }
