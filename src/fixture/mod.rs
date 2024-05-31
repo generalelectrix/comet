@@ -72,7 +72,8 @@ use crate::config::{FixtureConfig, Options};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{
-    ControlMessage as MasterControlMessage, MasterControls, StateChange as MasterStateChange,
+    Autopilot, ControlMessage as MasterControlMessage, MasterControls,
+    StateChange as MasterStateChange, Strobe,
 };
 use crate::osc::MapControls;
 
@@ -299,11 +300,19 @@ pub const N_ANIM: usize = 4;
 pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
 
 #[derive(Debug)]
+struct GroupFixtureConfig {
+    /// The starting index into the DMX buffer for a fixture in a group.
+    dmx_addr: usize,
+    /// True if the fixture should be mirrored in mirror mode.
+    mirror: bool,
+}
+
+#[derive(Debug)]
 pub struct FixtureGroup {
     /// The unique identifier of this group.
     key: FixtureGroupKey,
-    /// The starting index into the DMX buffer for the fixtures in this group.
-    dmx_indexes: Vec<usize>,
+    /// The configurations for the fixtures in the group.
+    fixture_configs: Vec<GroupFixtureConfig>,
     /// The number of DMX channels used by this fixture.
     channel_count: usize,
     /// The inner implementation of the fixture.
@@ -371,11 +380,18 @@ impl FixtureGroup {
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
     pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
-        let phase_offset_per_fixture = Phase::new(1.0 / self.dmx_indexes.len() as f64);
-        for (i, dmx_index) in self.dmx_indexes.iter().enumerate() {
+        let phase_offset_per_fixture = Phase::new(1.0 / self.fixture_configs.len() as f64);
+        for (i, cfg) in self.fixture_configs.iter().enumerate() {
             let phase_offset = phase_offset_per_fixture * i as f64;
-            let dmx_buf = &mut dmx_univ[*dmx_index..*dmx_index + self.channel_count];
-            self.fixture.render(phase_offset, master_controls, dmx_buf);
+            let dmx_buf = &mut dmx_univ[cfg.dmx_addr..cfg.dmx_addr + self.channel_count];
+            self.fixture.render(
+                phase_offset,
+                &FixtureGroupControls {
+                    master_controls,
+                    mirror: cfg.mirror,
+                },
+                dmx_buf,
+            );
             debug!("{} ({}): {:?}", self.fixture_type(), self.name(), dmx_buf);
         }
     }
@@ -465,7 +481,10 @@ impl Patch {
         };
         // Either identify an existing appropriate group or create a new one.
         if let Some(group) = self.group_mut(&key) {
-            group.dmx_indexes.push(cfg.addr.dmx_index());
+            group.fixture_configs.push(GroupFixtureConfig {
+                dmx_addr: cfg.addr.dmx_index(),
+                mirror: cfg.mirror,
+            });
             return Ok(());
         }
         // Add selector mapping index if provided.  Ensure this is an animatable fixture.
@@ -479,7 +498,10 @@ impl Patch {
         // No existing group; create a new one.
         self.fixtures.push(FixtureGroup {
             key,
-            dmx_indexes: vec![cfg.addr.dmx_index()],
+            fixture_configs: vec![GroupFixtureConfig {
+                dmx_addr: cfg.addr.dmx_index(),
+                mirror: cfg.mirror,
+            }],
             channel_count: candidate.channel_count,
             fixture: candidate.fixture,
         });
@@ -660,12 +682,31 @@ pub trait ControllableFixture: MapControls {
     fn update(&mut self, _: Duration) {}
 }
 
+/// Wrap up the master and group-level controls into a single struct to pass
+/// into fixtures.
+pub struct FixtureGroupControls<'a> {
+    /// Master controls.
+    master_controls: &'a MasterControls,
+    /// True if the fixture should render in mirrored mode.
+    mirror: bool,
+}
+
+impl<'a> FixtureGroupControls<'a> {
+    pub fn strobe(&self) -> &Strobe {
+        self.master_controls.strobe()
+    }
+
+    pub fn autopilot(&self) -> &Autopilot {
+        self.master_controls.autopilot()
+    }
+}
+
 pub trait NonAnimatedFixture: ControllableFixture + Debug {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
     /// The master controls are provided to potentially alter the render process.
-    fn render(&self, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
+    fn render(&self, group_controls: &FixtureGroupControls, dmx_buffer: &mut [u8]);
 }
 
 pub trait AnimatedFixture: ControllableFixture + Debug {
@@ -673,7 +714,7 @@ pub trait AnimatedFixture: ControllableFixture + Debug {
 
     fn render_with_animations(
         &self,
-        master: &MasterControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     );
@@ -685,7 +726,12 @@ pub trait Fixture: ControllableFixture + Debug {
     /// to the fixture's start address.
     /// The master controls are provided to potentially alter the render process.
     /// An animation phase offset is provided.
-    fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]);
+    fn render(
+        &self,
+        phase_offset: Phase,
+        group_controls: &FixtureGroupControls,
+        dmx_buffer: &mut [u8],
+    );
 
     /// Return true if this fixture has animations.
     fn is_animated(&self) -> bool;
@@ -701,10 +747,10 @@ where
     fn render(
         &self,
         _phase_offset: Phase,
-        master_controls: &MasterControls,
+        group_controls: &FixtureGroupControls,
         dmx_buffer: &mut [u8],
     ) {
-        self.render(master_controls, dmx_buffer)
+        self.render(group_controls, dmx_buffer)
     }
 
     fn is_animated(&self) -> bool {
@@ -750,21 +796,26 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
 }
 
 impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
-    fn render(&self, phase_offset: Phase, master_controls: &MasterControls, dmx_buffer: &mut [u8]) {
+    fn render(
+        &self,
+        phase_offset: Phase,
+        group_controls: &FixtureGroupControls,
+        dmx_buffer: &mut [u8],
+    ) {
         let mut animation_vals = [(0.0, F::Target::default()); N_ANIM];
         // FIXME: implement unipolar variant of animations
         for (i, ta) in self.animations.iter().enumerate() {
             animation_vals[i] = (
                 ta.animation.get_value(
                     phase_offset,
-                    &master_controls.clock_state,
-                    master_controls.audio_envelope,
+                    &group_controls.master_controls.clock_state,
+                    group_controls.master_controls.audio_envelope,
                 ),
                 ta.target,
             );
         }
         self.fixture
-            .render_with_animations(master_controls, &animation_vals, dmx_buffer);
+            .render_with_animations(group_controls, &animation_vals, dmx_buffer);
     }
 
     fn is_animated(&self) -> bool {
@@ -772,9 +823,7 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
     }
 
     fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
-        let Some(animation) = self.animations.get_mut(index) else {
-            return None;
-        };
+        let animation = self.animations.get_mut(index)?;
         Some(&mut *animation)
     }
 }

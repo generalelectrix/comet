@@ -9,7 +9,7 @@ use super::{
     ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
     PatchFixture,
 };
-use crate::master::{Autopilot, MasterControls};
+use crate::master::{Autopilot, FixtureGroupControls};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -120,18 +120,18 @@ impl Swarmolon {
 }
 
 impl NonAnimatedFixture for Swarmolon {
-    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
-        if master.autopilot().on() {
-            self.render_autopilot(master.autopilot(), dmx_buf);
+    fn render(&self, group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
+        if group_controls.autopilot().on() {
+            self.render_autopilot(group_controls.autopilot(), dmx_buf);
             return;
         }
         dmx_buf[0] = 255; // always set to DMX mode
         dmx_buf[1] = self.derby_color.render();
         dmx_buf[2] = 0; // Not using automatic derby programs.
-        dmx_buf[3] = self
-            .derby_strobe
-            .render_range_with_master(master.strobe(), 0, 254, 10);
-        dmx_buf[4] = self.white_strobe.render(master);
+        dmx_buf[3] =
+            self.derby_strobe
+                .render_range_with_master(group_controls.strobe(), 0, 254, 10);
+        dmx_buf[4] = self.white_strobe.render(group_controls);
         dmx_buf[5] = match (self.red_laser_on, self.green_laser_on) {
             (false, false) => 0,
             (true, false) => 10,
@@ -140,7 +140,7 @@ impl NonAnimatedFixture for Swarmolon {
         };
         dmx_buf[6] = self
             .laser_strobe
-            .render_range_with_master(master.strobe(), 0, 5, 254);
+            .render_range_with_master(group_controls.strobe(), 0, 5, 254);
         dmx_buf[7] = bipolar_to_split_range(self.derby_rotation, 5, 127, 134, 255, 0);
         dmx_buf[8] = bipolar_to_split_range(self.laser_rotation, 5, 127, 134, 255, 0);
         let mut offset = CHANNEL_COUNT;
@@ -157,9 +157,9 @@ impl NonAnimatedFixture for Swarmolon {
                 245,
                 0,
             );
-            slice[2] = self
-                .derby_strobe
-                .render_range_with_master(master.strobe(), 0, 1, 255);
+            slice[2] =
+                self.derby_strobe
+                    .render_range_with_master(group_controls.strobe(), 0, 1, 255);
             slice[3] = if color_val == 0 { 0 } else { 255 };
         }
         if self.galaxian_mindmeld {
@@ -167,20 +167,20 @@ impl NonAnimatedFixture for Swarmolon {
             slice[0] = if !self.red_laser_on {
                 0
             // FIXME: this won't work if we don't use master strobe in the future.
-            } else if !master.strobe().state.on() {
+            } else if !group_controls.strobe().state.on() {
                 8
             } else {
                 self.laser_strobe
-                    .render_range_with_master(master.strobe(), 8, 16, 239)
+                    .render_range_with_master(group_controls.strobe(), 8, 16, 239)
             };
             slice[1] = if !self.green_laser_on {
                 0
             // FIXME: this won't work if we don't use master strobe in the future.
-            } else if !master.strobe().state.on() {
+            } else if !group_controls.strobe().state.on() {
                 8
             } else {
                 self.laser_strobe
-                    .render_range_with_master(master.strobe(), 8, 16, 239)
+                    .render_range_with_master(group_controls.strobe(), 8, 16, 239)
             };
             let laser_rotation =
                 bipolar_to_split_range(self.laser_rotation, 194, 255, 189, 128, 190);
@@ -421,8 +421,8 @@ impl WhiteStrobe {
         Ok(())
     }
 
-    pub fn render(&self, master: &MasterControls) -> u8 {
-        let master_strobe = master.strobe();
+    pub fn render(&self, group_controls: &FixtureGroupControls) -> u8 {
+        let master_strobe = group_controls.strobe();
         if !self.state.on() || !master_strobe.state.on() {
             return 0;
         }

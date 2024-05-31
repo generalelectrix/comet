@@ -5,7 +5,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::{AnimatedFixture, ControllableFixture, PatchAnimatedFixture};
 use super::{EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage};
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -45,7 +45,7 @@ impl AnimatedFixture for H2O {
 
     fn render_with_animations(
         &self,
-        _master: &MasterControls,
+        _group_controls: &FixtureGroupControls,
         animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

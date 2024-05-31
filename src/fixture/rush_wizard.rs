@@ -5,10 +5,10 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
-use crate::master::{Autopilot, MasterControls};
+use crate::master::{Autopilot, FixtureGroupControls};
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -78,14 +78,14 @@ impl RushWizard {
 }
 
 impl NonAnimatedFixture for RushWizard {
-    fn render(&self, master: &MasterControls, dmx_buf: &mut [u8]) {
-        if master.autopilot().on() {
-            self.render_autopilot(master.autopilot(), dmx_buf);
+    fn render(&self, group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
+        if group_controls.autopilot().on() {
+            self.render_autopilot(group_controls.autopilot(), dmx_buf);
             return;
         }
         dmx_buf[0] = self
             .strobe
-            .render_range_with_master(master.strobe(), 8, 16, 131);
+            .render_range_with_master(group_controls.strobe(), 8, 16, 131);
 
         dmx_buf[1] = unipolar_to_range(0, 255, self.dimmer);
         dmx_buf[2] = if self.twinkle {

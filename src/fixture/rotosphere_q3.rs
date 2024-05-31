@@ -14,7 +14,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 
 #[derive(Debug)]
@@ -58,7 +58,7 @@ impl AnimatedFixture for RotosphereQ3 {
 
     fn render_with_animations(
         &self,
-        master: &MasterControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -75,10 +75,13 @@ impl AnimatedFixture for RotosphereQ3 {
             }
         }
         self.color
-            .render_with_animations(master, &color_anim_vals, &mut dmx_buf[0..4]);
-        dmx_buf[4] = self
-            .strobe
-            .render_range_with_master(master.strobe(), 0, 1, 250);
+            .render_with_animations(group_controls, &color_anim_vals, &mut dmx_buf[0..4]);
+        dmx_buf[4] = self.strobe.render_range_with_master(
+            group_controls.strobe(),
+            0,
+            1,
+            250,
+        );
         dmx_buf[5] = bipolar_to_split_range(BipolarFloat::new(rotation), 1, 127, 129, 255, 0);
         dmx_buf[6] = 0;
         dmx_buf[7] = 0;

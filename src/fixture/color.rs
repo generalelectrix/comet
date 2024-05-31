@@ -6,7 +6,7 @@ use anyhow::{bail, Result};
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{Phase, UnipolarFloat};
 
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 
 use super::{
     animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
@@ -88,7 +88,7 @@ impl AnimatedFixture for Color {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
-        _master: &MasterControls,
+        _group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

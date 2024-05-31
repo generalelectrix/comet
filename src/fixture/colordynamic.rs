@@ -10,7 +10,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -93,7 +93,7 @@ impl AnimatedFixture for Colordynamic {
 
     fn render_with_animations(
         &self,
-        master: &MasterControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -121,9 +121,9 @@ impl AnimatedFixture for Colordynamic {
             0
         } else {
             let strobe_off = 0;
-            let strobe = self
-                .strobe
-                .render_range_with_master(master.strobe(), strobe_off, 16, 239);
+            let strobe =
+                self.strobe
+                    .render_range_with_master(group_controls.strobe(), strobe_off, 16, 239);
             if strobe == strobe_off {
                 255
             } else {

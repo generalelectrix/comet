@@ -7,7 +7,7 @@ use super::{
     ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
     PatchFixture,
 };
-use crate::{master::MasterControls, util::unipolar_to_range};
+use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Comet {
@@ -78,7 +78,7 @@ impl Comet {
 }
 
 impl NonAnimatedFixture for Comet {
-    fn render(&self, _master_controls: &MasterControls, dmx_univ: &mut [u8]) {
+    fn render(&self, _group_controls: &FixtureGroupControls, dmx_univ: &mut [u8]) {
         dmx_univ[0] = self.render_shutter();
         dmx_univ[1] = Self::GAME_DMX_VALS[self.macro_pattern];
         dmx_univ[2] = self.render_mspeed();

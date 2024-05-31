@@ -7,7 +7,7 @@ use super::{
     ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
     PatchFixture,
 };
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::{unipolar_to_range, RampingParameter};
 
 /// DMX 255 is too fast; restrict to a reasonable value.
@@ -112,7 +112,7 @@ impl Lumasphere {
 }
 
 impl NonAnimatedFixture for Lumasphere {
-    fn render(&self, _master_controls: &MasterControls, dmx_buf: &mut [u8]) {
+    fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         self.render_ball_rotation(&mut dmx_buf[0..2]);
         dmx_buf[2] = self.render_color_rotation();
         self.strobe_1.render(&mut dmx_buf[3..5]);

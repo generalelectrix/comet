@@ -8,7 +8,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::{master::MasterControls, util::unipolar_to_range};
+use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Dimmer(UnipolarFloat);
@@ -32,7 +32,7 @@ impl AnimatedFixture for Dimmer {
 
     fn render_with_animations(
         &self,
-        _master: &MasterControls,
+        _group_controls: &FixtureGroupControls,
         animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {

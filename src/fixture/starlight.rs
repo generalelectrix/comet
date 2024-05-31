@@ -8,7 +8,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange as EmitShowStateChange,
     FixtureControlMessage, PatchAnimatedFixture,
 };
-use crate::master::MasterControls;
+use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -43,7 +43,7 @@ impl AnimatedFixture for Starlight {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
-        master_controls: &MasterControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -61,7 +61,7 @@ impl AnimatedFixture for Starlight {
         dmx_buf[1] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
         dmx_buf[2] = self
             .strobe
-            .render_range_with_master(master_controls.strobe(), 0, 10, 255);
+            .render_range_with_master(group_controls.strobe(), 0, 10, 255);
         dmx_buf[3] = bipolar_to_split_range(BipolarFloat::new(rotation), 127, 1, 128, 255, 0);
     }
 }

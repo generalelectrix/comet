@@ -14,7 +14,7 @@ use super::{
     AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     PatchAnimatedFixture,
 };
-use crate::{master::MasterControls, util::unipolar_to_range};
+use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -62,7 +62,7 @@ impl AnimatedFixture for FreedomFries {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
-        master_controls: &MasterControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -78,13 +78,13 @@ impl AnimatedFixture for FreedomFries {
         }
         dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
         self.color
-            .render_with_animations(master_controls, &[], &mut dmx_buf[1..4]);
+            .render_with_animations(group_controls, &[], &mut dmx_buf[1..4]);
         dmx_buf[4] = 0;
         dmx_buf[5] = self
             .strobe
-            .render_range_with_master(master_controls.strobe(), 0, 11, 255);
+            .render_range_with_master(group_controls.strobe(), 0, 11, 255);
         dmx_buf[6] = {
-            let autopilot = master_controls.autopilot();
+            let autopilot = group_controls.autopilot();
             let program = if autopilot.on() {
                 autopilot.program() % Self::PROGRAM_COUNT
             } else {
