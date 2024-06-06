@@ -3,7 +3,7 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
 /// A DMX address, indexed from 1.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct DmxAddr(usize);
 
 impl DmxAddr {
@@ -18,3 +18,12 @@ impl Display for DmxAddr {
         write!(f, "{}", self.0)
     }
 }
+
+/// A data buffer for one DMX universe.
+pub type DmxBuffer = [u8; 512];
+
+/// Index into the DMX universes.
+pub type UniverseIdx = usize;
+
+/// The complete address of a fixture at a particular DMX address in a universe.
+pub type FixtureAddress = (UniverseIdx, DmxAddr);

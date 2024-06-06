@@ -7,6 +7,7 @@ use crate::{
     animation::AnimationUIState,
     clock_service::ClockService,
     config::Config,
+    dmx::DmxBuffer,
     fixture::{FixtureControlMessage, FixtureGroup, Patch},
     master::MasterControls,
     osc::{AnimationControls, OscController},
@@ -73,10 +74,15 @@ impl Show {
         })
     }
 
+    /// Return the number of universes patched in the show.
+    pub fn universe_count(&self) -> usize {
+        self.patch.universe_count()
+    }
+
     /// Run the show forever in the current thread.
-    pub fn run(&mut self, mut dmx_port: Box<dyn DmxPort>) {
+    pub fn run(&mut self, mut dmx_ports: &mut [Box<dyn DmxPort>]) {
         let mut last_update = Instant::now();
-        let mut dmx_buffer = vec![0u8; 512];
+        let mut dmx_buffers = vec![[0u8; 512]; dmx_ports.len()];
         loop {
             // Process a control event if one is pending.
             if let Err(err) = self.control(CONTROL_TIMEOUT) {
@@ -99,9 +105,11 @@ impl Show {
 
             // Render the state of the show.
             if should_render {
-                self.render(&mut dmx_buffer);
-                if let Err(e) = dmx_port.write(&dmx_buffer) {
-                    error!("DMX write error: {e:#}.");
+                self.render(&mut dmx_buffers);
+                for (port, buffer) in dmx_ports.iter_mut().zip(&dmx_buffers) {
+                    if let Err(e) = port.write(buffer) {
+                        error!("DMX write error: {e:#}.");
+                    }
                 }
             }
         }
@@ -166,11 +174,11 @@ impl Show {
         }
     }
 
-    fn render(&self, dmx_buffer: &mut [u8]) {
+    fn render(&self, dmx_buffers: &mut [DmxBuffer]) {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
         for group in self.patch.iter() {
-            group.render(&self.master_controls, dmx_buffer);
+            group.render(&self.master_controls, dmx_buffers);
         }
     }
 }

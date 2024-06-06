@@ -1,5 +1,5 @@
 use anyhow::{ensure, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use std::time::Duration;
@@ -72,6 +72,7 @@ use crate::animation::{
     ControlMessage as AnimationControlMessage, GroupSelection, StateChange as AnimationStateChange,
 };
 use crate::config::{FixtureConfig, Options};
+use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{
@@ -313,6 +314,8 @@ pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
 struct GroupFixtureConfig {
     /// The starting index into the DMX buffer for a fixture in a group.
     dmx_addr: usize,
+    /// The universe that this fixture is patched in.
+    universe: usize,
     /// True if the fixture should be mirrored in mirror mode.
     mirror: bool,
 }
@@ -389,11 +392,12 @@ impl FixtureGroup {
 
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
-    pub fn render(&self, master_controls: &MasterControls, dmx_univ: &mut [u8]) {
+    pub fn render(&self, master_controls: &MasterControls, dmx_buffers: &mut [DmxBuffer]) {
         let phase_offset_per_fixture = Phase::new(1.0 / self.fixture_configs.len() as f64);
         for (i, cfg) in self.fixture_configs.iter().enumerate() {
             let phase_offset = phase_offset_per_fixture * i as f64;
-            let dmx_buf = &mut dmx_univ[cfg.dmx_addr..cfg.dmx_addr + self.channel_count];
+            let dmx_buf =
+                &mut dmx_buffers[cfg.universe][cfg.dmx_addr..cfg.dmx_addr + self.channel_count];
             self.fixture.render(
                 phase_offset,
                 &FixtureGroupControls {
@@ -428,7 +432,7 @@ impl MapControls for FixtureGroup {
     }
 }
 
-type UsedAddrs = HashMap<usize, FixtureConfig>;
+type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 
 #[derive(Default)]
 pub struct Patch {
@@ -493,6 +497,7 @@ impl Patch {
         // Either identify an existing appropriate group or create a new one.
         if let Some(group) = self.group_mut(&key) {
             group.fixture_configs.push(GroupFixtureConfig {
+                universe: cfg.universe,
                 dmx_addr: cfg.addr.dmx_index(),
                 mirror: cfg.mirror,
             });
@@ -510,6 +515,7 @@ impl Patch {
         self.fixtures.push(FixtureGroup {
             key,
             fixture_configs: vec![GroupFixtureConfig {
+                universe: cfg.universe,
                 dmx_addr: cfg.addr.dmx_index(),
                 mirror: cfg.mirror,
             }],
@@ -523,6 +529,17 @@ impl Patch {
         Ok(())
     }
 
+    /// Dynamically get the universe count.
+    pub fn universe_count(&self) -> usize {
+        let mut universes = HashSet::new();
+        for group in &self.fixtures {
+            for element in &group.fixture_configs {
+                universes.insert(element.universe);
+            }
+        }
+        universes.len()
+    }
+
     /// Check that the patch candidate doesn't conflict with another patched fixture.
     /// Return an updated collection of used addresses if it does not conflict.
     fn check_collision(
@@ -533,19 +550,20 @@ impl Patch {
         let mut used_addrs = self.used_addrs.clone();
         let dmx_index = cfg.addr.dmx_index();
         for addr in dmx_index..dmx_index + candidate.channel_count {
-            match used_addrs.get(&addr) {
+            match used_addrs.get(&(cfg.universe, addr)) {
                 Some(existing_fixture) => {
                     bail!(
-                        "{} at {} overlaps at DMX address {} with {} at {}.",
+                        "{} at {} overlaps at DMX address {} in universe {} with {} at {}.",
                         cfg.name,
                         cfg.addr,
                         addr + 1,
+                        cfg.universe,
                         existing_fixture.name,
                         existing_fixture.addr,
                     );
                 }
                 None => {
-                    used_addrs.insert(addr, cfg.clone());
+                    used_addrs.insert((cfg.universe, addr), cfg.clone());
                 }
             }
         }

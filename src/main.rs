@@ -41,9 +41,17 @@ fn main() -> Result<()> {
 
     let mut show = Show::new(cfg, clock_service)?;
 
-    let dmx_port = select_port()?;
+    let universe_count = show.universe_count();
+    println!("This show requires {universe_count} universes.");
 
-    show.run(dmx_port);
+    let mut dmx_ports = Vec::new();
+
+    for i in 0..universe_count {
+        println!("Assign port to universe {i}:");
+        dmx_ports.push(select_port()?);
+    }
+
+    show.run(&mut dmx_ports);
 
     Ok(())
 }

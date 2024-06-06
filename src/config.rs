@@ -32,6 +32,10 @@ impl Config {
 pub struct FixtureConfig {
     pub name: String,
     pub addr: DmxAddr,
+    /// The universe this fixture is patched in.
+    /// Defaults to 0.
+    #[serde(default)]
+    pub universe: usize,
     /// True if this fixture's controls should be flipped when running in mirror mode.
     #[serde(default)]
     pub mirror: bool,
