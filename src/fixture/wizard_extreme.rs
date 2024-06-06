@@ -1,6 +1,6 @@
 //! Martin Wizard Extreme - the one that Goes Slow
 
-use log::{debug, error};
+use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
@@ -25,6 +25,7 @@ pub struct WizardExtreme {
     drum_rotation: BipolarFloat,
     drum_swivel: BipolarFloat,
     reflector_rotation: BipolarFloat,
+    mirror: Mirror,
 }
 
 impl PatchAnimatedFixture for WizardExtreme {
@@ -53,8 +54,11 @@ impl WizardExtreme {
                 self.gobo = v;
             }
             DrumRotation(v) => self.drum_rotation = v,
+            MirrorDrumRotation(v) => self.mirror.drum_rotation = v,
             DrumSwivel(v) => self.drum_swivel = v,
+            MirrorDrumSwivel(v) => self.mirror.drum_swivel = v,
             ReflectorRotation(v) => self.reflector_rotation = v,
+            MirrorReflectorRotation(v) => self.mirror.reflector_rotation = v,
         };
         emitter.emit_wizard_extreme(sc);
     }
@@ -73,8 +77,11 @@ impl ControllableFixture for WizardExtreme {
         emitter.emit_wizard_extreme(TwinkleSpeed(self.twinkle_speed));
         emitter.emit_wizard_extreme(Gobo(self.gobo));
         emitter.emit_wizard_extreme(DrumRotation(self.drum_rotation));
+        emitter.emit_wizard_extreme(MirrorDrumRotation(self.mirror.drum_rotation));
         emitter.emit_wizard_extreme(DrumSwivel(self.drum_swivel));
+        emitter.emit_wizard_extreme(MirrorDrumSwivel(self.mirror.drum_swivel));
         emitter.emit_wizard_extreme(ReflectorRotation(self.reflector_rotation));
+        emitter.emit_wizard_extreme(MirrorReflectorRotation(self.mirror.reflector_rotation));
     }
 
     fn control(
@@ -101,7 +108,6 @@ impl AnimatedFixture for WizardExtreme {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        debug!("{:?}", animation_vals);
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
         let mut reflector_rotation = self.reflector_rotation.val();
@@ -130,7 +136,8 @@ impl AnimatedFixture for WizardExtreme {
             }
         };
         dmx_buf[1] = bipolar_to_split_range(
-            BipolarFloat::new(reflector_rotation).invert_if(group_controls.mirror),
+            BipolarFloat::new(reflector_rotation)
+                .invert_if(group_controls.mirror && self.mirror.reflector_rotation),
             2,
             63,
             127,
@@ -150,10 +157,12 @@ impl AnimatedFixture for WizardExtreme {
         dmx_buf[6] = bipolar_to_range(
             0,
             127,
-            BipolarFloat::new(drum_swivel).invert_if(group_controls.mirror),
+            BipolarFloat::new(drum_swivel)
+                .invert_if(group_controls.mirror && self.mirror.drum_swivel),
         );
         dmx_buf[7] = bipolar_to_split_range(
-            BipolarFloat::new(drum_rotation).invert_if(group_controls.mirror),
+            BipolarFloat::new(drum_rotation)
+                .invert_if(group_controls.mirror && self.mirror.drum_rotation),
             2,
             63,
             127,
@@ -163,6 +172,23 @@ impl AnimatedFixture for WizardExtreme {
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
         dmx_buf[10] = 0;
+    }
+}
+
+#[derive(Debug)]
+struct Mirror {
+    drum_rotation: bool,
+    drum_swivel: bool,
+    reflector_rotation: bool,
+}
+
+impl Default for Mirror {
+    fn default() -> Self {
+        Self {
+            drum_rotation: true,
+            drum_swivel: true,
+            reflector_rotation: true,
+        }
     }
 }
 
@@ -177,6 +203,9 @@ pub enum StateChange {
     DrumRotation(BipolarFloat),
     DrumSwivel(BipolarFloat),
     ReflectorRotation(BipolarFloat),
+    MirrorReflectorRotation(bool),
+    MirrorDrumRotation(bool),
+    MirrorDrumSwivel(bool),
 }
 
 pub type ControlMessage = StateChange;

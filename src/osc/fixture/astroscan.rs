@@ -22,6 +22,11 @@ const GOBO_SELECT: RadioButton = RadioButton {
 
 const LAMP_ON: Button = button(GROUP, "LampOn");
 
+const MIRROR_GOBO_ROTATION: Button = button(GROUP, "MirrorGoboRotation");
+const MIRROR_MIRROR_ROTATION: Button = button(GROUP, "MirrorMirrorRotation");
+const MIRROR_PAN: Button = button(GROUP, "MirrorPan");
+const MIRROR_TILT: Button = button(GROUP, "MirrorTilt");
+
 impl EnumRadioButton for Color {}
 
 impl MapControls for Astroscan {
@@ -37,15 +42,19 @@ impl MapControls for Astroscan {
         map.add_bipolar(GROUP, "GoboRotation", |v| {
             Astroscan(GoboRotation(bipolar_fader_with_detent(v)))
         });
+        MIRROR_GOBO_ROTATION.map_state(map, |v| Astroscan(MirrorGoboRotation(v)));
         map.add_bipolar(GROUP, "MirrorRotation", |v| {
             Astroscan(MirrorRotation(bipolar_fader_with_detent(v)))
         });
+        MIRROR_MIRROR_ROTATION.map_state(map, |v| Astroscan(MirrorMirrorRotation(v)));
         map.add_bipolar(GROUP, "Pan", |v| {
             Astroscan(Pan(bipolar_fader_with_detent(v)))
         });
+        MIRROR_PAN.map_state(map, |v| Astroscan(MirrorPan(v)));
         map.add_bipolar(GROUP, "Tilt", |v| {
             Astroscan(Tilt(bipolar_fader_with_detent(v)))
         });
+        MIRROR_TILT.map_state(map, |v| Astroscan(MirrorTilt(v)));
     }
 }
 
@@ -60,6 +69,10 @@ impl HandleStateChange<StateChange> for Astroscan {
     {
         match sc {
             StateChange::LampOn(v) => LAMP_ON.send(v, send),
+            StateChange::MirrorGoboRotation(v) => MIRROR_GOBO_ROTATION.send(v, send),
+            StateChange::MirrorMirrorRotation(v) => MIRROR_MIRROR_ROTATION.send(v, send),
+            StateChange::MirrorPan(v) => MIRROR_PAN.send(v, send),
+            StateChange::MirrorTilt(v) => MIRROR_TILT.send(v, send),
             StateChange::Color(c) => {
                 c.set(GROUP, COLOR, send);
             }

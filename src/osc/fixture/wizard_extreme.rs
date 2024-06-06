@@ -22,6 +22,10 @@ const GOBO_SELECT: RadioButton = RadioButton {
 
 const TWINKLE: Button = button(GROUP, "Twinkle");
 
+const MIRROR_DRUM_ROTATION: Button = button(GROUP, "MirrorDrumRotation");
+const MIRROR_DRUM_SWIVEL: Button = button(GROUP, "MirrorDrumSwivel");
+const MIRROR_REFLECTOR_ROTATION: Button = button(GROUP, "MirrorReflectorRotation");
+
 impl EnumRadioButton for Color {}
 
 impl MapControls for WizardExtreme {
@@ -37,10 +41,13 @@ impl MapControls for WizardExtreme {
         map.add_bipolar(GROUP, "DrumRotation", |v| {
             WizardExtreme(DrumRotation(bipolar_fader_with_detent(v)))
         });
+        MIRROR_DRUM_ROTATION.map_state(map, |v| WizardExtreme(MirrorDrumRotation(v)));
         map.add_bipolar(GROUP, "DrumSwivel", |v| WizardExtreme(DrumSwivel(v)));
+        MIRROR_DRUM_SWIVEL.map_state(map, |v| WizardExtreme(MirrorDrumSwivel(v)));
         map.add_bipolar(GROUP, "ReflectorRotation", |v| {
             WizardExtreme(ReflectorRotation(bipolar_fader_with_detent(v)))
         });
+        MIRROR_REFLECTOR_ROTATION.map_state(map, |v| WizardExtreme(MirrorReflectorRotation(v)));
     }
 }
 
@@ -58,6 +65,9 @@ impl HandleStateChange<StateChange> for WizardExtreme {
                 c.set(GROUP, COLOR, send);
             }
             StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
+            StateChange::MirrorDrumRotation(v) => MIRROR_DRUM_ROTATION.send(v, send),
+            StateChange::MirrorReflectorRotation(v) => MIRROR_REFLECTOR_ROTATION.send(v, send),
+            StateChange::MirrorDrumSwivel(v) => MIRROR_DRUM_SWIVEL.send(v, send),
             _ => (),
         }
     }

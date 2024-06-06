@@ -4,5 +4,6 @@ controllers:
     port: 9000
 debug: True
 fixtures:
-  - name: faderboard
-    addr: 33
+  - name: wizard_extreme
+    addr: 1
+    selector: True

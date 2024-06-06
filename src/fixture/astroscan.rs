@@ -1,6 +1,6 @@
-//! Martin Wizard Extreme - the one that Goes Slow
+//! Clay Paky Astroscan - drunken sailor extraordinaire
 
-use log::{debug, error};
+use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
@@ -25,6 +25,7 @@ pub struct Astroscan {
     mirror_rotation: BipolarFloat,
     pan: BipolarFloat,
     tilt: BipolarFloat,
+    mirror: Mirror,
 }
 
 impl PatchAnimatedFixture for Astroscan {
@@ -53,9 +54,13 @@ impl Astroscan {
                 self.gobo = v;
             }
             GoboRotation(v) => self.gobo_rotation = v,
+            MirrorGoboRotation(v) => self.mirror.gobo_rotation = v,
             MirrorRotation(v) => self.mirror_rotation = v,
+            MirrorMirrorRotation(v) => self.mirror.mirror_rotation = v,
             Pan(v) => self.pan = v,
+            MirrorPan(v) => self.mirror.pan = v,
             Tilt(v) => self.tilt = v,
+            MirrorTilt(v) => self.mirror.tilt = v,
         };
         emitter.emit_astroscan(sc);
     }
@@ -74,9 +79,13 @@ impl ControllableFixture for Astroscan {
         emitter.emit_astroscan(Iris(self.iris));
         emitter.emit_astroscan(Gobo(self.gobo));
         emitter.emit_astroscan(GoboRotation(self.gobo_rotation));
+        emitter.emit_astroscan(MirrorGoboRotation(self.mirror.gobo_rotation));
         emitter.emit_astroscan(MirrorRotation(self.mirror_rotation));
+        emitter.emit_astroscan(MirrorMirrorRotation(self.mirror.mirror_rotation));
         emitter.emit_astroscan(Pan(self.pan));
+        emitter.emit_astroscan(MirrorPan(self.mirror.pan));
         emitter.emit_astroscan(Tilt(self.tilt));
+        emitter.emit_astroscan(MirrorTilt(self.mirror.tilt));
     }
 
     fn control(
@@ -103,7 +112,6 @@ impl AnimatedFixture for Astroscan {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        debug!("{:?}", animation_vals);
         let mut dimmer = self.dimmer.val();
         let mut iris = self.iris.val();
         let mut gobo_rotation = self.gobo_rotation.val();
@@ -161,6 +169,25 @@ impl AnimatedFixture for Astroscan {
     }
 }
 
+#[derive(Debug)]
+struct Mirror {
+    mirror_rotation: bool,
+    gobo_rotation: bool,
+    pan: bool,
+    tilt: bool,
+}
+
+impl Default for Mirror {
+    fn default() -> Self {
+        Self {
+            mirror_rotation: true,
+            gobo_rotation: true,
+            pan: true,
+            tilt: false,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {
     LampOn(bool),
@@ -173,6 +200,10 @@ pub enum StateChange {
     MirrorRotation(BipolarFloat),
     Pan(BipolarFloat),
     Tilt(BipolarFloat),
+    MirrorGoboRotation(bool),
+    MirrorMirrorRotation(bool),
+    MirrorPan(bool),
+    MirrorTilt(bool),
 }
 
 pub type ControlMessage = StateChange;

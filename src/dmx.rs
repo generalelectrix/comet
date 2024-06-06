@@ -24,6 +24,3 @@ pub type DmxBuffer = [u8; 512];
 
 /// Index into the DMX universes.
 pub type UniverseIdx = usize;
-
-/// The complete address of a fixture at a particular DMX address in a universe.
-pub type FixtureAddress = (UniverseIdx, DmxAddr);

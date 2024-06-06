@@ -80,7 +80,7 @@ impl Show {
     }
 
     /// Run the show forever in the current thread.
-    pub fn run(&mut self, mut dmx_ports: &mut [Box<dyn DmxPort>]) {
+    pub fn run(&mut self, dmx_ports: &mut [Box<dyn DmxPort>]) {
         let mut last_update = Instant::now();
         let mut dmx_buffers = vec![[0u8; 512]; dmx_ports.len()];
         loop {
