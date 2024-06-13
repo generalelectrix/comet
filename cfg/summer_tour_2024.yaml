@@ -1,0 +1,38 @@
+receive_port: 8000
+controllers:
+  - host: 10.0.1.2
+    port: 9000
+debug: True
+fixtures:
+  - name: wizard_extreme
+    universe: 0
+    addr: 123
+    selector: True
+
+  - name: wizard_extreme
+    universe: 0
+    addr: 134
+    selector: True
+
+  - name: astroscan
+    universe: 0
+    addr: 423
+    selector: True
+
+  - name: wizard_extreme
+    universe: 0
+    addr: 145
+    selector: True
+    mirror: True
+
+  - name: wizard_extreme
+    universe: 0
+    addr: 297
+    selector: True
+    mirror: True
+
+  - name: astroscan
+    universe: 0
+    addr: 437
+    selector: True
+    mirror: True
