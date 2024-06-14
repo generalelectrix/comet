@@ -13,6 +13,15 @@ use super::{
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+#[derive(Debug)]
+struct Active(bool);
+
+impl Default for Active {
+    fn default() -> Self {
+        Self(true)
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct Astroscan {
     lamp_on: bool,
@@ -26,6 +35,7 @@ pub struct Astroscan {
     pan: BipolarFloat,
     tilt: BipolarFloat,
     mirror: Mirror,
+    active: Active,
 }
 
 impl PatchAnimatedFixture for Astroscan {
@@ -61,6 +71,7 @@ impl Astroscan {
             MirrorPan(v) => self.mirror.pan = v,
             Tilt(v) => self.tilt = v,
             MirrorTilt(v) => self.mirror.tilt = v,
+            Active(v) => self.active.0 = v,
         };
         emitter.emit_astroscan(sc);
     }
@@ -86,6 +97,7 @@ impl ControllableFixture for Astroscan {
         emitter.emit_astroscan(MirrorPan(self.mirror.pan));
         emitter.emit_astroscan(Tilt(self.tilt));
         emitter.emit_astroscan(MirrorTilt(self.mirror.tilt));
+        emitter.emit_astroscan(Active(self.active.0));
     }
 
     fn control(
@@ -112,6 +124,10 @@ impl AnimatedFixture for Astroscan {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
+        if !self.active.0 {
+            dmx_buf.fill(0);
+            return;
+        }
         let mut dimmer = self.dimmer.val();
         let mut iris = self.iris.val();
         let mut gobo_rotation = self.gobo_rotation.val();
@@ -204,6 +220,7 @@ pub enum StateChange {
     MirrorMirrorRotation(bool),
     MirrorPan(bool),
     MirrorTilt(bool),
+    Active(bool),
 }
 
 pub type ControlMessage = StateChange;

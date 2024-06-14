@@ -26,6 +26,8 @@ const MIRROR_DRUM_ROTATION: Button = button(GROUP, "MirrorDrumRotation");
 const MIRROR_DRUM_SWIVEL: Button = button(GROUP, "MirrorDrumSwivel");
 const MIRROR_REFLECTOR_ROTATION: Button = button(GROUP, "MirrorReflectorRotation");
 
+const ACTIVE: Button = button(GROUP, "Active");
+
 impl EnumRadioButton for Color {}
 
 impl MapControls for WizardExtreme {
@@ -48,6 +50,7 @@ impl MapControls for WizardExtreme {
             WizardExtreme(ReflectorRotation(bipolar_fader_with_detent(v)))
         });
         MIRROR_REFLECTOR_ROTATION.map_state(map, |v| WizardExtreme(MirrorReflectorRotation(v)));
+        ACTIVE.map_state(map, |v| WizardExtreme(Active(v)));
     }
 }
 
@@ -68,6 +71,7 @@ impl HandleStateChange<StateChange> for WizardExtreme {
             StateChange::MirrorDrumRotation(v) => MIRROR_DRUM_ROTATION.send(v, send),
             StateChange::MirrorReflectorRotation(v) => MIRROR_REFLECTOR_ROTATION.send(v, send),
             StateChange::MirrorDrumSwivel(v) => MIRROR_DRUM_SWIVEL.send(v, send),
+            StateChange::Active(v) => ACTIVE.send(v, send),
             _ => (),
         }
     }

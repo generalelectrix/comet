@@ -27,6 +27,8 @@ const MIRROR_MIRROR_ROTATION: Button = button(GROUP, "MirrorMirrorRotation");
 const MIRROR_PAN: Button = button(GROUP, "MirrorPan");
 const MIRROR_TILT: Button = button(GROUP, "MirrorTilt");
 
+const ACTIVE: Button = button(GROUP, "Active");
+
 impl EnumRadioButton for Color {}
 
 impl MapControls for Astroscan {
@@ -55,6 +57,7 @@ impl MapControls for Astroscan {
             Astroscan(Tilt(bipolar_fader_with_detent(v)))
         });
         MIRROR_TILT.map_state(map, |v| Astroscan(MirrorTilt(v)));
+        ACTIVE.map_state(map, |v| Astroscan(Active(v)));
     }
 }
 
@@ -73,6 +76,7 @@ impl HandleStateChange<StateChange> for Astroscan {
             StateChange::MirrorMirrorRotation(v) => MIRROR_MIRROR_ROTATION.send(v, send),
             StateChange::MirrorPan(v) => MIRROR_PAN.send(v, send),
             StateChange::MirrorTilt(v) => MIRROR_TILT.send(v, send),
+            StateChange::Active(v) => ACTIVE.send(v, send),
             StateChange::Color(c) => {
                 c.set(GROUP, COLOR, send);
             }

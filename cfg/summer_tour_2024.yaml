@@ -2,7 +2,7 @@ receive_port: 8000
 controllers:
   - host: 10.0.1.2
     port: 9000
-debug: True
+debug: False
 fixtures:
   - name: wizard_extreme
     universe: 0

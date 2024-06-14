@@ -14,6 +14,15 @@ use crate::master::FixtureGroupControls;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+#[derive(Debug)]
+struct Active(bool);
+
+impl Default for Active {
+    fn default() -> Self {
+        Self(true)
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct WizardExtreme {
     dimmer: UnipolarFloat,
@@ -26,6 +35,7 @@ pub struct WizardExtreme {
     drum_swivel: BipolarFloat,
     reflector_rotation: BipolarFloat,
     mirror: Mirror,
+    active: Active,
 }
 
 impl PatchAnimatedFixture for WizardExtreme {
@@ -59,6 +69,7 @@ impl WizardExtreme {
             MirrorDrumSwivel(v) => self.mirror.drum_swivel = v,
             ReflectorRotation(v) => self.reflector_rotation = v,
             MirrorReflectorRotation(v) => self.mirror.reflector_rotation = v,
+            Active(v) => self.active.0 = v,
         };
         emitter.emit_wizard_extreme(sc);
     }
@@ -82,6 +93,7 @@ impl ControllableFixture for WizardExtreme {
         emitter.emit_wizard_extreme(MirrorDrumSwivel(self.mirror.drum_swivel));
         emitter.emit_wizard_extreme(ReflectorRotation(self.reflector_rotation));
         emitter.emit_wizard_extreme(MirrorReflectorRotation(self.mirror.reflector_rotation));
+        emitter.emit_wizard_extreme(Active(self.active.0));
     }
 
     fn control(
@@ -108,6 +120,10 @@ impl AnimatedFixture for WizardExtreme {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
+        if !self.active.0 {
+            dmx_buf.fill(0);
+            return;
+        }
         let mut drum_swivel = self.drum_swivel.val();
         let mut drum_rotation = self.drum_rotation.val();
         let mut reflector_rotation = self.reflector_rotation.val();
@@ -206,6 +222,7 @@ pub enum StateChange {
     MirrorReflectorRotation(bool),
     MirrorDrumRotation(bool),
     MirrorDrumSwivel(bool),
+    Active(bool),
 }
 
 pub type ControlMessage = StateChange;
