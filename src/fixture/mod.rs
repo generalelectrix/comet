@@ -152,6 +152,12 @@ pub struct FixtureGroupKey {
     group: GroupName,
 }
 
+impl Display for FixtureGroupKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}({})", self.group, self.fixture)
+    }
+}
+
 pub trait EmitStateChange {
     fn emit(&mut self, sc: StateChange);
 }
@@ -436,10 +442,10 @@ type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 
 #[derive(Default)]
 pub struct Patch {
-    fixtures: Vec<FixtureGroup>,
+    fixtures: HashMap<FixtureGroupKey, FixtureGroup>,
     used_addrs: UsedAddrs,
-    // Lookup from selector index to the fixture index assigned to that selector.
-    selector_index: Vec<usize>,
+    // Lookup from selector index to the fixture group assigned to that selector.
+    selector_index: Vec<FixtureGroupKey>,
 }
 
 lazy_static! {
@@ -495,7 +501,7 @@ impl Patch {
             group: cfg.group,
         };
         // Either identify an existing appropriate group or create a new one.
-        if let Some(group) = self.group_mut(&key) {
+        if let Some(group) = self.fixtures.get_mut(&key) {
             group.fixture_configs.push(GroupFixtureConfig {
                 universe: cfg.universe,
                 dmx_addr: cfg.addr.dmx_index(),
@@ -512,19 +518,22 @@ impl Patch {
             );
         }
         // No existing group; create a new one.
-        self.fixtures.push(FixtureGroup {
-            key,
-            fixture_configs: vec![GroupFixtureConfig {
-                universe: cfg.universe,
-                dmx_addr: cfg.addr.dmx_index(),
-                mirror: cfg.mirror,
-            }],
-            channel_count: candidate.channel_count,
-            fixture: candidate.fixture,
-        });
         if cfg.selector {
-            self.selector_index.push(self.fixtures.len() - 1);
+            self.selector_index.push(key.clone());
         }
+        self.fixtures.insert(
+            key.clone(),
+            FixtureGroup {
+                key,
+                fixture_configs: vec![GroupFixtureConfig {
+                    universe: cfg.universe,
+                    dmx_addr: cfg.addr.dmx_index(),
+                    mirror: cfg.mirror,
+                }],
+                channel_count: candidate.channel_count,
+                fixture: candidate.fixture,
+            },
+        );
 
         Ok(())
     }
@@ -532,7 +541,7 @@ impl Patch {
     /// Dynamically get the universe count.
     pub fn universe_count(&self) -> usize {
         let mut universes = HashSet::new();
-        for group in &self.fixtures {
+        for group in self.fixtures.values() {
             for element in &group.fixture_configs {
                 universes.insert(element.universe);
             }
@@ -570,22 +579,18 @@ impl Patch {
         Ok(used_addrs)
     }
 
-    pub fn group_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
-        self.fixtures.iter_mut().find(|g| g.key == *key)
-    }
-
     pub fn group_by_selector_mut(
         &mut self,
         selection: &GroupSelection,
     ) -> Result<&mut FixtureGroup> {
-        let Some(fixture_index) = self.selector_index.get(selection.0) else {
+        let Some(fixture_key) = self.selector_index.get(selection.0) else {
             bail!("tried to get out-of-range selector {}.", selection.0);
         };
-        if let Some(fixture) = self.fixtures.get_mut(*fixture_index) {
+        if let Some(fixture) = self.fixtures.get_mut(fixture_key) {
             Ok(fixture)
         } else {
             bail!(
-                "selector ID {} mapped to out-of-range fixture index {fixture_index}",
+                "selector ID {} mapped to non-existent fixture key {fixture_key}",
                 selection.0
             );
         }
@@ -602,7 +607,7 @@ impl Patch {
     pub fn selector_labels(&self) -> impl Iterator<Item = String> + '_ {
         self.selector_index
             .iter()
-            .filter_map(|i| self.fixtures.get(*i))
+            .filter_map(|i| self.fixtures.get(i))
             .map(|f| {
                 if f.key.group.is_none() {
                     f.key.fixture.to_string()
@@ -613,11 +618,11 @@ impl Patch {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {
-        self.fixtures.iter()
+        self.fixtures.values()
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut FixtureGroup> {
-        self.fixtures.iter_mut()
+        self.fixtures.values_mut()
     }
 }
 
