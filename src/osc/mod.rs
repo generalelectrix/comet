@@ -134,7 +134,7 @@ impl OscController {
 impl EmitStateChange for OscController {
     fn emit(&mut self, sc: StateChange) {
         let send = &mut |mut msg: OscMessage| {
-            if let Some(g) = sc.group.inner() {
+            if let Some(g) = &sc.group {
                 // If a group is set, prepend the ID to the address.
                 // FIXME: would be nice to think through this a bit and see if
                 // we can avoid this allocation by somehow transparently threading

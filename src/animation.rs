@@ -7,8 +7,8 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 use crate::{
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
-        EmitStateChange, FixtureStateChange, GroupName, Patch,
-        StateChange as FixtureStateChangeWithGroup, N_ANIM,
+        EmitStateChange, FixtureStateChange, Patch, StateChange as FixtureStateChangeWithGroup,
+        N_ANIM,
     },
     osc::OscController,
 };
@@ -42,26 +42,26 @@ impl AnimationUIState {
         let (ta, index) = self.current_animation_with_index(patch)?;
         ta.anim().emit_state(osc_controller);
         osc_controller.emit(FixtureStateChangeWithGroup {
-            group: GroupName::none(),
+            group: None,
             sc: FixtureStateChange::Animation(StateChange::Target(ta.target())),
         });
         osc_controller.emit(FixtureStateChangeWithGroup {
-            group: GroupName::none(),
+            group: None,
             sc: FixtureStateChange::Animation(StateChange::SelectAnimation(index)),
         });
         osc_controller.emit(FixtureStateChangeWithGroup {
-            group: GroupName::none(),
+            group: None,
             sc: FixtureStateChange::Animation(StateChange::TargetLabels(ta.target_labels())),
         });
         if let Some(selector) = self.current_group {
             osc_controller.emit(FixtureStateChangeWithGroup {
-                group: GroupName::none(),
+                group: None,
                 sc: FixtureStateChange::Animation(StateChange::SelectGroup(selector)),
             });
         }
         // FIXME this really should belong to the show
         osc_controller.emit(FixtureStateChangeWithGroup {
-            group: GroupName::none(),
+            group: None,
             sc: FixtureStateChange::Animation(StateChange::GroupLabels(
                 patch.selector_labels().collect(),
             )),
@@ -89,7 +89,7 @@ impl AnimationUIState {
                 }
                 anim.set_target(msg)?;
                 osc_controller.emit(FixtureStateChangeWithGroup {
-                    group: GroupName::none(),
+                    group: None,
                     sc: crate::fixture::FixtureStateChange::Animation(StateChange::Target(msg)),
                 });
             }
@@ -165,7 +165,7 @@ impl AnimationUIState {
 impl EmitAnimationStateChange for OscController {
     fn emit_animation_state_change(&mut self, sc: tunnels::animation::StateChange) {
         self.emit(FixtureStateChangeWithGroup {
-            group: GroupName::none(),
+            group: None,
             sc: FixtureStateChange::Animation(StateChange::Animation(sc)),
         });
     }

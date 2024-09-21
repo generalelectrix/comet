@@ -7,7 +7,7 @@ use tunnels::clock_server::StaticClockBank;
 
 use crate::fixture::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    EmitStateChange, FixtureStateChange, GroupName, StateChange as ShowStateChange,
+    EmitStateChange, FixtureStateChange, StateChange as ShowStateChange,
 };
 
 pub use crate::fixture::FixtureGroupControls;
@@ -37,7 +37,7 @@ impl MasterControls {
         use StateChange::*;
         let mut emit_strobe = |ssc| {
             emitter.emit(ShowStateChange {
-                group: GroupName::none(),
+                group: None,
                 sc: FixtureStateChange::Master(Strobe(ssc)),
             });
         };
@@ -53,7 +53,7 @@ impl MasterControls {
             AutopilotSoundActive(v) => self.autopilot.sound_active = v,
         }
         emitter.emit(ShowStateChange {
-            group: GroupName::none(),
+            group: None,
             sc: FixtureStateChange::Master(msg),
         });
     }

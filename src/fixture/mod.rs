@@ -2,6 +2,7 @@ use anyhow::{ensure, Result};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -107,42 +108,24 @@ pub mod wizard_extreme;
 
 /// Identify a named group of a particular type of fixture.
 #[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct GroupName(Option<Arc<String>>);
+pub struct GroupName(Arc<String>);
 
 impl GroupName {
-    pub fn none() -> Self {
-        Self(None)
-    }
-
-    pub fn is_none(&self) -> bool {
-        self.0.is_none()
-    }
-
     pub fn new<S: Into<String>>(v: S) -> Self {
-        Self(Some(Arc::new(v.into())))
-    }
-
-    pub fn inner(&self) -> &Option<Arc<String>> {
-        &self.0
+        Self(Arc::new(v.into()))
     }
 }
 
-impl From<&Option<String>> for GroupName {
-    fn from(v: &Option<String>) -> Self {
-        match v {
-            None => Self::none(),
-            Some(v) => Self::new(v),
-        }
+impl Deref for GroupName {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        self.0.as_str()
     }
 }
 
 impl Display for GroupName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.0.as_ref().map(|g| g.as_str()).unwrap_or("none")
-        )
+        write!(f, "{}", self.0)
     }
 }
 
@@ -150,12 +133,17 @@ impl Display for GroupName {
 #[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct FixtureGroupKey {
     pub fixture: Cow<'static, str>,
-    pub group: GroupName,
+    pub group: Option<GroupName>,
 }
 
 impl Display for FixtureGroupKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}({})", self.group, self.fixture)
+        write!(
+            f,
+            "{}({})",
+            self.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none"),
+            self.fixture
+        )
     }
 }
 
@@ -249,7 +237,7 @@ pub trait EmitFixtureStateChange {
 
 #[derive(Debug)]
 pub struct StateChange {
-    pub group: GroupName,
+    pub group: Option<GroupName>,
     pub sc: FixtureStateChange,
 }
 
@@ -347,8 +335,8 @@ impl FixtureGroup {
         &self.key.fixture
     }
 
-    pub fn name(&self) -> &GroupName {
-        &self.key.group
+    pub fn name(&self) -> Option<&GroupName> {
+        self.key.group.as_ref()
     }
 
     pub fn get_animation(
@@ -366,7 +354,7 @@ impl FixtureGroup {
     pub fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
         let mut emitter = StateChangeWithGroupEmitter {
             emitter,
-            group: self.name().clone(),
+            group: self.name().cloned(),
         };
         self.fixture.emit_state(&mut emitter);
     }
@@ -380,7 +368,7 @@ impl FixtureGroup {
     ) -> Result<()> {
         let mut emitter = StateChangeWithGroupEmitter {
             emitter,
-            group: self.name().clone(),
+            group: self.name().cloned(),
         };
         let Some(bad_msg) = self.fixture.control(msg, &mut emitter) else {
             return Ok(());
@@ -412,7 +400,12 @@ impl FixtureGroup {
                 },
                 dmx_buf,
             );
-            debug!("{} ({}): {:?}", self.fixture_type(), self.name(), dmx_buf);
+            debug!(
+                "{} ({}): {:?}",
+                self.fixture_type(),
+                self.name().map(|g| g.0.as_str()).unwrap_or("none"),
+                dmx_buf
+            );
         }
     }
 }
@@ -420,7 +413,7 @@ impl FixtureGroup {
 /// Wrap a state change emitter,
 struct StateChangeWithGroupEmitter<'a> {
     emitter: &'a mut dyn EmitStateChange,
-    group: GroupName,
+    group: Option<GroupName>,
 }
 
 impl<'a> EmitFixtureStateChange for StateChangeWithGroupEmitter<'a> {
@@ -494,7 +487,9 @@ impl Patch {
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
         info!(
             "Controlling {} at {} (group: {}).",
-            cfg.name, cfg.addr, cfg.group
+            cfg.name,
+            cfg.addr,
+            cfg.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none")
         );
         let key = FixtureGroupKey {
             fixture: Cow::Borrowed(candidate.fixture_type),
@@ -615,7 +610,11 @@ impl Patch {
                 if f.key.group.is_none() {
                     f.key.fixture.to_string()
                 } else {
-                    format!("{}({})", f.key.fixture, f.key.group)
+                    format!(
+                        "{}({})",
+                        f.key.fixture,
+                        f.key.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none")
+                    )
                 }
             })
     }
