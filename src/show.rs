@@ -13,8 +13,8 @@ use crate::{
     osc::{AnimationControls, OscController},
 };
 
-use anyhow::Result;
-use log::{error, warn};
+use anyhow::{bail, Result};
+use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
 
@@ -143,23 +143,12 @@ impl Show {
                 .emit_state(&mut self.patch, &mut self.osc_controller)?;
         }
 
-        // "Option dance" to pass ownership into/back out of handlers.
-        let mut msg = Some(msg);
+        // Identify the correct fixture to handle this message.
+        let Some(fixture) = self.patch.get_mut(&msg.key) else {
+            bail!("Control message was not handled by any fixture: {msg:?}");
+        };
 
-        for fixture in self.patch.iter_mut() {
-            match msg.take() {
-                Some(m) => {
-                    msg = fixture.control(m, &mut self.osc_controller);
-                }
-                None => {
-                    break;
-                }
-            }
-        }
-        if let Some(m) = msg {
-            warn!("Control message was not handled by any fixture: {:?}", m);
-        }
-        Ok(())
+        fixture.control(msg.msg, &mut self.osc_controller)
     }
 
     fn update(&mut self, delta_t: Duration) {

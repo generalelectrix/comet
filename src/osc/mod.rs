@@ -19,7 +19,8 @@ use crate::fixture::uv_led_brick::UvLedBrick;
 use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
-    ControlMessage, EmitStateChange, FixtureControlMessage, FixtureStateChange, StateChange,
+    ControlMessage, EmitStateChange, FixtureControlMessage, FixtureGroupKey, FixtureStateChange,
+    StateChange,
 };
 use crate::master::MasterControls;
 use anyhow::bail;
@@ -118,7 +119,10 @@ impl OscController {
         };
         Ok(self.control_map.handle(&msg)?.map(|m| ControlMessage {
             msg: m,
-            group: msg.group.clone(),
+            key: FixtureGroupKey {
+                fixture: std::borrow::Cow::Owned(msg.key().to_string()),
+                group: msg.group,
+            },
         }))
     }
 

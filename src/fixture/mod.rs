@@ -1,4 +1,5 @@
 use anyhow::{ensure, Result};
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::sync::Arc;
@@ -145,11 +146,11 @@ impl Display for GroupName {
     }
 }
 
-/// Uniquely identify the a specific fixture group.
+/// Uniquely identify a specific fixture group.
 #[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct FixtureGroupKey {
-    fixture: &'static str,
-    group: GroupName,
+    pub fixture: Cow<'static, str>,
+    pub group: GroupName,
 }
 
 impl Display for FixtureGroupKey {
@@ -246,7 +247,7 @@ pub trait EmitFixtureStateChange {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct StateChange {
     pub group: GroupName,
     pub sc: FixtureStateChange,
@@ -278,9 +279,9 @@ pub enum FixtureStateChange {
     Animation(AnimationStateChange),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ControlMessage {
-    pub group: GroupName,
+    pub key: FixtureGroupKey,
     pub msg: FixtureControlMessage,
 }
 
@@ -343,7 +344,7 @@ impl FixtureGroup {
         &self.key
     }
     pub fn fixture_type(&self) -> &str {
-        self.key.fixture
+        &self.key.fixture
     }
 
     pub fn name(&self) -> &GroupName {
@@ -370,26 +371,25 @@ impl FixtureGroup {
         self.fixture.emit_state(&mut emitter);
     }
 
-    /// Potentially process the provided control message.
-    /// If this fixture will not process it, return it back to the caller.
+    /// Process the provided control message.
+    /// Return an error if fixture couldn't handle it.
     pub fn control(
         &mut self,
-        msg: ControlMessage,
+        msg: FixtureControlMessage,
         emitter: &mut dyn EmitStateChange,
-    ) -> Option<ControlMessage> {
-        if *self.name() != msg.group {
-            return Some(msg);
-        }
+    ) -> Result<()> {
         let mut emitter = StateChangeWithGroupEmitter {
             emitter,
             group: self.name().clone(),
         };
-        self.fixture
-            .control(msg.msg, &mut emitter)
-            .map(|m| ControlMessage {
-                group: msg.group,
-                msg: m,
-            })
+        let Some(bad_msg) = self.fixture.control(msg, &mut emitter) else {
+            return Ok(());
+        };
+        bail!(
+            "{} could not handle the control message {:?}",
+            self.key,
+            bad_msg
+        );
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {
@@ -497,7 +497,7 @@ impl Patch {
             cfg.name, cfg.addr, cfg.group
         );
         let key = FixtureGroupKey {
-            fixture: candidate.fixture_type,
+            fixture: Cow::Borrowed(candidate.fixture_type),
             group: cfg.group,
         };
         // Either identify an existing appropriate group or create a new one.
@@ -579,6 +579,7 @@ impl Patch {
         Ok(used_addrs)
     }
 
+    /// Get a fixture group by selector index.
     pub fn group_by_selector_mut(
         &mut self,
         selection: &GroupSelection,
@@ -596,6 +597,7 @@ impl Patch {
         }
     }
 
+    /// Validate that a selector index refers to a selector that actually exists.
     pub fn validate_selector(&self, selector: usize) -> Result<GroupSelection> {
         if selector < self.selector_index.len() {
             Ok(GroupSelection(selector))
@@ -604,6 +606,7 @@ impl Patch {
         }
     }
 
+    /// Iterate over all of the labels for each selector.
     pub fn selector_labels(&self) -> impl Iterator<Item = String> + '_ {
         self.selector_index
             .iter()
@@ -617,10 +620,17 @@ impl Patch {
             })
     }
 
+    /// Get the fixture patched with this key, mutably.
+    pub fn get_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
+        self.fixtures.get_mut(key)
+    }
+
+    /// Iterate over all patched fixtures.
     pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {
         self.fixtures.values()
     }
 
+    /// Iterate over all patched fixtures, mutably.
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut FixtureGroup> {
         self.fixtures.values_mut()
     }
@@ -705,8 +715,8 @@ pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange);
 
-    /// Potentially process the provided control message.
-    /// If this fixture will not process it, return it back to the caller.
+    /// Process the provided control message.
+    /// Return the message if this fixture cannot process it.
     fn control(
         &mut self,
         msg: FixtureControlMessage,
