@@ -1,5 +1,6 @@
 use crate::fixture::hypnotic::{Hypnotic, StateChange};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
@@ -20,6 +21,10 @@ impl MapControls for Hypnotic {
         map.add_bipolar(GROUP, "Rotation", |v| {
             ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
         });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

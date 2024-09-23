@@ -5,14 +5,8 @@ use std::time::Duration;
 use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::{
-    master::FixtureGroupControls,
-    util::{unipolar_to_range, RampingParameter},
-};
+use super::prelude::*;
+use crate::util::{unipolar_to_range, RampingParameter};
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus
@@ -43,7 +37,7 @@ pub struct Venus {
 }
 
 impl PatchFixture for Venus {
-    const NAME: &'static str = "venus";
+    const NAME: FixtureType = FixtureType("venus");
     fn channel_count(&self) -> usize {
         8
     }

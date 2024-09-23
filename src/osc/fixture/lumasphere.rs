@@ -2,6 +2,7 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::lumasphere::StrobeStateChange;
 use crate::fixture::lumasphere::{Lumasphere, StateChange};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
@@ -37,6 +38,10 @@ impl MapControls for Lumasphere {
         map_strobe(map, 2, |inner| {
             ControlMessagePayload::fixture(Strobe2(inner))
         });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

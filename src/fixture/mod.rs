@@ -1,7 +1,7 @@
 use anyhow::{ensure, Context, Result};
 use dyn_clone::DynClone;
+use itertools::Itertools;
 use std::any::{type_name, Any};
-use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
@@ -101,9 +101,9 @@ impl Display for GroupName {
 }
 
 /// Uniquely identify a specific fixture group.
-#[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FixtureGroupKey {
-    pub fixture: Cow<'static, str>,
+    pub fixture: FixtureType,
     pub group: Option<GroupName>,
 }
 
@@ -240,7 +240,8 @@ pub enum FixtureStateChange {
 
 #[derive(Debug)]
 pub struct ControlMessage {
-    pub key: FixtureGroupKey,
+    // FIXME: this should be tied to the fixture message payload, not this scope!
+    pub key: Option<FixtureGroupKey>,
     pub msg: ControlMessagePayload,
 }
 
@@ -306,7 +307,7 @@ impl FixtureGroup {
     pub fn key(&self) -> &FixtureGroupKey {
         &self.key
     }
-    pub fn fixture_type(&self) -> &str {
+    pub fn fixture_type(&self) -> &FixtureType {
         &self.key.fixture
     }
 
@@ -399,6 +400,10 @@ impl MapControls for FixtureGroup {
     fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map);
     }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)> {
+        self.fixture.fixture_type_aliases()
+    }
 }
 
 type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
@@ -447,14 +452,18 @@ impl Patch {
             1 => candidates.pop().unwrap(),
             _ => bail!(
                 "multiple fixture patch candidates: {:?}",
-                candidates
-                    .iter()
-                    .map(|c| c.fixture_type)
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                candidates.iter().map(|c| &c.fixture_type).join(", ")
             ),
         };
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
+        // Add selector mapping index if provided.  Ensure this is an animatable fixture.
+        if cfg.selector {
+            ensure!(
+                candidate.fixture.is_animated(),
+                "cannot assign non-animatable fixture {} to a selector",
+                candidate.fixture_type
+            );
+        }
         info!(
             "Controlling {} at {} (group: {}).",
             cfg.name,
@@ -462,7 +471,7 @@ impl Patch {
             cfg.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none")
         );
         let key = FixtureGroupKey {
-            fixture: Cow::Borrowed(candidate.fixture_type),
+            fixture: candidate.fixture_type,
             group: cfg.group,
         };
         // Either identify an existing appropriate group or create a new one.
@@ -473,14 +482,6 @@ impl Patch {
                 mirror: cfg.mirror,
             });
             return Ok(());
-        }
-        // Add selector mapping index if provided.  Ensure this is an animatable fixture.
-        if cfg.selector {
-            ensure!(
-                candidate.fixture.is_animated(),
-                "cannot assign non-animatable fixture {} to a selector",
-                candidate.fixture_type
-            );
         }
         // No existing group; create a new one.
         if cfg.selector {
@@ -576,16 +577,9 @@ impl Patch {
         self.selector_index
             .iter()
             .filter_map(|i| self.fixtures.get(i))
-            .map(|f| {
-                if f.key.group.is_none() {
-                    f.key.fixture.to_string()
-                } else {
-                    format!(
-                        "{}({})",
-                        f.key.fixture,
-                        f.key.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none")
-                    )
-                }
+            .map(|f| match f.key.group.as_ref() {
+                None => f.key.fixture.to_string(),
+                Some(g) => format!("{g}({})", f.key.fixture),
             })
     }
 
@@ -605,8 +599,17 @@ impl Patch {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FixtureType(&'static str);
+
+impl Display for FixtureType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
 pub struct PatchCandidate {
-    fixture_type: &'static str,
+    fixture_type: FixtureType,
     channel_count: usize,
     fixture: Box<dyn Fixture>,
 }
@@ -615,12 +618,12 @@ pub type Patcher = Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate>> 
 
 /// Fixture constructor trait to handle patching non-animating fixtures.
 pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
-    const NAME: &'static str;
+    const NAME: FixtureType;
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
     fn patcher() -> Patcher {
         Box::new(|cfg| {
-            if cfg.name != Self::NAME {
+            if cfg.name != Self::NAME.0 {
                 return None;
             }
             match Self::new(&cfg.options) {
@@ -647,12 +650,12 @@ pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
 
 /// Fixture constructor trait to handle patching non-animating fixtures.
 pub trait PatchAnimatedFixture: AnimatedFixture + Default + 'static {
-    const NAME: &'static str;
+    const NAME: FixtureType;
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
     fn patcher() -> Patcher {
         Box::new(|cfg| {
-            if cfg.name != Self::NAME {
+            if cfg.name != Self::NAME.0 {
                 return None;
             }
             match Self::new(&cfg.options) {
@@ -785,6 +788,10 @@ impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
     fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map)
     }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)> {
+        self.fixture.fixture_type_aliases()
+    }
 }
 
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
@@ -839,4 +846,12 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
         let animation = self.animations.get_mut(index)?;
         Some(&mut *animation)
     }
+}
+
+pub mod prelude {
+    #[allow(unused)]
+    pub use super::{
+        AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+        FixtureGroupControls, FixtureType, NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
+    };
 }

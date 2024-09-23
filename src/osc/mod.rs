@@ -20,7 +20,7 @@ use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
     ControlMessage, ControlMessagePayload, EmitStateChange, FixtureGroupKey, FixtureStateChange,
-    StateChange,
+    FixtureType, StateChange,
 };
 use crate::master::MasterControls;
 use anyhow::bail;
@@ -56,6 +56,10 @@ pub type TalkbackMode = bool;
 pub trait MapControls {
     /// Add OSC control mappings to the provided control map.
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>);
+
+    /// Return aliases for fixture type, if this is a fixture.
+    /// Return None if we're not mapping fixture controls.
+    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)>;
 }
 
 /// Process a state change message into OSC messages.
@@ -70,6 +74,7 @@ pub trait HandleStateChange<SC> {
 
 pub struct OscController {
     control_map: ControlMap<ControlMessagePayload>,
+    key_map: HashMap<String, FixtureType>,
     talkback: TalkbackMode,
     recv: Receiver<OscControlMessage>,
     send: Sender<OscMessage>,
@@ -101,6 +106,7 @@ impl OscController {
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
             control_map: ControlMap::new(),
+            key_map: HashMap::new(),
             talkback: true,
             recv: control_recv,
             send: response_send,
@@ -119,15 +125,34 @@ impl OscController {
         };
         Ok(self.control_map.handle(&msg)?.map(|m| ControlMessage {
             msg: m,
-            key: FixtureGroupKey {
-                fixture: std::borrow::Cow::Owned(msg.key().to_string()),
-                group: msg.group,
-            },
+            key: self
+                .key_map
+                .get(msg.entity_type())
+                .map(|fixture| FixtureGroupKey {
+                    fixture: *fixture,
+                    group: msg.group,
+                }),
         }))
     }
 
     pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
         fixture.map_controls(&mut self.control_map);
+        for (control_key, fixture_type) in fixture.fixture_type_aliases() {
+            match self.key_map.entry(control_key) {
+                Entry::Vacant(e) => {
+                    e.insert(fixture_type);
+                }
+                Entry::Occupied(existing) => {
+                    assert!(
+                        existing.get() == &fixture_type,
+                        "fixture type alias conflict for {}: {}, {}",
+                        existing.key(),
+                        existing.get(),
+                        fixture_type
+                    );
+                }
+            }
+        }
     }
 }
 
@@ -217,7 +242,7 @@ impl<C> ControlMap<C> {
     }
 
     pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<C>> {
-        let key = msg.key();
+        let key = msg.control_key();
         match self.0.get(key) {
             None => {
                 bail!("No control handler matched key \"{}\".", key);

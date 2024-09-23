@@ -4,6 +4,7 @@ use super::generic::map_strobe;
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::wizard_extreme::{Color, StateChange, WizardExtreme};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleStateChange};
@@ -62,6 +63,10 @@ impl MapControls for WizardExtreme {
             ControlMessagePayload::fixture(MirrorReflectorRotation(v))
         });
         ACTIVE.map_state(map, |v| ControlMessagePayload::fixture(Active(v)));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

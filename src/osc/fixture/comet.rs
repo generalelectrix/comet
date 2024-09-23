@@ -1,5 +1,6 @@
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleStateChange, MapControls, RadioButton};
 use crate::{
@@ -68,6 +69,14 @@ impl MapControls for Comet {
         });
 
         RESET.map_state(map, |v| ControlMessagePayload::fixture(Set(Reset(v))));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![
+            (CONTROLS.to_string(), Self::NAME),
+            (MUSIC.to_string(), Self::NAME),
+            (DEBUG.to_string(), Self::NAME),
+        ]
     }
 }
 

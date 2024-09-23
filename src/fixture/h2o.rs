@@ -4,9 +4,8 @@ use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
+use super::prelude::*;
 use super::EmitFixtureStateChange as EmitShowStateChange;
-use super::{AnimatedFixture, ControllableFixture, FixtureControlMessage, PatchAnimatedFixture};
-use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -21,7 +20,7 @@ pub struct H2O {
 }
 
 impl PatchAnimatedFixture for H2O {
-    const NAME: &'static str = "h2o";
+    const NAME: FixtureType = FixtureType("h2o");
     fn channel_count(&self) -> usize {
         3
     }

@@ -7,10 +7,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
+use super::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -39,7 +36,7 @@ pub struct Colordynamic {
 // }
 
 impl PatchAnimatedFixture for Colordynamic {
-    const NAME: &'static str = "colordynamic";
+    const NAME: FixtureType = FixtureType("colordynamic");
     fn channel_count(&self) -> usize {
         4
     }

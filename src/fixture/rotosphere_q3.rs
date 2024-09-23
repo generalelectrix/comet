@@ -11,10 +11,7 @@ use super::color::{
     StateChange as ColorStateChange,
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
+use super::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 
@@ -36,7 +33,7 @@ impl Default for RotosphereQ3 {
 }
 
 impl PatchAnimatedFixture for RotosphereQ3 {
-    const NAME: &'static str = "rotosphere_q3";
+    const NAME: FixtureType = FixtureType("rotosphere_q3");
     fn channel_count(&self) -> usize {
         9
     }

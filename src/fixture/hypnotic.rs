@@ -3,11 +3,9 @@
 use anyhow::Context;
 use number::BipolarFloat;
 
-use super::{
-    animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
-    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
-};
-use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
+use super::animation_target::TargetedAnimationValues;
+use super::prelude::*;
+use crate::util::bipolar_to_split_range;
 use num_derive::{FromPrimitive, ToPrimitive};
 
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -21,7 +19,7 @@ pub struct Hypnotic {
 }
 
 impl PatchAnimatedFixture for Hypnotic {
-    const NAME: &'static str = "hypnotic";
+    const NAME: FixtureType = FixtureType("hypnotic");
     fn channel_count(&self) -> usize {
         2
     }

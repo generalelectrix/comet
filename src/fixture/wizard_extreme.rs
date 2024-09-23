@@ -7,11 +7,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
-use crate::master::FixtureGroupControls;
+use super::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -40,7 +36,7 @@ pub struct WizardExtreme {
 }
 
 impl PatchAnimatedFixture for WizardExtreme {
-    const NAME: &'static str = "wizard_extreme";
+    const NAME: FixtureType = FixtureType("wizard_extreme");
     fn channel_count(&self) -> usize {
         11
     }

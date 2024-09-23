@@ -2,6 +2,7 @@ use crate::fixture::color::StateChange as ColorStateChange;
 use crate::fixture::freedom_fries::{FreedomFries as FreedomFriesFixture, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::fixture::color::map_color;
 use crate::osc::fixture::generic::map_strobe;
@@ -40,6 +41,10 @@ impl MapControls for FreedomFriesFixture {
             ) as usize))
         });
         PROGRAM_CYCLE_ALL.map_state(map, |v| ControlMessagePayload::fixture(ProgramCycleAll(v)));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

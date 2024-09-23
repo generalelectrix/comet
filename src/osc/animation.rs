@@ -99,6 +99,10 @@ impl MapControls for AnimationControls {
 
         TargetAndSelectControls.map_controls(map);
     }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        Default::default()
+    }
 }
 
 // Targeting/selection
@@ -151,6 +155,10 @@ impl MapControls for TargetAndSelectControls {
         ANIMATION_GROUP_SELECT.map(map, |msg| Animation(ControlMessage::SelectGroup(msg)));
         ANIMATION_TARGET_SELECT.map(map, |msg| Animation(ControlMessage::Target(msg)));
         ANIMATION_SELECT.map(map, |msg| Animation(ControlMessage::SelectAnimation(msg)));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        Default::default()
     }
 }
 

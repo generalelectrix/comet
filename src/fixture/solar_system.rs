@@ -6,11 +6,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 
 use super::animation_target::TargetedAnimationValues;
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
-use crate::master::FixtureGroupControls;
+use super::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -25,7 +21,7 @@ pub struct SolarSystem {
 }
 
 impl PatchAnimatedFixture for SolarSystem {
-    const NAME: &'static str = "solar_system";
+    const NAME: FixtureType = FixtureType("solar_system");
     fn channel_count(&self) -> usize {
         7
     }

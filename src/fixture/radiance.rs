@@ -5,10 +5,8 @@ use std::{collections::HashMap, time::Duration};
 
 use number::UnipolarFloat;
 
-use super::{
-    generic::Timer, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
-};
+use super::generic::Timer;
+use super::prelude::*;
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -19,7 +17,7 @@ pub struct Radiance {
 }
 
 impl PatchFixture for Radiance {
-    const NAME: &'static str = "radiance";
+    const NAME: FixtureType = FixtureType("radiance");
     fn channel_count(&self) -> usize {
         2
     }

@@ -5,17 +5,14 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use super::prelude::*;
+use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
 pub struct Dimmer(UnipolarFloat);
 
 impl PatchAnimatedFixture for Dimmer {
-    const NAME: &'static str = "dimmer";
+    const NAME: FixtureType = FixtureType("dimmer");
     fn channel_count(&self) -> usize {
         1
     }

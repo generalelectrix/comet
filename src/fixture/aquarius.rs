@@ -4,10 +4,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
+use super::prelude::*;
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -17,7 +14,7 @@ pub struct Aquarius {
 }
 
 impl PatchAnimatedFixture for Aquarius {
-    const NAME: &'static str = "aquarius";
+    const NAME: FixtureType = FixtureType("aquarius");
     fn channel_count(&self) -> usize {
         2
     }

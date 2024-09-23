@@ -3,6 +3,7 @@ use crate::fixture::color::StateChange as ColorStateChange;
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::rotosphere_q3::{RotosphereQ3, StateChange};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::fixture::color::map_color;
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
@@ -18,6 +19,10 @@ impl MapControls for RotosphereQ3 {
         map.add_bipolar(GROUP, "Rotation", |v| {
             ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
         });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

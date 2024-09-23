@@ -29,6 +29,10 @@ impl MapControls for MasterControls {
         });
         REFRESH_UI.map_trigger(map, || ControlMessagePayload::RefreshUI)
     }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        Default::default()
+    }
 }
 
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {

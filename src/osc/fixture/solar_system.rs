@@ -5,6 +5,7 @@ use crate::fixture::solar_system::StateChange;
 use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleStateChange;
 
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::button;
 use crate::osc::basic_controls::Button;
 use crate::osc::{ControlMap, MapControls, RadioButton};
@@ -42,6 +43,10 @@ impl MapControls for SolarSystem {
         map.add_bipolar(GROUP, "RearRotation", |v| {
             ControlMessagePayload::fixture(RearRotation(bipolar_fader_with_detent(v)))
         });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

@@ -4,11 +4,7 @@ use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::master::FixtureGroupControls;
+use super::prelude::*;
 use crate::util::{unipolar_to_range, RampingParameter};
 
 /// DMX 255 is too fast; restrict to a reasonable value.
@@ -50,7 +46,7 @@ pub struct Lumasphere {
 }
 
 impl PatchFixture for Lumasphere {
-    const NAME: &'static str = "lumasphere";
+    const NAME: FixtureType = FixtureType("lumasphere");
     fn channel_count(&self) -> usize {
         9
     }

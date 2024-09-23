@@ -7,10 +7,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    FixtureGroupControls, PatchAnimatedFixture,
-};
+use super::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -40,7 +37,7 @@ pub struct Astroscan {
 }
 
 impl PatchAnimatedFixture for Astroscan {
-    const NAME: &'static str = "astroscan";
+    const NAME: FixtureType = FixtureType("astroscan");
     fn channel_count(&self) -> usize {
         9
     }

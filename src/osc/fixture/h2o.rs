@@ -2,6 +2,7 @@ use rosc::OscMessage;
 
 use crate::fixture::h2o::{FixedColor, StateChange, H2O};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleStateChange};
@@ -31,6 +32,10 @@ impl MapControls for H2O {
         map.add_bipolar(GROUP, "ColorRotation", |v| {
             ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
         });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

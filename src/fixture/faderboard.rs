@@ -4,11 +4,8 @@ use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use super::prelude::*;
+use crate::util::unipolar_to_range;
 
 #[derive(Debug)]
 pub struct Faderboard {
@@ -17,7 +14,7 @@ pub struct Faderboard {
 }
 
 impl PatchFixture for Faderboard {
-    const NAME: &'static str = "faderboard";
+    const NAME: FixtureType = FixtureType("faderboard");
     fn channel_count(&self) -> usize {
         self.channel_count
     }

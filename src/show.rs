@@ -45,7 +45,7 @@ impl Show {
         for group in patch.iter() {
             if !patched_controls.contains(group.fixture_type()) {
                 osc_controller.map_controls(group);
-                patched_controls.insert(group.fixture_type().to_string());
+                patched_controls.insert(group.fixture_type());
             }
 
             group.emit_state(&mut osc_controller);
@@ -141,8 +141,11 @@ impl Show {
                     .emit_state(&mut self.patch, &mut self.osc_controller)
             }
             ControlMessagePayload::Fixture(fixture_control_msg) => {
+                let Some(group_key) = msg.key.as_ref() else {
+                    bail!("no fixture group key was provided with a fixture control message");
+                };
                 // Identify the correct fixture to handle this message.
-                let Some(fixture) = self.patch.get_mut(&msg.key) else {
+                let Some(fixture) = self.patch.get_mut(group_key) else {
                     bail!("no fixture found for key: {:?}", msg.key);
                 };
 

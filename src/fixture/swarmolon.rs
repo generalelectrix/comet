@@ -5,11 +5,8 @@ use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::master::{Autopilot, FixtureGroupControls};
+use super::prelude::*;
+use crate::master::Autopilot;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -37,7 +34,7 @@ const QUAD_PHASE_CHANNEL_COUNT: usize = 4;
 const GALAXIAN_CHANNEL_COUNT: usize = 5;
 
 impl PatchFixture for Swarmolon {
-    const NAME: &'static str = "swarmolon";
+    const NAME: FixtureType = FixtureType("swarmolon");
     fn channel_count(&self) -> usize {
         let mut count = CHANNEL_COUNT;
         if self.quad_phase_mindmeld {

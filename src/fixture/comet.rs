@@ -3,12 +3,9 @@ use log::error;
 use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
-use super::{
-    generic::{GenericStrobe, GenericStrobeStateChange},
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use super::generic::{GenericStrobe, GenericStrobeStateChange};
+use super::prelude::*;
+use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
 pub struct Comet {
@@ -22,7 +19,7 @@ pub struct Comet {
 }
 
 impl PatchFixture for Comet {
-    const NAME: &'static str = "comet";
+    const NAME: FixtureType = FixtureType("comet");
     fn channel_count(&self) -> usize {
         5
     }

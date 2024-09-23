@@ -2,6 +2,7 @@ use anyhow::{anyhow, bail, Context};
 
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchFixture;
 use crate::osc::{get_unipolar, ControlMap, HandleStateChange, MapControls};
 
 const GROUP: &str = "Faderboard";
@@ -24,6 +25,10 @@ impl MapControls for Faderboard {
             let val = get_unipolar(msg)?;
             Ok(Some(ControlMessagePayload::fixture((index - 1, val))))
         })
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

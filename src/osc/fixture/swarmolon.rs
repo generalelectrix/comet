@@ -6,6 +6,7 @@ use crate::fixture::swarmolon::{
     ControlMessage, DerbyColor, StateChange, Swarmolon, WhiteStrobeStateChange,
 };
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{get_bool, ControlMap, HandleStateChange, MapControls, RadioButton};
@@ -57,6 +58,10 @@ impl MapControls for Swarmolon {
         map.add_unipolar(GROUP, "StrobeRate", |v| {
             ControlMessagePayload::fixture(StrobeRate(v))
         });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

@@ -8,10 +8,8 @@ use number::{Phase, UnipolarFloat};
 
 use crate::master::FixtureGroupControls;
 
-use super::{
-    animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
-    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
-};
+use super::animation_target::TargetedAnimationValues;
+use super::prelude::*;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -23,7 +21,7 @@ pub struct Color {
 }
 
 impl PatchAnimatedFixture for Color {
-    const NAME: &'static str = "color";
+    const NAME: FixtureType = FixtureType("color");
     fn channel_count(&self) -> usize {
         self.model.channel_count()
     }

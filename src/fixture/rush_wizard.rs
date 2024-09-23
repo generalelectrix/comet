@@ -5,11 +5,8 @@ use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::master::{Autopilot, FixtureGroupControls};
+use super::prelude::*;
+use crate::master::Autopilot;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -27,7 +24,7 @@ pub struct RushWizard {
 }
 
 impl PatchFixture for RushWizard {
-    const NAME: &'static str = "rush_wizard";
+    const NAME: FixtureType = FixtureType("rush_wizard");
     fn channel_count(&self) -> usize {
         10
     }

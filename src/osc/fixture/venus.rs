@@ -1,5 +1,6 @@
 use crate::fixture::venus::{StateChange, Venus};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
@@ -27,6 +28,13 @@ impl MapControls for Venus {
             ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
         });
         LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![
+            (CONTROLS.to_string(), Self::NAME),
+            (LAMP.to_string(), Self::NAME),
+        ]
     }
 }
 

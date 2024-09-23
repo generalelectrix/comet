@@ -273,6 +273,7 @@ dependencies = [
  "crossbeam-channel",
  "derive_more",
  "dyn-clone",
+ "itertools 0.13.0",
  "lazy_static",
  "local-ip-address",
  "log 0.4.20",
@@ -653,6 +654,15 @@ name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
 dependencies = [
  "either",
 ]
@@ -2000,7 +2010,7 @@ dependencies = [
  "augmented-dsp-filters",
  "cpal",
  "derive_more",
- "itertools",
+ "itertools 0.10.5",
  "lazy_static",
  "log 0.4.20",
  "midir",

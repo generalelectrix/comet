@@ -8,14 +8,13 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 
+use super::prelude::*;
 use super::{
     animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
 };
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -30,7 +29,7 @@ pub struct FreedomFries {
 }
 
 impl PatchAnimatedFixture for FreedomFries {
-    const NAME: &'static str = "freedom_fries";
+    const NAME: FixtureType = FixtureType("freedom_fries");
     fn channel_count(&self) -> usize {
         8
     }

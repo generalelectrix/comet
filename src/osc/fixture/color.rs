@@ -1,5 +1,6 @@
 use crate::fixture::color::{Color, StateChange};
 use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 
 const GROUP: &str = "Color";
@@ -7,6 +8,10 @@ const GROUP: &str = "Color";
 impl MapControls for Color {
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         map_color(map, GROUP, &wrap_color);
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 
