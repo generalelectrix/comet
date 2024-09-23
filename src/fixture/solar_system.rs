@@ -1,13 +1,14 @@
 //! Optikinetics Solar System - the grand champion gobo rotator
 
+use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 
 use super::animation_target::TargetedAnimationValues;
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::unipolar_to_range;
@@ -74,14 +75,12 @@ impl ControllableFixture for SolarSystem {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::SolarSystem(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

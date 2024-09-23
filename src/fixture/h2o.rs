@@ -1,10 +1,11 @@
 //! Intuitive control profile for the American DJ H2O DMX Pro.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::{AnimatedFixture, ControllableFixture, PatchAnimatedFixture};
-use super::{EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage};
+use super::{AnimatedFixture, ControllableFixture, FixtureControlMessage, PatchAnimatedFixture};
+use super::{ControlMessagePayload, EmitFixtureStateChange as EmitShowStateChange};
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
@@ -77,14 +78,12 @@ impl ControllableFixture for H2O {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitShowStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::H2O(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitShowStateChange) {

@@ -4,7 +4,7 @@ use rosc::{OscMessage, OscType};
 use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;
 
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
 
 use super::{control_message::OscControlMessage, ControlMap, OscError};
 
@@ -25,9 +25,9 @@ pub struct RadioButton {
 
 impl RadioButton {
     /// Wire up this radio button to a control map.
-    pub fn map<F>(self, map: &mut ControlMap<FixtureControlMessage>, process: F)
+    pub fn map<F>(self, map: &mut ControlMap<ControlMessagePayload>, process: F)
     where
-        F: Fn(usize) -> FixtureControlMessage + 'static + Copy,
+        F: Fn(usize) -> ControlMessagePayload + 'static + Copy,
     {
         map.add_fetch_process(
             self.group,

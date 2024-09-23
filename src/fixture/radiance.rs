@@ -1,13 +1,13 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::{collections::HashMap, time::Duration};
 
 use number::UnipolarFloat;
 
 use super::{
-    generic::Timer, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    generic::Timer, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, NonAnimatedFixture, PatchFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
@@ -75,14 +75,12 @@ impl ControllableFixture for Radiance {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Radiance(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

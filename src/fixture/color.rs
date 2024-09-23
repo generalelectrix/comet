@@ -2,15 +2,15 @@
 
 use std::collections::HashMap;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{Phase, UnipolarFloat};
 
 use crate::master::FixtureGroupControls;
 
 use super::{
-    animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
-    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
+    animation_target::TargetedAnimationValues, AnimatedFixture, ControlMessagePayload,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -122,14 +122,12 @@ impl ControllableFixture for Color {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Color(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

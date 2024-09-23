@@ -3,7 +3,7 @@ use rosc::OscMessage;
 use super::generic::map_strobe;
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::rush_wizard::{Color, RushWizard, StateChange};
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleStateChange};
@@ -25,27 +25,34 @@ const TWINKLE: Button = button(GROUP, "Twinkle");
 impl EnumRadioButton for Color {}
 
 impl MapControls for RushWizard {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use FixtureControlMessage::RushWizard;
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use StateChange::*;
-        map.add_unipolar(GROUP, "Dimmer", |v| RushWizard(Dimmer(v)));
-        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
-        map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| RushWizard(Color(c)));
-        TWINKLE.map_state(map, |v| RushWizard(Twinkle(v)));
-        map.add_unipolar(GROUP, "TwinkleSpeed", |v| RushWizard(TwinkleSpeed(v)));
-        GOBO_SELECT.map(map, |v| RushWizard(Gobo(v)));
-        map.add_bipolar(GROUP, "DrumRotation", |v| {
-            RushWizard(DrumRotation(bipolar_fader_with_detent(v)))
+        map.add_unipolar(GROUP, "Dimmer", |v| {
+            ControlMessagePayload::fixture(Dimmer(v))
         });
-        map.add_bipolar(GROUP, "DrumSwivel", |v| RushWizard(DrumSwivel(v)));
+        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
+        map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| {
+            ControlMessagePayload::fixture(Color(c))
+        });
+        TWINKLE.map_state(map, |v| ControlMessagePayload::fixture(Twinkle(v)));
+        map.add_unipolar(GROUP, "TwinkleSpeed", |v| {
+            ControlMessagePayload::fixture(TwinkleSpeed(v))
+        });
+        GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(Gobo(v)));
+        map.add_bipolar(GROUP, "DrumRotation", |v| {
+            ControlMessagePayload::fixture(DrumRotation(bipolar_fader_with_detent(v)))
+        });
+        map.add_bipolar(GROUP, "DrumSwivel", |v| {
+            ControlMessagePayload::fixture(DrumSwivel(v))
+        });
         map.add_bipolar(GROUP, "ReflectorRotation", |v| {
-            RushWizard(ReflectorRotation(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(ReflectorRotation(bipolar_fader_with_detent(v)))
         });
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
-    FixtureControlMessage::RushWizard(StateChange::Strobe(sc))
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
+    ControlMessagePayload::fixture(StateChange::Strobe(sc))
 }
 
 impl HandleStateChange<StateChange> for RushWizard {

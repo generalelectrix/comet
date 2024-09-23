@@ -1,12 +1,13 @@
 //! Control profile for a uv_led_brick.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
@@ -57,14 +58,12 @@ impl ControllableFixture for UvLedBrick {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::UvLedBrick(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

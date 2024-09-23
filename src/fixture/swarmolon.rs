@@ -1,13 +1,13 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 //! Also
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
+    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
 };
 use crate::master::{Autopilot, FixtureGroupControls};
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
@@ -217,35 +217,30 @@ impl ControllableFixture for Swarmolon {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Swarmolon(msg) => {
-                match msg {
-                    ControlMessage::Set(sc) => {
-                        self.handle_state_change(sc, emitter);
-                    }
-                    ControlMessage::StrobeRate(v) => {
-                        self.handle_state_change(
-                            StateChange::DerbyStrobe(GenericStrobeStateChange::Rate(v)),
-                            emitter,
-                        );
-                        self.handle_state_change(
-                            StateChange::WhiteStrobe(WhiteStrobeStateChange::State(
-                                GenericStrobeStateChange::Rate(v),
-                            )),
-                            emitter,
-                        );
-                        self.handle_state_change(
-                            StateChange::LaserStrobe(GenericStrobeStateChange::Rate(v)),
-                            emitter,
-                        );
-                    }
-                }
-
-                None
+    ) -> anyhow::Result<()> {
+        match *msg.unpack_as::<ControlMessage>().context(Self::NAME)? {
+            ControlMessage::Set(sc) => {
+                self.handle_state_change(sc, emitter);
             }
-            other => Some(other),
+            ControlMessage::StrobeRate(v) => {
+                self.handle_state_change(
+                    StateChange::DerbyStrobe(GenericStrobeStateChange::Rate(v)),
+                    emitter,
+                );
+                self.handle_state_change(
+                    StateChange::WhiteStrobe(WhiteStrobeStateChange::State(
+                        GenericStrobeStateChange::Rate(v),
+                    )),
+                    emitter,
+                );
+                self.handle_state_change(
+                    StateChange::LaserStrobe(GenericStrobeStateChange::Rate(v)),
+                    emitter,
+                );
+            }
         }
+
+        Ok(())
     }
 }
 

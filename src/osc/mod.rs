@@ -19,7 +19,7 @@ use crate::fixture::uv_led_brick::UvLedBrick;
 use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
-    ControlMessage, EmitStateChange, FixtureControlMessage, FixtureGroupKey, FixtureStateChange,
+    ControlMessage, ControlMessagePayload, EmitStateChange, FixtureGroupKey, FixtureStateChange,
     StateChange,
 };
 use crate::master::MasterControls;
@@ -55,7 +55,7 @@ pub type TalkbackMode = bool;
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
     /// Add OSC control mappings to the provided control map.
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>);
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>);
 }
 
 /// Process a state change message into OSC messages.
@@ -69,7 +69,7 @@ pub trait HandleStateChange<SC> {
 }
 
 pub struct OscController {
-    control_map: ControlMap<FixtureControlMessage>,
+    control_map: ControlMap<ControlMessagePayload>,
     talkback: TalkbackMode,
     recv: Receiver<OscControlMessage>,
     send: Sender<OscMessage>,
@@ -209,7 +209,7 @@ type ControlMessageCreator<C> = Box<dyn Fn(&OscControlMessage) -> Result<Option<
 
 pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
 
-pub type FixtureControlMap = ControlMap<FixtureControlMessage>;
+pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
 
 impl<C> ControlMap<C> {
     pub fn new() -> Self {

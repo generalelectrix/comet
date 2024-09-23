@@ -1,10 +1,11 @@
 //! A DMX faderboard utility.
 
+use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
@@ -64,14 +65,12 @@ impl ControllableFixture for Faderboard {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Faderboard(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

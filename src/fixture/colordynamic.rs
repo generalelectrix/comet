@@ -1,14 +1,15 @@
 //! SGM Colordynamic 575
 //! The granddaddy Aquarius.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
@@ -77,14 +78,12 @@ impl ControllableFixture for Colordynamic {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Colordynamic(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

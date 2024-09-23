@@ -1,11 +1,12 @@
+use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
 use super::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
+    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
@@ -111,14 +112,12 @@ impl ControllableFixture for Comet {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Comet(msg) => {
-                self.control(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.control(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

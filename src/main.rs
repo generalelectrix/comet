@@ -21,7 +21,7 @@ mod osc;
 mod show;
 mod util;
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let config_path = env::args()
         .nth(1)
         .expect("Provide config path as first arg.");

@@ -1,12 +1,13 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
+use anyhow::Context;
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
+    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    NonAnimatedFixture, PatchFixture,
 };
 use crate::master::{Autopilot, FixtureGroupControls};
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
@@ -125,14 +126,12 @@ impl ControllableFixture for RushWizard {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::RushWizard(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

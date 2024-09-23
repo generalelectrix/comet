@@ -2,10 +2,11 @@
 
 use std::time::Duration;
 
+use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
     NonAnimatedFixture, PatchFixture,
 };
 use crate::{
@@ -110,14 +111,12 @@ impl ControllableFixture for Venus {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Venus(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

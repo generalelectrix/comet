@@ -3,6 +3,7 @@
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
+use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
@@ -11,8 +12,8 @@ use super::{
     animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -115,14 +116,12 @@ impl ControllableFixture for FreedomFries {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::FreedomFries(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

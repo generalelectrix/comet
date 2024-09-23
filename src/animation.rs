@@ -38,7 +38,7 @@ impl AnimationUIState {
         &self,
         patch: &mut Patch,                  // FIXME this doesn't need to be mutable
         osc_controller: &mut OscController, // FIXME this ought to be generic
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         let (ta, index) = self.current_animation_with_index(patch)?;
         ta.anim().emit_state(osc_controller);
         osc_controller.emit(FixtureStateChangeWithGroup {
@@ -75,7 +75,7 @@ impl AnimationUIState {
         msg: ControlMessage,
         patch: &mut Patch,
         osc_controller: &mut OscController,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         match msg {
             ControlMessage::Animation(msg) => {
                 self.current_animation(patch)?
@@ -152,7 +152,7 @@ impl AnimationUIState {
     }
 
     /// Set the current animation for the current group to the provided value.
-    pub fn set_current_animation(&mut self, n: usize) -> Result<()> {
+    pub fn set_current_animation(&mut self, n: usize) -> anyhow::Result<()> {
         if n > N_ANIM {
             bail!("animator index {n} out of range");
         }

@@ -3,7 +3,7 @@ use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
 use crate::animation::ControlMessage::Animation as WrapAnimation;
 
-use crate::fixture::{FixtureControlMessage, N_ANIM};
+use crate::fixture::{ControlMessagePayload, N_ANIM};
 use crate::osc::HandleStateChange;
 use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
 
@@ -53,9 +53,9 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
 pub struct AnimationControls;
 
 impl MapControls for AnimationControls {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
-        use FixtureControlMessage::{Animation as FixtureAnimation, Error as ControlError};
+        use ControlMessagePayload::{Animation as FixtureAnimation, Error as ControlError};
         use StateChange::*;
         WAVEFORM_SELECT.map(map, |v| {
             match v {
@@ -91,11 +91,11 @@ impl MapControls for AnimationControls {
                 FixtureAnimation(WrapAnimation(SetClockSource(Some(ClockIdxExt(v - 1)))))
             }
         });
-        PULSE.map_trigger(map, FixtureAnimation(WrapAnimation(TogglePulse)));
-        INVERT.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleInvert)));
-        STANDING.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleStanding)));
-        USE_AUDIO_SPEED.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
-        USE_AUDIO_SIZE.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
+        PULSE.map_trigger(map, || FixtureAnimation(WrapAnimation(TogglePulse)));
+        INVERT.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleInvert)));
+        STANDING.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleStanding)));
+        USE_AUDIO_SPEED.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
+        USE_AUDIO_SIZE.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
 
         TargetAndSelectControls.map_controls(map);
     }
@@ -144,9 +144,9 @@ const ANIMATION_GROUP_LABELS: LabelArray = LabelArray {
 struct TargetAndSelectControls;
 
 impl MapControls for TargetAndSelectControls {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use crate::animation::ControlMessage;
-        use FixtureControlMessage::Animation;
+        use ControlMessagePayload::Animation;
 
         ANIMATION_GROUP_SELECT.map(map, |msg| Animation(ControlMessage::SelectGroup(msg)));
         ANIMATION_TARGET_SELECT.map(map, |msg| Animation(ControlMessage::Target(msg)));

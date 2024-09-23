@@ -1,12 +1,12 @@
 use crate::fixture::dimmer::{Dimmer, StateChange};
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
 use crate::osc::{ControlMap, HandleStateChange, MapControls};
 
 const GROUP: &str = "Dimmer";
 
 impl MapControls for Dimmer {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        map.add_unipolar(GROUP, "Level", FixtureControlMessage::Dimmer);
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+        map.add_unipolar(GROUP, "Level", ControlMessagePayload::fixture);
     }
 }
 

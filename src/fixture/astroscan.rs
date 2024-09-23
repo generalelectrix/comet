@@ -1,5 +1,6 @@
 //! Clay Paky Astroscan - drunken sailor extraordinaire
 
+use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
@@ -7,8 +8,8 @@ use number::{BipolarFloat, UnipolarFloat};
 use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    FixtureGroupControls, PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, FixtureGroupControls, PatchAnimatedFixture,
 };
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -104,14 +105,12 @@ impl ControllableFixture for Astroscan {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Astroscan(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

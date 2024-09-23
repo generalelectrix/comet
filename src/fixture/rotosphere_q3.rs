@@ -1,5 +1,6 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -11,8 +12,8 @@ use super::color::{
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
+    FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
@@ -76,12 +77,9 @@ impl AnimatedFixture for RotosphereQ3 {
         }
         self.color
             .render_with_animations(group_controls, &color_anim_vals, &mut dmx_buf[0..4]);
-        dmx_buf[4] = self.strobe.render_range_with_master(
-            group_controls.strobe(),
-            0,
-            1,
-            250,
-        );
+        dmx_buf[4] = self
+            .strobe
+            .render_range_with_master(group_controls.strobe(), 0, 1, 250);
         dmx_buf[5] = bipolar_to_split_range(BipolarFloat::new(rotation), 1, 127, 129, 255, 0);
         dmx_buf[6] = 0;
         dmx_buf[7] = 0;
@@ -107,14 +105,12 @@ impl ControllableFixture for RotosphereQ3 {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::RotosphereQ3(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

@@ -2,7 +2,7 @@ use rosc::OscMessage;
 
 use crate::fixture::solar_system::SolarSystem;
 use crate::fixture::solar_system::StateChange;
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleStateChange;
 
 use crate::osc::basic_controls::button;
@@ -30,18 +30,17 @@ const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
 
 impl MapControls for SolarSystem {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use FixtureControlMessage::SolarSystem;
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use StateChange::*;
-        SHUTTER_OPEN.map_state(map, |v| SolarSystem(ShutterOpen(v)));
-        AUTO_SHUTTER.map_state(map, |v| SolarSystem(AutoShutter(v)));
-        FRONT_GOBO_SELECT.map(map, |v| SolarSystem(FrontGobo(v)));
+        SHUTTER_OPEN.map_state(map, |v| ControlMessagePayload::fixture(ShutterOpen(v)));
+        AUTO_SHUTTER.map_state(map, |v| ControlMessagePayload::fixture(AutoShutter(v)));
+        FRONT_GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(FrontGobo(v)));
         map.add_bipolar(GROUP, "FrontRotation", |v| {
-            SolarSystem(FrontRotation(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(FrontRotation(bipolar_fader_with_detent(v)))
         });
-        REAR_GOBO_SELECT.map(map, |v| SolarSystem(RearGobo(v)));
+        REAR_GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(RearGobo(v)));
         map.add_bipolar(GROUP, "RearRotation", |v| {
-            SolarSystem(RearRotation(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(RearRotation(bipolar_fader_with_detent(v)))
         });
     }
 }

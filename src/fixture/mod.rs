@@ -1,4 +1,6 @@
-use anyhow::{ensure, Result};
+use anyhow::{ensure, Context, Result};
+use dyn_clone::DynClone;
+use std::any::{type_name, type_name_of_val, Any};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
@@ -6,7 +8,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use lazy_static::lazy_static;
 use log::{debug, info};
 use number::{Phase, UnipolarFloat};
@@ -15,13 +17,9 @@ use serde::{Deserialize, Serialize};
 use self::animation_target::{
     ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
 };
-use self::aquarius::{
-    Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
-};
-use self::astroscan::{
-    Astroscan, ControlMessage as AstroscanControlMessage, StateChange as AstroscanStateChange,
-};
-use self::color::{Color, ControlMessage as ColorControlMessage, StateChange as ColorStateChange};
+use self::aquarius::{Aquarius, StateChange as AquariusStateChange};
+use self::astroscan::{Astroscan, StateChange as AstroscanStateChange};
+use self::color::{Color, StateChange as ColorStateChange};
 use self::colordynamic::{
     ControlMessage as ColordynamicControlMessage, StateChange as ColordynamicStateChange,
 };
@@ -270,36 +268,40 @@ pub enum FixtureStateChange {
 #[derive(Debug)]
 pub struct ControlMessage {
     pub key: FixtureGroupKey,
-    pub msg: FixtureControlMessage,
+    pub msg: ControlMessagePayload,
 }
 
-#[derive(Clone, Debug)]
-pub enum FixtureControlMessage {
-    Astroscan(AstroscanControlMessage),
-    Comet(CometControlMessage),
-    Lumasphere(LumasphereControlMessage),
-    Venus(VenusControlMessage),
-    H2O(H2OControlMessage),
-    Hypnotic(HypnoticControlMessage),
-    Aquarius(AquariusControlMessage),
-    Radiance(RadianceControlMessage),
-    Swarmolon(SwarmolonControlMessage),
-    Starlight(StarlightControlMessage),
-    RotosphereQ3(RotosphereQ3ControlMessage),
-    FreedomFries(FreedomFriesControlMessage),
-    Faderboard(FaderboardControlMessage),
-    RushWizard(RushWizardControlMessage),
-    WizardExtreme(WizardExtremeControlMessage),
-    SolarSystem(SolarSystemControlMessage),
-    Color(ColorControlMessage),
-    Colordynamic(ColordynamicControlMessage),
-    Dimmer(DimmerControlMessage),
-    UvLedBrick(UvLedBrickControlMessage),
+pub trait FixtureControlMessageType: Any + DynClone + Debug + 'static {
+    fn fixture_type(&self) -> &str;
+}
+
+dyn_clone::clone_trait_object!(FixtureControlMessageType);
+
+#[derive(Debug)]
+pub struct FixtureControlMessage(Box<dyn Any>);
+
+impl FixtureControlMessage {
+    fn unpack_as<T: 'static>(self) -> Result<Box<T>> {
+        self.0
+            .downcast::<T>()
+            .map_err(|_| anyhow!("failed to unpack message as type {}", type_name::<T>()))
+    }
+}
+
+#[derive(Debug)]
+pub enum ControlMessagePayload {
+    Fixture(FixtureControlMessage),
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
+}
+
+impl ControlMessagePayload {
+    pub fn fixture<T: Any>(msg: T) -> Self {
+        Self::Fixture(FixtureControlMessage(Box::new(msg)))
+    }
 }
 
 pub const N_ANIM: usize = 4;
@@ -365,19 +367,14 @@ impl FixtureGroup {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitStateChange,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         let mut emitter = StateChangeWithGroupEmitter {
             emitter,
             group: self.name().cloned(),
         };
-        let Some(bad_msg) = self.fixture.control(msg, &mut emitter) else {
-            return Ok(());
-        };
-        bail!(
-            "{} could not handle the control message {:?}",
-            self.key,
-            bad_msg
-        );
+        self.fixture
+            .control(msg, &mut emitter)
+            .with_context(|| self.key.clone())
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {
@@ -426,7 +423,7 @@ impl<'a> EmitFixtureStateChange for StateChangeWithGroupEmitter<'a> {
 }
 
 impl MapControls for FixtureGroup {
-    fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map);
     }
 }
@@ -467,7 +464,7 @@ lazy_static! {
 }
 
 impl Patch {
-    pub fn patch(&mut self, cfg: FixtureConfig) -> Result<()> {
+    pub fn patch(&mut self, cfg: FixtureConfig) -> anyhow::Result<()> {
         let mut candidates = PATCHERS
             .iter()
             .flat_map(|p| p(&cfg))
@@ -720,7 +717,7 @@ pub trait ControllableFixture: MapControls {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage>;
+    ) -> anyhow::Result<()>;
 
     fn update(&mut self, _: Duration) {}
 }
@@ -812,7 +809,7 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
 }
 
 impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
-    fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map)
     }
 }
@@ -822,7 +819,7 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
+    ) -> anyhow::Result<()> {
         self.fixture.control(msg, emitter)
     }
 

@@ -1,12 +1,13 @@
 //! Control profile for the "house light" Starlight white laser moonflower.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange as EmitShowStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControlMessagePayload, ControllableFixture,
+    EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
@@ -71,14 +72,12 @@ impl ControllableFixture for Starlight {
         &mut self,
         msg: FixtureControlMessage,
         emitter: &mut dyn EmitShowStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Starlight(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 
     fn emit_state(&self, emitter: &mut dyn EmitShowStateChange) {
