@@ -4,8 +4,8 @@ use anyhow::Context;
 use number::BipolarFloat;
 
 use super::{
-    animation_target::TargetedAnimationValues, AnimatedFixture, ControlMessagePayload,
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
+    animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
+    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 use num_derive::{FromPrimitive, ToPrimitive};

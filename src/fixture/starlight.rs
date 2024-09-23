@@ -6,8 +6,8 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    AnimatedFixture, ControlMessagePayload, ControllableFixture,
-    EmitFixtureStateChange as EmitShowStateChange, FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange as EmitShowStateChange,
+    FixtureControlMessage, PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;

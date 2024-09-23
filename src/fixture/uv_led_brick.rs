@@ -6,8 +6,8 @@ use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::{
-    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 

@@ -9,8 +9,8 @@ use number::{Phase, UnipolarFloat};
 use crate::master::FixtureGroupControls;
 
 use super::{
-    animation_target::TargetedAnimationValues, AnimatedFixture, ControlMessagePayload,
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
+    animation_target::TargetedAnimationValues, AnimatedFixture, ControllableFixture,
+    EmitFixtureStateChange, FixtureControlMessage, PatchAnimatedFixture,
 };
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 

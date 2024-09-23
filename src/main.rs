@@ -1,4 +1,3 @@
-use anyhow::Result;
 use clock_service::prompt_start_clock_service;
 use local_ip_address::local_ip;
 use log::info;

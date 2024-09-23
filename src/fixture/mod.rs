@@ -1,6 +1,6 @@
 use anyhow::{ensure, Context, Result};
 use dyn_clone::DynClone;
-use std::any::{type_name, type_name_of_val, Any};
+use std::any::{type_name, Any};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
@@ -20,54 +20,27 @@ use self::animation_target::{
 use self::aquarius::{Aquarius, StateChange as AquariusStateChange};
 use self::astroscan::{Astroscan, StateChange as AstroscanStateChange};
 use self::color::{Color, StateChange as ColorStateChange};
-use self::colordynamic::{
-    ControlMessage as ColordynamicControlMessage, StateChange as ColordynamicStateChange,
-};
-use self::comet::{Comet, ControlMessage as CometControlMessage, StateChange as CometStateChange};
+use self::colordynamic::StateChange as ColordynamicStateChange;
+use self::comet::{Comet, StateChange as CometStateChange};
 use self::dimmer::{
     ControlMessage as DimmerControlMessage, Dimmer, StateChange as DimmerStateChange,
 };
-use self::faderboard::{
-    ControlMessage as FaderboardControlMessage, Faderboard, StateChange as FaderboardStateChange,
-};
-use self::freedom_fries::{
-    ControlMessage as FreedomFriesControlMessage, FreedomFries,
-    StateChange as FreedomFriesStateChange,
-};
-use self::h2o::{ControlMessage as H2OControlMessage, StateChange as H2OStateChange, H2O};
-use self::hypnotic::{
-    ControlMessage as HypnoticControlMessage, Hypnotic, StateChange as HypnoticStateChange,
-};
-use self::lumasphere::{
-    ControlMessage as LumasphereControlMessage, Lumasphere, StateChange as LumasphereStateChange,
-};
-use self::radiance::{
-    ControlMessage as RadianceControlMessage, Radiance, StateChange as RadianceStateChange,
-};
-use self::rotosphere_q3::{
-    ControlMessage as RotosphereQ3ControlMessage, RotosphereQ3,
-    StateChange as RotosphereQ3StateChange,
-};
-use self::rush_wizard::{
-    ControlMessage as RushWizardControlMessage, RushWizard, StateChange as RushWizardStateChange,
-};
-use self::solar_system::{
-    ControlMessage as SolarSystemControlMessage, SolarSystem, StateChange as SolarSystemStateChange,
-};
-use self::starlight::{
-    ControlMessage as StarlightControlMessage, Starlight, StateChange as StarlightStateChange,
-};
-use self::swarmolon::{
-    ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange, Swarmolon,
-};
+use self::faderboard::{Faderboard, StateChange as FaderboardStateChange};
+use self::freedom_fries::{FreedomFries, StateChange as FreedomFriesStateChange};
+use self::h2o::{StateChange as H2OStateChange, H2O};
+use self::hypnotic::{Hypnotic, StateChange as HypnoticStateChange};
+use self::lumasphere::{Lumasphere, StateChange as LumasphereStateChange};
+use self::radiance::{Radiance, StateChange as RadianceStateChange};
+use self::rotosphere_q3::{RotosphereQ3, StateChange as RotosphereQ3StateChange};
+use self::rush_wizard::{RushWizard, StateChange as RushWizardStateChange};
+use self::solar_system::{SolarSystem, StateChange as SolarSystemStateChange};
+use self::starlight::{Starlight, StateChange as StarlightStateChange};
+use self::swarmolon::{StateChange as SwarmolonStateChange, Swarmolon};
 use self::uv_led_brick::{
     ControlMessage as UvLedBrickControlMessage, StateChange as UvLedBrickStateChange, UvLedBrick,
 };
-use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange, Venus};
-use self::wizard_extreme::{
-    ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
-    WizardExtreme,
-};
+use self::venus::{StateChange as VenusStateChange, Venus};
+use self::wizard_extreme::{StateChange as WizardExtremeStateChange, WizardExtreme};
 use crate::animation::{
     ControlMessage as AnimationControlMessage, GroupSelection, StateChange as AnimationStateChange,
 };

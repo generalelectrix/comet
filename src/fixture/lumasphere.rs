@@ -5,8 +5,8 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::{unipolar_to_range, RampingParameter};

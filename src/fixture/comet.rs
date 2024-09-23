@@ -5,8 +5,8 @@ use std::{collections::VecDeque, time::Duration};
 
 use super::{
     generic::{GenericStrobe, GenericStrobeStateChange},
-    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 

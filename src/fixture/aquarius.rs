@@ -1,12 +1,12 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
-use anyhow::{Context, Result};
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::{
-    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 

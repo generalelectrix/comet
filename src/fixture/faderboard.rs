@@ -5,8 +5,8 @@ use log::error;
 use number::UnipolarFloat;
 
 use super::{
-    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 

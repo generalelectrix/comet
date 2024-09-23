@@ -4,8 +4,8 @@ use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
+use super::EmitFixtureStateChange as EmitShowStateChange;
 use super::{AnimatedFixture, ControllableFixture, FixtureControlMessage, PatchAnimatedFixture};
-use super::{ControlMessagePayload, EmitFixtureStateChange as EmitShowStateChange};
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;

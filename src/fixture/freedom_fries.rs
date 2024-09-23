@@ -12,8 +12,8 @@ use super::{
     animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};

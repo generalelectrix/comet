@@ -7,8 +7,8 @@ use number::BipolarFloat;
 
 use super::animation_target::TargetedAnimationValues;
 use super::{
-    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::unipolar_to_range;

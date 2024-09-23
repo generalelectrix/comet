@@ -6,8 +6,8 @@ use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::{
-    ControlMessagePayload, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
+    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
+    PatchFixture,
 };
 use crate::{
     master::FixtureGroupControls,

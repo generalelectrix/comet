@@ -12,8 +12,8 @@ use super::color::{
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::{
-    AnimatedFixture, ControlMessagePayload, ControllableFixture, EmitFixtureStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
+    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
+    PatchAnimatedFixture,
 };
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
