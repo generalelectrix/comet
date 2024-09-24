@@ -1,5 +1,3 @@
-use rosc::OscMessage;
-
 use super::generic::map_strobe;
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::wizard_extreme::{Color, StateChange, WizardExtreme};

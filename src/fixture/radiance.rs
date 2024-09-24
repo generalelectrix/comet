@@ -32,7 +32,11 @@ impl PatchFixture for Radiance {
 }
 
 impl Radiance {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Haze(v) => self.haze = v,

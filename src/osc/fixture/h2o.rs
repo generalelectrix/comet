@@ -1,5 +1,3 @@
-use rosc::OscMessage;
-
 use crate::fixture::h2o::{FixedColor, StateChange, H2O};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;

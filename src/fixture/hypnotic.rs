@@ -26,7 +26,11 @@ impl PatchAnimatedFixture for Hypnotic {
 }
 
 impl Hypnotic {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             RedLaserOn(v) => self.red_laser_on = v,

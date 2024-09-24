@@ -19,7 +19,11 @@ impl PatchAnimatedFixture for Dimmer {
 }
 
 impl Dimmer {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         self.0 = sc;
         Self::emit(sc, emitter);
     }

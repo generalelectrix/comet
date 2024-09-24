@@ -1,27 +1,6 @@
-use crate::fixture::aquarius::Aquarius;
-use crate::fixture::astroscan::Astroscan;
-use crate::fixture::color::Color;
-use crate::fixture::colordynamic::Colordynamic;
-use crate::fixture::comet::Comet;
-use crate::fixture::dimmer::Dimmer;
-use crate::fixture::faderboard::Faderboard;
-use crate::fixture::freedom_fries::FreedomFries;
-use crate::fixture::h2o::H2O;
-use crate::fixture::hypnotic::Hypnotic;
-use crate::fixture::lumasphere::Lumasphere;
-use crate::fixture::radiance::Radiance;
-use crate::fixture::rotosphere_q3::RotosphereQ3;
-use crate::fixture::rush_wizard::RushWizard;
-use crate::fixture::solar_system::SolarSystem;
-use crate::fixture::starlight::Starlight;
-use crate::fixture::swarmolon::Swarmolon;
-use crate::fixture::uv_led_brick::UvLedBrick;
-use crate::fixture::venus::Venus;
-use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
     ControlMessage, ControlMessagePayload, FixtureGroupKey, FixtureType, GroupName,
 };
-use crate::master::MasterControls;
 use anyhow::bail;
 use anyhow::Result;
 use control_message::OscControlMessage;
@@ -47,8 +26,6 @@ mod fixture;
 mod label_array;
 mod master;
 mod radio_button;
-
-pub type TalkbackMode = bool;
 
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
@@ -95,7 +72,6 @@ impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 pub struct OscController {
     control_map: ControlMap<ControlMessagePayload>,
     key_map: HashMap<String, FixtureType>,
-    talkback: TalkbackMode,
     recv: Receiver<OscControlMessage>,
     send: Sender<OscMessage>,
 }
@@ -127,7 +103,6 @@ impl OscController {
         Ok(Self {
             control_map: ControlMap::new(),
             key_map: HashMap::new(),
-            talkback: true,
             recv: control_recv,
             send: response_send,
         })

@@ -56,7 +56,11 @@ impl Default for Venus {
 }
 
 impl Venus {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             BaseRotation(v) => self.base_rotation.target = v,

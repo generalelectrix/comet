@@ -32,7 +32,11 @@ impl Default for Faderboard {
 }
 
 impl Faderboard {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         let (chan, val) = sc;
         if chan >= self.channel_count {
             error!("Channel out of range: {}.", chan);

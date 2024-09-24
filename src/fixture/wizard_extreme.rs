@@ -45,7 +45,11 @@ impl PatchAnimatedFixture for WizardExtreme {
 impl WizardExtreme {
     pub const GOBO_COUNT: usize = 14; // includes the open position
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -89,7 +93,10 @@ impl ControllableFixture for WizardExtreme {
         Self::emit(DrumSwivel(self.drum_swivel), emitter);
         Self::emit(MirrorDrumSwivel(self.mirror.drum_swivel), emitter);
         Self::emit(ReflectorRotation(self.reflector_rotation), emitter);
-        Self::emit(MirrorReflectorRotation(self.mirror.reflector_rotation), emitter);
+        Self::emit(
+            MirrorReflectorRotation(self.mirror.reflector_rotation),
+            emitter,
+        );
         Self::emit(Active(self.active.0), emitter);
     }
 

@@ -30,7 +30,11 @@ impl PatchAnimatedFixture for SolarSystem {
 impl SolarSystem {
     pub const GOBO_COUNT: usize = 8;
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             ShutterOpen(v) => self.shutter_open = v,

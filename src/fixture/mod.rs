@@ -17,41 +17,31 @@ use serde::{Deserialize, Serialize};
 use self::animation_target::{
     ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
 };
-use self::aquarius::{Aquarius, StateChange as AquariusStateChange};
-use self::astroscan::{Astroscan, StateChange as AstroscanStateChange};
-use self::color::{Color, StateChange as ColorStateChange};
-use self::colordynamic::StateChange as ColordynamicStateChange;
-use self::comet::{Comet, StateChange as CometStateChange};
-use self::dimmer::{
-    ControlMessage as DimmerControlMessage, Dimmer, StateChange as DimmerStateChange,
-};
-use self::faderboard::{Faderboard, StateChange as FaderboardStateChange};
-use self::freedom_fries::{FreedomFries, StateChange as FreedomFriesStateChange};
-use self::h2o::{StateChange as H2OStateChange, H2O};
-use self::hypnotic::{Hypnotic, StateChange as HypnoticStateChange};
-use self::lumasphere::{Lumasphere, StateChange as LumasphereStateChange};
-use self::radiance::{Radiance, StateChange as RadianceStateChange};
-use self::rotosphere_q3::{RotosphereQ3, StateChange as RotosphereQ3StateChange};
-use self::rush_wizard::{RushWizard, StateChange as RushWizardStateChange};
-use self::solar_system::{SolarSystem, StateChange as SolarSystemStateChange};
-use self::starlight::{Starlight, StateChange as StarlightStateChange};
-use self::swarmolon::{StateChange as SwarmolonStateChange, Swarmolon};
-use self::uv_led_brick::{
-    ControlMessage as UvLedBrickControlMessage, StateChange as UvLedBrickStateChange, UvLedBrick,
-};
-use self::venus::{StateChange as VenusStateChange, Venus};
-use self::wizard_extreme::{StateChange as WizardExtremeStateChange, WizardExtreme};
-use crate::animation::{
-    ControlMessage as AnimationControlMessage, GroupSelection, StateChange as AnimationStateChange,
-};
+use self::aquarius::Aquarius;
+use self::astroscan::Astroscan;
+use self::color::Color;
+use self::comet::Comet;
+use self::dimmer::Dimmer;
+use self::faderboard::Faderboard;
+use self::freedom_fries::FreedomFries;
+use self::h2o::H2O;
+use self::hypnotic::Hypnotic;
+use self::lumasphere::Lumasphere;
+use self::radiance::Radiance;
+use self::rotosphere_q3::RotosphereQ3;
+use self::rush_wizard::RushWizard;
+use self::solar_system::SolarSystem;
+use self::starlight::Starlight;
+use self::swarmolon::Swarmolon;
+use self::uv_led_brick::UvLedBrick;
+use self::venus::Venus;
+use self::wizard_extreme::WizardExtreme;
+use crate::animation::{ControlMessage as AnimationControlMessage, GroupSelection};
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
-use crate::master::{
-    Autopilot, ControlMessage as MasterControlMessage, MasterControls,
-    StateChange as MasterStateChange, Strobe,
-};
+use crate::master::{Autopilot, ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{MapControls, OscMessageWithGroupSender};
 
 pub mod animation_target;

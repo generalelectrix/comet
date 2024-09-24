@@ -1,5 +1,3 @@
-use rosc::OscMessage;
-
 use super::generic::map_strobe;
 use crate::fixture::colordynamic::{Colordynamic, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;

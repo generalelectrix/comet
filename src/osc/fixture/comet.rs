@@ -8,7 +8,6 @@ use crate::{
     osc::quadratic,
 };
 
-use rosc::OscMessage;
 // Control group names.
 const CONTROLS: &str = "Controls";
 const MUSIC: &str = "Music";

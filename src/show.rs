@@ -125,31 +125,31 @@ impl Show {
 
         match msg.msg {
             ControlMessagePayload::Master(mc) => {
-                self.master_controls.control(mc, &mut self.osc_controller);
+                self.master_controls.control(mc, &self.osc_controller);
                 Ok(())
             }
             ControlMessagePayload::Animation(msg) => {
                 self.animation_ui_state
-                    .control(msg, &mut self.patch, &mut self.osc_controller)
+                    .control(msg, &mut self.patch, &self.osc_controller)
             }
             ControlMessagePayload::RefreshUI => {
-                self.master_controls.emit_state(&mut self.osc_controller);
+                self.master_controls.emit_state(&self.osc_controller);
                 for group in self.patch.iter() {
-                    group.emit_state(&mut self.osc_controller);
+                    group.emit_state(&self.osc_controller);
                 }
                 self.animation_ui_state
-                    .emit_state(&mut self.patch, &mut self.osc_controller)
+                    .emit_state(&mut self.patch, &self.osc_controller)
             }
             ControlMessagePayload::Fixture(fixture_control_msg) => {
                 let Some(group_key) = msg.key.as_ref() else {
                     bail!("no fixture group key was provided with a fixture control message");
                 };
                 // Identify the correct fixture to handle this message.
-                let Some(fixture) = self.patch.get_mut(&group_key) else {
+                let Some(fixture) = self.patch.get_mut(group_key) else {
                     bail!("no fixture found for key: {:?}", msg.key);
                 };
 
-                fixture.control(fixture_control_msg, &mut self.osc_controller)
+                fixture.control(fixture_control_msg, &self.osc_controller)
             }
             ControlMessagePayload::Error(msg) => {
                 bail!("control processing error: {msg}")

@@ -1,5 +1,3 @@
-use rosc::OscMessage;
-
 use super::generic::map_strobe;
 use crate::fixture::astroscan::{Astroscan, Color, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;

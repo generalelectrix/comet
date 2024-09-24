@@ -9,7 +9,7 @@ use crate::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
         Patch, N_ANIM,
     },
-    osc::{EmitControlMessage, HandleStateChange, OscController},
+    osc::{EmitControlMessage, HandleStateChange},
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
