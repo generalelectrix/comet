@@ -43,7 +43,11 @@ impl PatchAnimatedFixture for Colordynamic {
 }
 
 impl Colordynamic {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             ShutterOpen(v) => self.shutter_open = v,
@@ -53,28 +57,28 @@ impl Colordynamic {
             FiberRotation(v) => self.fiber_rotation = v,
             ColorRotationOn(v) => self.color_rotation_on = v,
         };
-        emitter.emit_colordynamic(sc);
+        Self::emit(sc, emitter);
     }
 }
 
 impl ControllableFixture for Colordynamic {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_colordynamic(ShutterOpen(self.shutter_open));
+        Self::emit(ShutterOpen(self.shutter_open), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_colordynamic(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_colordynamic(ColorRotationOn(self.color_rotation_on));
-        emitter.emit_colordynamic(ColorRotationSpeed(self.color_rotation_speed));
-        emitter.emit_colordynamic(ColorPosition(self.color_position));
-        emitter.emit_colordynamic(FiberRotation(self.fiber_rotation));
+        Self::emit(ColorRotationOn(self.color_rotation_on), emitter);
+        Self::emit(ColorRotationSpeed(self.color_rotation_speed), emitter);
+        Self::emit(ColorPosition(self.color_position), emitter);
+        Self::emit(FiberRotation(self.fiber_rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

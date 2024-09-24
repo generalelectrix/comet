@@ -25,14 +25,14 @@ impl PatchAnimatedFixture for Starlight {
 }
 
 impl Starlight {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
             Rotation(v) => self.rotation = v,
             Strobe(v) => self.strobe.handle_state_change(v),
         };
-        emitter.emit_starlight(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -67,7 +67,7 @@ impl ControllableFixture for Starlight {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
@@ -76,12 +76,12 @@ impl ControllableFixture for Starlight {
         Ok(())
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_starlight(Dimmer(self.dimmer));
-        emitter.emit_starlight(Rotation(self.rotation));
+        Self::emit(Dimmer(self.dimmer), emitter);
+        Self::emit(Rotation(self.rotation), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_starlight(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
     }

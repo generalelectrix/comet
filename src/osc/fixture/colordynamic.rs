@@ -44,12 +44,9 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
 }
 
 impl HandleOscStateChange<StateChange> for Colordynamic {
-    fn emit_osc_state_change<S>(
-        _sc: StateChange,
-        _send: &mut S,
-        _talkback: crate::osc::TalkbackMode,
-    ) where
-        S: crate::osc::EmitOscMessage,
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         // FIXME no talkback
     }

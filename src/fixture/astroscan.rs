@@ -8,6 +8,7 @@ use number::{BipolarFloat, UnipolarFloat};
 use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::prelude::*;
+
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -46,7 +47,11 @@ impl PatchAnimatedFixture for Astroscan {
 impl Astroscan {
     pub const GOBO_COUNT: usize = 5; // includes the open position
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             LampOn(v) => self.lamp_on = v,
@@ -71,37 +76,38 @@ impl Astroscan {
             MirrorTilt(v) => self.mirror.tilt = v,
             Active(v) => self.active.0 = v,
         };
-        emitter.emit_astroscan(sc);
+        Self::emit(sc, emitter);
+        Self::emit(sc, emitter);
     }
 }
 
 impl ControllableFixture for Astroscan {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_astroscan(LampOn(self.lamp_on));
-        emitter.emit_astroscan(Dimmer(self.dimmer));
+        Self::emit(LampOn(self.lamp_on), emitter);
+        Self::emit(Dimmer(self.dimmer), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_astroscan(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_astroscan(Color(self.color));
-        emitter.emit_astroscan(Iris(self.iris));
-        emitter.emit_astroscan(Gobo(self.gobo));
-        emitter.emit_astroscan(GoboRotation(self.gobo_rotation));
-        emitter.emit_astroscan(MirrorGoboRotation(self.mirror.gobo_rotation));
-        emitter.emit_astroscan(MirrorRotation(self.mirror_rotation));
-        emitter.emit_astroscan(MirrorMirrorRotation(self.mirror.mirror_rotation));
-        emitter.emit_astroscan(Pan(self.pan));
-        emitter.emit_astroscan(MirrorPan(self.mirror.pan));
-        emitter.emit_astroscan(Tilt(self.tilt));
-        emitter.emit_astroscan(MirrorTilt(self.mirror.tilt));
-        emitter.emit_astroscan(Active(self.active.0));
+        Self::emit(Color(self.color), emitter);
+        Self::emit(Iris(self.iris), emitter);
+        Self::emit(Gobo(self.gobo), emitter);
+        Self::emit(GoboRotation(self.gobo_rotation), emitter);
+        Self::emit(MirrorGoboRotation(self.mirror.gobo_rotation), emitter);
+        Self::emit(MirrorRotation(self.mirror_rotation), emitter);
+        Self::emit(MirrorMirrorRotation(self.mirror.mirror_rotation), emitter);
+        Self::emit(Pan(self.pan), emitter);
+        Self::emit(MirrorPan(self.mirror.pan), emitter);
+        Self::emit(Tilt(self.tilt), emitter);
+        Self::emit(MirrorTilt(self.mirror.tilt), emitter);
+        Self::emit(Active(self.active.0), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

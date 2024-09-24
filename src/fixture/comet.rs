@@ -44,7 +44,7 @@ impl Comet {
         unipolar_to_range(0, 255, self.mirror_speed)
     }
 
-    fn control(&mut self, msg: ControlMessage, emitter: &mut dyn EmitFixtureStateChange) {
+    fn control(&mut self, msg: ControlMessage, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use ControlMessage::*;
         match msg {
             Set(sc) => self.handle_state_change(sc, emitter),
@@ -52,7 +52,11 @@ impl Comet {
         }
     }
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,
@@ -71,7 +75,7 @@ impl Comet {
             AutoStepRate(v) => self.trigger_state.auto_step_rate = v,
             Reset(v) => self.reset = v,
         };
-        emitter.emit_comet(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -89,26 +93,26 @@ impl ControllableFixture for Comet {
         self.trigger_state.update(delta_t);
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_comet(Shutter(self.shutter_open));
+        Self::emit(Shutter(self.shutter_open), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_comet(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_comet(ShutterSoundActive(self.shutter_sound_active));
-        emitter.emit_comet(SelectMacro(self.macro_pattern));
-        emitter.emit_comet(MirrorSpeed(self.mirror_speed));
-        emitter.emit_comet(TrigSoundActive(self.trigger_state.music_trigger));
-        emitter.emit_comet(AutoStep(self.trigger_state.auto_step));
-        emitter.emit_comet(AutoStepRate(self.trigger_state.auto_step_rate));
-        emitter.emit_comet(Reset(self.reset));
+        Self::emit(ShutterSoundActive(self.shutter_sound_active), emitter);
+        Self::emit(SelectMacro(self.macro_pattern), emitter);
+        Self::emit(MirrorSpeed(self.mirror_speed), emitter);
+        Self::emit(TrigSoundActive(self.trigger_state.music_trigger), emitter);
+        Self::emit(AutoStep(self.trigger_state.auto_step), emitter);
+        Self::emit(AutoStepRate(self.trigger_state.auto_step_rate), emitter);
+        Self::emit(Reset(self.reset), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.control(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

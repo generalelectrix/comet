@@ -16,12 +16,9 @@ impl MapControls for Dimmer {
 }
 
 impl HandleOscStateChange<StateChange> for Dimmer {
-    fn emit_osc_state_change<S>(
-        _sc: StateChange,
-        _send: &mut S,
-        _talkback: crate::osc::TalkbackMode,
-    ) where
-        S: crate::osc::EmitOscMessage,
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
     }
 }

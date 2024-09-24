@@ -38,9 +38,9 @@ impl Button {
         })
     }
 
-    pub fn send<S>(&self, val: bool, send: &mut S)
+    pub fn send<S>(&self, val: bool, send: &S)
     where
-        S: crate::osc::EmitOscMessage,
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         send_float(self.group, self.control, if val { 1.0 } else { 0.0 }, send);
     }

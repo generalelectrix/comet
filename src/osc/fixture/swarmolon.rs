@@ -80,9 +80,9 @@ fn wrap_laser_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
 }
 
 impl HandleOscStateChange<StateChange> for Swarmolon {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage,
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         use StateChange::*;
         #[allow(clippy::single_match)]

@@ -7,10 +7,9 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 use crate::{
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
-        EmitStateChange, FixtureStateChange, Patch, StateChange as FixtureStateChangeWithGroup,
-        N_ANIM,
+        Patch, N_ANIM,
     },
-    osc::OscController,
+    osc::{EmitControlMessage, HandleStateChange, OscController},
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
@@ -36,36 +35,22 @@ impl AnimationUIState {
     /// Emit all current animation state, including target and selection.
     pub fn emit_state(
         &self,
-        patch: &mut Patch,                  // FIXME this doesn't need to be mutable
-        osc_controller: &mut OscController, // FIXME this ought to be generic
+        patch: &mut Patch, // FIXME this doesn't need to be mutable
+        emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         let (ta, index) = self.current_animation_with_index(patch)?;
-        ta.anim().emit_state(osc_controller);
-        osc_controller.emit(FixtureStateChangeWithGroup {
-            group: None,
-            sc: FixtureStateChange::Animation(StateChange::Target(ta.target())),
-        });
-        osc_controller.emit(FixtureStateChangeWithGroup {
-            group: None,
-            sc: FixtureStateChange::Animation(StateChange::SelectAnimation(index)),
-        });
-        osc_controller.emit(FixtureStateChangeWithGroup {
-            group: None,
-            sc: FixtureStateChange::Animation(StateChange::TargetLabels(ta.target_labels())),
-        });
+        ta.anim().emit_state(&mut InnerAnimationEmitter(emitter));
+        Self::emit(StateChange::Target(ta.target()), emitter);
+        Self::emit(StateChange::SelectAnimation(index), emitter);
+        Self::emit(StateChange::TargetLabels(ta.target_labels()), emitter);
         if let Some(selector) = self.current_group {
-            osc_controller.emit(FixtureStateChangeWithGroup {
-                group: None,
-                sc: FixtureStateChange::Animation(StateChange::SelectGroup(selector)),
-            });
+            Self::emit(StateChange::SelectGroup(selector), emitter);
         }
         // FIXME this really should belong to the show
-        osc_controller.emit(FixtureStateChangeWithGroup {
-            group: None,
-            sc: FixtureStateChange::Animation(StateChange::GroupLabels(
-                patch.selector_labels().collect(),
-            )),
-        });
+        Self::emit(
+            StateChange::GroupLabels(patch.selector_labels().collect()),
+            emitter,
+        );
         Ok(())
     }
 
@@ -74,13 +59,13 @@ impl AnimationUIState {
         &mut self,
         msg: ControlMessage,
         patch: &mut Patch,
-        osc_controller: &mut OscController,
+        emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         match msg {
             ControlMessage::Animation(msg) => {
                 self.current_animation(patch)?
                     .anim_mut()
-                    .control(msg, osc_controller);
+                    .control(msg, &mut InnerAnimationEmitter(emitter));
             }
             ControlMessage::Target(msg) => {
                 let anim = self.current_animation(patch)?;
@@ -88,17 +73,14 @@ impl AnimationUIState {
                     return Ok(());
                 }
                 anim.set_target(msg)?;
-                osc_controller.emit(FixtureStateChangeWithGroup {
-                    group: None,
-                    sc: crate::fixture::FixtureStateChange::Animation(StateChange::Target(msg)),
-                });
+                Self::emit(StateChange::Target(msg), emitter);
             }
             ControlMessage::SelectAnimation(n) => {
                 if self.animation_index_for_selector(self.current_group()?) == n {
                     return Ok(());
                 }
                 self.set_current_animation(n)?;
-                self.emit_state(patch, osc_controller)?;
+                self.emit_state(patch, emitter)?;
             }
             ControlMessage::SelectGroup(g) => {
                 // Validate the group.
@@ -108,7 +90,7 @@ impl AnimationUIState {
                     return Ok(());
                 }
                 self.current_group = Some(selector);
-                self.emit_state(patch, osc_controller)?;
+                self.emit_state(patch, emitter)?;
             }
         }
         Ok(())
@@ -162,12 +144,11 @@ impl AnimationUIState {
     }
 }
 
-impl EmitAnimationStateChange for OscController {
+struct InnerAnimationEmitter<'a>(&'a dyn EmitControlMessage);
+
+impl<'a> EmitAnimationStateChange for InnerAnimationEmitter<'a> {
     fn emit_animation_state_change(&mut self, sc: tunnels::animation::StateChange) {
-        self.emit(FixtureStateChangeWithGroup {
-            group: None,
-            sc: FixtureStateChange::Animation(StateChange::Animation(sc)),
-        });
+        AnimationUIState::emit(StateChange::Animation(sc), self.0);
     }
 }
 

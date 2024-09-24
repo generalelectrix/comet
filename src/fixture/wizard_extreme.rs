@@ -45,7 +45,7 @@ impl PatchAnimatedFixture for WizardExtreme {
 impl WizardExtreme {
     pub const GOBO_COUNT: usize = 14; // includes the open position
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -68,35 +68,35 @@ impl WizardExtreme {
             MirrorReflectorRotation(v) => self.mirror.reflector_rotation = v,
             Active(v) => self.active.0 = v,
         };
-        emitter.emit_wizard_extreme(sc);
+        Self::emit(sc, emitter);
     }
 }
 
 impl ControllableFixture for WizardExtreme {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_wizard_extreme(Dimmer(self.dimmer));
+        Self::emit(Dimmer(self.dimmer), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_wizard_extreme(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_wizard_extreme(Color(self.color));
-        emitter.emit_wizard_extreme(Twinkle(self.twinkle));
-        emitter.emit_wizard_extreme(TwinkleSpeed(self.twinkle_speed));
-        emitter.emit_wizard_extreme(Gobo(self.gobo));
-        emitter.emit_wizard_extreme(DrumRotation(self.drum_rotation));
-        emitter.emit_wizard_extreme(MirrorDrumRotation(self.mirror.drum_rotation));
-        emitter.emit_wizard_extreme(DrumSwivel(self.drum_swivel));
-        emitter.emit_wizard_extreme(MirrorDrumSwivel(self.mirror.drum_swivel));
-        emitter.emit_wizard_extreme(ReflectorRotation(self.reflector_rotation));
-        emitter.emit_wizard_extreme(MirrorReflectorRotation(self.mirror.reflector_rotation));
-        emitter.emit_wizard_extreme(Active(self.active.0));
+        Self::emit(Color(self.color), emitter);
+        Self::emit(Twinkle(self.twinkle), emitter);
+        Self::emit(TwinkleSpeed(self.twinkle_speed), emitter);
+        Self::emit(Gobo(self.gobo), emitter);
+        Self::emit(DrumRotation(self.drum_rotation), emitter);
+        Self::emit(MirrorDrumRotation(self.mirror.drum_rotation), emitter);
+        Self::emit(DrumSwivel(self.drum_swivel), emitter);
+        Self::emit(MirrorDrumSwivel(self.mirror.drum_swivel), emitter);
+        Self::emit(ReflectorRotation(self.reflector_rotation), emitter);
+        Self::emit(MirrorReflectorRotation(self.mirror.reflector_rotation), emitter);
+        Self::emit(Active(self.active.0), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

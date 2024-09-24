@@ -61,9 +61,9 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
 }
 
 impl HandleOscStateChange<StateChange> for RushWizard {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage,
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         match sc {
             StateChange::Color(c) => {

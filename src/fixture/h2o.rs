@@ -5,7 +5,6 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::prelude::*;
-use super::EmitFixtureStateChange as EmitShowStateChange;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -27,7 +26,11 @@ impl PatchAnimatedFixture for H2O {
 }
 
 impl H2O {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitShowStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -36,7 +39,7 @@ impl H2O {
             ColorRotate(v) => self.color_rotate = v,
             ColorRotation(v) => self.color_rotation = v,
         };
-        emitter.emit_h2o(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -76,7 +79,7 @@ impl ControllableFixture for H2O {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitShowStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
@@ -85,13 +88,13 @@ impl ControllableFixture for H2O {
         Ok(())
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitShowStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_h2o(Dimmer(self.dimmer));
-        emitter.emit_h2o(Rotation(self.rotation));
-        emitter.emit_h2o(FixedColor(self.fixed_color));
-        emitter.emit_h2o(ColorRotate(self.color_rotate));
-        emitter.emit_h2o(ColorRotation(self.color_rotation));
+        Self::emit(Dimmer(self.dimmer), emitter);
+        Self::emit(Rotation(self.rotation), emitter);
+        Self::emit(FixedColor(self.fixed_color), emitter);
+        Self::emit(ColorRotate(self.color_rotate), emitter);
+        Self::emit(ColorRotation(self.color_rotation), emitter);
     }
 }
 

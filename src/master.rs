@@ -5,9 +5,10 @@ use std::time::Duration;
 use number::UnipolarFloat;
 use tunnels::clock_server::StaticClockBank;
 
-use crate::fixture::{
-    generic::{GenericStrobe, GenericStrobeStateChange},
-    EmitStateChange, FixtureStateChange, StateChange as ShowStateChange,
+use crate::osc::HandleStateChange;
+use crate::{
+    fixture::generic::{GenericStrobe, GenericStrobeStateChange},
+    osc::EmitControlMessage,
 };
 
 pub use crate::fixture::FixtureGroupControls;
@@ -33,18 +34,15 @@ impl MasterControls {
         self.autopilot.update(delta_t);
     }
 
-    pub fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
+    pub fn emit_state(&self, emitter: &dyn EmitControlMessage) {
         use StateChange::*;
         let mut emit_strobe = |ssc| {
-            emitter.emit(ShowStateChange {
-                group: None,
-                sc: FixtureStateChange::Master(Strobe(ssc)),
-            });
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.state.emit_state(&mut emit_strobe);
     }
 
-    pub fn control(&mut self, msg: ControlMessage, emitter: &mut dyn EmitStateChange) {
+    pub fn control(&mut self, msg: ControlMessage, emitter: &dyn EmitControlMessage) {
         use StateChange::*;
         match msg {
             Strobe(sc) => self.strobe.state.handle_state_change(sc),
@@ -52,10 +50,7 @@ impl MasterControls {
             AutopilotOn(v) => self.autopilot.on = v,
             AutopilotSoundActive(v) => self.autopilot.sound_active = v,
         }
-        emitter.emit(ShowStateChange {
-            group: None,
-            sc: FixtureStateChange::Master(msg),
-        });
+        Self::emit(msg, emitter);
     }
 }
 

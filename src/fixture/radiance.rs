@@ -32,13 +32,13 @@ impl PatchFixture for Radiance {
 }
 
 impl Radiance {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         match sc {
             Haze(v) => self.haze = v,
             Fan(v) => self.fan = v,
         };
-        emitter.emit_radiance(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -63,16 +63,16 @@ impl ControllableFixture for Radiance {
         }
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_radiance(Haze(self.haze));
-        emitter.emit_radiance(Fan(self.fan));
+        Self::emit(Haze(self.haze), emitter);
+        Self::emit(Fan(self.fan), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

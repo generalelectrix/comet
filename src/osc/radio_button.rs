@@ -71,9 +71,9 @@ impl RadioButton {
 
     /// Send OSC messages to set the current state of the button.
     /// Error conditions are logged.
-    pub fn set<S>(&self, n: usize, emitter: &mut S)
+    pub fn set<S>(&self, n: usize, emitter: &S)
     where
-        S: crate::osc::EmitOscMessage,
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         if n >= self.n {
             error!(
@@ -139,9 +139,9 @@ where
     /// Update the state of a "radio select enum".
     /// Each enum variant is mapped to a button with the name of the address as the
     /// last piece of the address.
-    fn set<S>(&self, group: &str, control: &str, emitter: &mut S)
+    fn set<S>(&self, group: &str, control: &str, emitter: &S)
     where
-        S: crate::osc::EmitOscMessage,
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         for choice in Self::iter() {
             emitter.emit_osc(OscMessage {

@@ -40,9 +40,9 @@ impl MapControls for H2O {
 }
 
 impl HandleOscStateChange<StateChange> for H2O {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage,
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         #[allow(clippy::single_match)]
         match sc {

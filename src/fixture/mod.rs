@@ -52,7 +52,7 @@ use crate::master::{
     Autopilot, ControlMessage as MasterControlMessage, MasterControls,
     StateChange as MasterStateChange, Strobe,
 };
-use crate::osc::MapControls;
+use crate::osc::{MapControls, OscMessageWithGroupSender};
 
 pub mod animation_target;
 pub mod aquarius;
@@ -116,126 +116,6 @@ impl Display for FixtureGroupKey {
             self.fixture
         )
     }
-}
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-pub trait EmitFixtureStateChange {
-    fn emit(&mut self, sc: FixtureStateChange);
-
-    fn emit_astroscan(&mut self, sc: AstroscanStateChange) {
-        self.emit(FixtureStateChange::Astroscan(sc));
-    }
-
-    fn emit_comet(&mut self, sc: CometStateChange) {
-        self.emit(FixtureStateChange::Comet(sc));
-    }
-
-    fn emit_colordynamic(&mut self, sc: ColordynamicStateChange) {
-        self.emit(FixtureStateChange::Colordynamic(sc));
-    }
-
-    fn emit_lumasphere(&mut self, sc: LumasphereStateChange) {
-        self.emit(FixtureStateChange::Lumasphere(sc));
-    }
-
-    fn emit_venus(&mut self, sc: VenusStateChange) {
-        self.emit(FixtureStateChange::Venus(sc));
-    }
-
-    fn emit_h2o(&mut self, sc: H2OStateChange) {
-        self.emit(FixtureStateChange::H2O(sc));
-    }
-
-    fn emit_hypnotic(&mut self, sc: HypnoticStateChange) {
-        self.emit(FixtureStateChange::Hypnotic(sc));
-    }
-
-    fn emit_aquarius(&mut self, sc: AquariusStateChange) {
-        self.emit(FixtureStateChange::Aquarius(sc));
-    }
-
-    fn emit_radiance(&mut self, sc: RadianceStateChange) {
-        self.emit(FixtureStateChange::Radiance(sc));
-    }
-
-    fn emit_swarmolon(&mut self, sc: SwarmolonStateChange) {
-        self.emit(FixtureStateChange::Swarmolon(sc));
-    }
-
-    fn emit_rotosphere_q3(&mut self, sc: RotosphereQ3StateChange) {
-        self.emit(FixtureStateChange::RotosphereQ3(sc));
-    }
-
-    fn emit_freedom_fries(&mut self, sc: FreedomFriesStateChange) {
-        self.emit(FixtureStateChange::FreedomFries(sc));
-    }
-
-    fn emit_faderboard(&mut self, sc: FaderboardStateChange) {
-        self.emit(FixtureStateChange::Faderboard(sc));
-    }
-
-    fn emit_rush_wizard(&mut self, sc: RushWizardStateChange) {
-        self.emit(FixtureStateChange::RushWizard(sc));
-    }
-
-    fn emit_wizard_extreme(&mut self, sc: WizardExtremeStateChange) {
-        self.emit(FixtureStateChange::WizardExtreme(sc));
-    }
-
-    fn emit_solar_system(&mut self, sc: SolarSystemStateChange) {
-        self.emit(FixtureStateChange::SolarSystem(sc));
-    }
-
-    fn emit_color(&mut self, sc: ColorStateChange) {
-        self.emit(FixtureStateChange::Color(sc));
-    }
-
-    fn emit_dimmer(&mut self, sc: DimmerStateChange) {
-        self.emit(FixtureStateChange::Dimmer(sc));
-    }
-
-    fn emit_uv_led_brick(&mut self, sc: UvLedBrickStateChange) {
-        self.emit(FixtureStateChange::UvLedBrick(sc));
-    }
-
-    fn emit_starlight(&mut self, sc: StarlightStateChange) {
-        self.emit(FixtureStateChange::Starlight(sc));
-    }
-}
-
-#[derive(Debug)]
-pub struct StateChange {
-    pub group: Option<GroupName>,
-    pub sc: FixtureStateChange,
-}
-
-#[derive(Clone, Debug)]
-pub enum FixtureStateChange {
-    Astroscan(AstroscanStateChange),
-    Comet(CometStateChange),
-    Lumasphere(LumasphereStateChange),
-    Venus(VenusStateChange),
-    H2O(H2OStateChange),
-    Hypnotic(HypnoticStateChange),
-    Aquarius(AquariusStateChange),
-    Radiance(RadianceStateChange),
-    Swarmolon(SwarmolonStateChange),
-    RotosphereQ3(RotosphereQ3StateChange),
-    FreedomFries(FreedomFriesStateChange),
-    Faderboard(FaderboardStateChange),
-    RushWizard(RushWizardStateChange),
-    Starlight(StarlightStateChange),
-    WizardExtreme(WizardExtremeStateChange),
-    SolarSystem(SolarSystemStateChange),
-    Color(ColorStateChange),
-    Colordynamic(ColordynamicStateChange),
-    Dimmer(DimmerControlMessage),
-    UvLedBrick(UvLedBrickControlMessage),
-    Master(MasterStateChange),
-    Animation(AnimationStateChange),
 }
 
 #[derive(Debug)]
@@ -327,10 +207,10 @@ impl FixtureGroup {
     }
 
     /// Emit the current state of all controls.
-    pub fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
-        let mut emitter = StateChangeWithGroupEmitter {
-            emitter,
+    pub fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+        let mut emitter = OscMessageWithGroupSender {
             group: self.name().cloned(),
+            emitter,
         };
         self.fixture.emit_state(&mut emitter);
     }
@@ -340,11 +220,11 @@ impl FixtureGroup {
     pub fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitStateChange,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
-        let mut emitter = StateChangeWithGroupEmitter {
-            emitter,
+        let mut emitter = OscMessageWithGroupSender {
             group: self.name().cloned(),
+            emitter,
         };
         self.fixture
             .control(msg, &mut emitter)
@@ -378,21 +258,6 @@ impl FixtureGroup {
                 dmx_buf
             );
         }
-    }
-}
-
-/// Wrap a state change emitter,
-struct StateChangeWithGroupEmitter<'a> {
-    emitter: &'a mut dyn EmitStateChange,
-    group: Option<GroupName>,
-}
-
-impl<'a> EmitFixtureStateChange for StateChangeWithGroupEmitter<'a> {
-    fn emit(&mut self, sc: FixtureStateChange) {
-        self.emitter.emit(StateChange {
-            group: self.group.clone(),
-            sc,
-        });
     }
 }
 
@@ -685,14 +550,14 @@ pub trait PatchAnimatedFixture: AnimatedFixture + Default + 'static {
 
 pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange);
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage);
 
     /// Process the provided control message.
     /// Return the message if this fixture cannot process it.
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()>;
 
     fn update(&mut self, _: Duration) {}
@@ -798,12 +663,12 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.fixture.control(msg, emitter)
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         self.fixture.emit_state(emitter);
     }
 
@@ -851,7 +716,8 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
 pub mod prelude {
     #[allow(unused)]
     pub use super::{
-        AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-        FixtureGroupControls, FixtureType, NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
+        AnimatedFixture, ControllableFixture, FixtureControlMessage, FixtureGroupControls,
+        FixtureType, NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
     };
+    pub use crate::osc::HandleStateChange;
 }

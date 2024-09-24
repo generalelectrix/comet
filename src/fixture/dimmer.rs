@@ -19,9 +19,9 @@ impl PatchAnimatedFixture for Dimmer {
 }
 
 impl Dimmer {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         self.0 = sc;
-        emitter.emit_dimmer(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -44,14 +44,14 @@ impl AnimatedFixture for Dimmer {
 }
 
 impl ControllableFixture for Dimmer {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
-        emitter.emit_dimmer(self.0);
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+        Self::emit(self.0, emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

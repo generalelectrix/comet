@@ -40,14 +40,14 @@ impl PatchAnimatedFixture for RotosphereQ3 {
 }
 
 impl RotosphereQ3 {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         match sc {
             Color(c) => self.color.update_state(c),
             Strobe(sc) => self.strobe.handle_state_change(sc),
             Rotation(v) => self.rotation = v,
         };
-        emitter.emit_rotosphere_q3(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -85,23 +85,23 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         let mut emit_color = |sc| {
-            emitter.emit_rotosphere_q3(Color(sc));
+            Self::emit(Color(sc), emitter);
         };
         self.color.state(&mut emit_color);
         let mut emit_strobe = |ssc| {
-            emitter.emit_rotosphere_q3(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_rotosphere_q3(Rotation(self.rotation));
+        Self::emit(Rotation(self.rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

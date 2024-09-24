@@ -10,7 +10,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::{AnimationControls, OscController},
+    osc::OscController,
 };
 
 use anyhow::{bail, Result};
@@ -48,18 +48,18 @@ impl Show {
                 patched_controls.insert(group.fixture_type());
             }
 
-            group.emit_state(&mut osc_controller);
+            group.emit_state(&osc_controller);
         }
 
         let master_controls = MasterControls::default();
         osc_controller.map_controls(&master_controls);
-        master_controls.emit_state(&mut osc_controller);
+        master_controls.emit_state(&osc_controller);
 
         // Configure animation controls.
-        osc_controller.map_controls(&AnimationControls);
         let animation_ui_state = if patch.iter().any(FixtureGroup::is_animated) {
             let state = AnimationUIState::new(Some(patch.validate_selector(0)?));
-            state.emit_state(&mut patch, &mut osc_controller)?;
+            osc_controller.map_controls(&state);
+            state.emit_state(&mut patch, &osc_controller)?;
             state
         } else {
             AnimationUIState::new(None)

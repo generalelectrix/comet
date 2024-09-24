@@ -32,14 +32,14 @@ impl Default for Faderboard {
 }
 
 impl Faderboard {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         let (chan, val) = sc;
         if chan >= self.channel_count {
             error!("Channel out of range: {}.", chan);
             return;
         }
         self.vals[chan] = val;
-        emitter.emit_faderboard(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -52,16 +52,16 @@ impl NonAnimatedFixture for Faderboard {
 }
 
 impl ControllableFixture for Faderboard {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         for (i, v) in self.vals.iter().enumerate() {
-            emitter.emit_faderboard((i, *v));
+            Self::emit((i, *v), emitter);
         }
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

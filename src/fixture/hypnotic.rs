@@ -26,7 +26,7 @@ impl PatchAnimatedFixture for Hypnotic {
 }
 
 impl Hypnotic {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         match sc {
             RedLaserOn(v) => self.red_laser_on = v,
@@ -34,7 +34,7 @@ impl Hypnotic {
             BlueLaserOn(v) => self.blue_laser_on = v,
             Rotation(v) => self.rotation = v,
         };
-        emitter.emit_hypnotic(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -68,18 +68,18 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_hypnotic(RedLaserOn(self.red_laser_on));
-        emitter.emit_hypnotic(GreenLaserOn(self.green_laser_on));
-        emitter.emit_hypnotic(BlueLaserOn(self.blue_laser_on));
-        emitter.emit_hypnotic(Rotation(self.rotation));
+        Self::emit(RedLaserOn(self.red_laser_on), emitter);
+        Self::emit(GreenLaserOn(self.green_laser_on), emitter);
+        Self::emit(BlueLaserOn(self.blue_laser_on), emitter);
+        Self::emit(Rotation(self.rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

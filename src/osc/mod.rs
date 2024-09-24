@@ -19,8 +19,7 @@ use crate::fixture::uv_led_brick::UvLedBrick;
 use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
-    ControlMessage, ControlMessagePayload, EmitStateChange, FixtureGroupKey, FixtureStateChange,
-    FixtureType, GroupName, StateChange,
+    ControlMessage, ControlMessagePayload, FixtureGroupKey, FixtureType, GroupName,
 };
 use crate::master::MasterControls;
 use anyhow::bail;
@@ -39,7 +38,6 @@ use std::thread;
 use std::time::Duration;
 use thiserror::Error;
 
-pub use self::animation::AnimationControls;
 use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;
@@ -67,7 +65,7 @@ pub trait MapControls {
 pub trait EmitControlMessage: EmitOscMessage {}
 
 pub trait EmitOscMessage {
-    fn emit_osc(&mut self, msg: OscMessage);
+    fn emit_osc(&self, msg: OscMessage);
 }
 
 impl<T> EmitControlMessage for T where T: EmitOscMessage {}
@@ -75,12 +73,24 @@ impl<T> EmitControlMessage for T where T: EmitOscMessage {}
 /// Process a state change message into OSC messages.
 pub trait HandleOscStateChange<SC> {
     /// Convert the provided state change into OSC messages and send them.
-    fn emit_osc_state_change<S>(_sc: SC, _send: &mut S, _talkback: TalkbackMode)
+    fn emit_osc_state_change<S>(_sc: SC, _send: &S)
     where
-        S: EmitControlMessage,
+        S: EmitOscMessage + ?Sized,
     {
     }
 }
+
+/// Process a state change message into control state changes.
+pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
+    fn emit<S>(sc: SC, send: &S)
+    where
+        S: EmitControlMessage + ?Sized,
+    {
+        Self::emit_osc_state_change(sc, send);
+    }
+}
+
+impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 
 pub struct OscController {
     control_map: ControlMap<ControlMessagePayload>,
@@ -166,14 +176,20 @@ impl OscController {
     }
 }
 
-struct OscMessageWithGroupSender<'a> {
-    group: Option<&'a GroupName>,
-    send: &'a Sender<OscMessage>,
+impl EmitOscMessage for OscController {
+    fn emit_osc(&self, msg: OscMessage) {
+        let _ = self.send.send(msg);
+    }
+}
+
+pub struct OscMessageWithGroupSender<'a> {
+    pub group: Option<GroupName>,
+    pub emitter: &'a dyn EmitControlMessage,
 }
 
 impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
-    fn emit_osc(&mut self, mut msg: OscMessage) {
-        if let Some(g) = self.group {
+    fn emit_osc(&self, mut msg: OscMessage) {
+        if let Some(g) = &self.group {
             // If a group is set, prepend the ID to the address.
             // FIXME: would be nice to think through this a bit and see if
             // we can avoid this allocation by somehow transparently threading
@@ -181,76 +197,7 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
             // injection.
             msg.addr = format!("/:{}{}", g, msg.addr);
         }
-        let _ = self.send.send(msg);
-    }
-}
-
-impl EmitStateChange for OscController {
-    fn emit(&mut self, sc: StateChange) {
-        let send = &mut OscMessageWithGroupSender {
-            group: sc.group.as_ref(),
-            send: &self.send,
-        };
-        match sc.sc {
-            FixtureStateChange::Astroscan(sc) => {
-                Astroscan::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Comet(sc) => Comet::emit_osc_state_change(sc, send, self.talkback),
-            FixtureStateChange::Lumasphere(sc) => {
-                Lumasphere::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Venus(sc) => Venus::emit_osc_state_change(sc, send, self.talkback),
-            FixtureStateChange::H2O(sc) => H2O::emit_osc_state_change(sc, send, self.talkback),
-            FixtureStateChange::Hypnotic(sc) => {
-                Hypnotic::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Aquarius(sc) => {
-                Aquarius::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Radiance(sc) => {
-                Radiance::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Swarmolon(sc) => {
-                Swarmolon::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Starlight(sc) => {
-                Starlight::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::RotosphereQ3(sc) => {
-                RotosphereQ3::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::FreedomFries(sc) => {
-                FreedomFries::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Faderboard(sc) => {
-                Faderboard::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::RushWizard(sc) => {
-                RushWizard::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::WizardExtreme(sc) => {
-                WizardExtreme::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::SolarSystem(sc) => {
-                SolarSystem::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Color(sc) => Color::emit_osc_state_change(sc, send, self.talkback),
-            FixtureStateChange::Colordynamic(sc) => {
-                Colordynamic::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Dimmer(sc) => {
-                Dimmer::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::UvLedBrick(sc) => {
-                UvLedBrick::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Master(sc) => {
-                MasterControls::emit_osc_state_change(sc, send, self.talkback)
-            }
-            FixtureStateChange::Animation(sc) => {
-                AnimationControls::emit_osc_state_change(sc, send, self.talkback)
-            }
-        }
+        self.emitter.emit_osc(msg);
     }
 }
 
@@ -491,9 +438,9 @@ fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
 }
 
 /// Send an OSC message setting the state of a float control.
-fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &mut S)
+fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &S)
 where
-    S: crate::osc::EmitOscMessage,
+    S: crate::osc::EmitOscMessage + ?Sized,
 {
     emitter.emit_osc(OscMessage {
         addr: format!("/{group}/{control}"),
