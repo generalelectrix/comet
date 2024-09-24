@@ -1,7 +1,7 @@
 use crate::fixture::uv_led_brick::{StateChange, UvLedBrick};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "UvLedBrick";
 
@@ -15,4 +15,4 @@ impl MapControls for UvLedBrick {
     }
 }
 
-impl HandleStateChange<StateChange> for UvLedBrick {}
+impl HandleOscStateChange<StateChange> for UvLedBrick {}

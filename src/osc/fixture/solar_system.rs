@@ -3,7 +3,7 @@ use rosc::OscMessage;
 use crate::fixture::solar_system::SolarSystem;
 use crate::fixture::solar_system::StateChange;
 use crate::fixture::ControlMessagePayload;
-use crate::osc::HandleStateChange;
+use crate::osc::HandleOscStateChange;
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::button;
@@ -50,10 +50,10 @@ impl MapControls for SolarSystem {
     }
 }
 
-impl HandleStateChange<StateChange> for SolarSystem {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for SolarSystem {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         match sc {
             StateChange::FrontGobo(v) => FRONT_GOBO_SELECT.set(v, send),

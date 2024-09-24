@@ -73,9 +73,9 @@ pub trait EmitOscMessage {
 impl<T> EmitControlMessage for T where T: EmitOscMessage {}
 
 /// Process a state change message into OSC messages.
-pub trait HandleStateChange<SC> {
+pub trait HandleOscStateChange<SC> {
     /// Convert the provided state change into OSC messages and send them.
-    fn emit_state_change<S>(_sc: SC, _send: &mut S, _talkback: TalkbackMode)
+    fn emit_osc_state_change<S>(_sc: SC, _send: &mut S, _talkback: TalkbackMode)
     where
         S: EmitControlMessage,
     {
@@ -193,60 +193,62 @@ impl EmitStateChange for OscController {
         };
         match sc.sc {
             FixtureStateChange::Astroscan(sc) => {
-                Astroscan::emit_state_change(sc, send, self.talkback)
+                Astroscan::emit_osc_state_change(sc, send, self.talkback)
             }
-            FixtureStateChange::Comet(sc) => Comet::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Comet(sc) => Comet::emit_osc_state_change(sc, send, self.talkback),
             FixtureStateChange::Lumasphere(sc) => {
-                Lumasphere::emit_state_change(sc, send, self.talkback)
+                Lumasphere::emit_osc_state_change(sc, send, self.talkback)
             }
-            FixtureStateChange::Venus(sc) => Venus::emit_state_change(sc, send, self.talkback),
-            FixtureStateChange::H2O(sc) => H2O::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Venus(sc) => Venus::emit_osc_state_change(sc, send, self.talkback),
+            FixtureStateChange::H2O(sc) => H2O::emit_osc_state_change(sc, send, self.talkback),
             FixtureStateChange::Hypnotic(sc) => {
-                Hypnotic::emit_state_change(sc, send, self.talkback)
+                Hypnotic::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Aquarius(sc) => {
-                Aquarius::emit_state_change(sc, send, self.talkback)
+                Aquarius::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Radiance(sc) => {
-                Radiance::emit_state_change(sc, send, self.talkback)
+                Radiance::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Swarmolon(sc) => {
-                Swarmolon::emit_state_change(sc, send, self.talkback)
+                Swarmolon::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Starlight(sc) => {
-                Starlight::emit_state_change(sc, send, self.talkback)
+                Starlight::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::RotosphereQ3(sc) => {
-                RotosphereQ3::emit_state_change(sc, send, self.talkback)
+                RotosphereQ3::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::FreedomFries(sc) => {
-                FreedomFries::emit_state_change(sc, send, self.talkback)
+                FreedomFries::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Faderboard(sc) => {
-                Faderboard::emit_state_change(sc, send, self.talkback)
+                Faderboard::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::RushWizard(sc) => {
-                RushWizard::emit_state_change(sc, send, self.talkback)
+                RushWizard::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::WizardExtreme(sc) => {
-                WizardExtreme::emit_state_change(sc, send, self.talkback)
+                WizardExtreme::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::SolarSystem(sc) => {
-                SolarSystem::emit_state_change(sc, send, self.talkback)
+                SolarSystem::emit_osc_state_change(sc, send, self.talkback)
             }
-            FixtureStateChange::Color(sc) => Color::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Color(sc) => Color::emit_osc_state_change(sc, send, self.talkback),
             FixtureStateChange::Colordynamic(sc) => {
-                Colordynamic::emit_state_change(sc, send, self.talkback)
+                Colordynamic::emit_osc_state_change(sc, send, self.talkback)
             }
-            FixtureStateChange::Dimmer(sc) => Dimmer::emit_state_change(sc, send, self.talkback),
+            FixtureStateChange::Dimmer(sc) => {
+                Dimmer::emit_osc_state_change(sc, send, self.talkback)
+            }
             FixtureStateChange::UvLedBrick(sc) => {
-                UvLedBrick::emit_state_change(sc, send, self.talkback)
+                UvLedBrick::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Master(sc) => {
-                MasterControls::emit_state_change(sc, send, self.talkback)
+                MasterControls::emit_osc_state_change(sc, send, self.talkback)
             }
             FixtureStateChange::Animation(sc) => {
-                AnimationControls::emit_state_change(sc, send, self.talkback)
+                AnimationControls::emit_osc_state_change(sc, send, self.talkback)
             }
         }
     }

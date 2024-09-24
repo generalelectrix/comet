@@ -1,7 +1,7 @@
 use crate::fixture::radiance::{Radiance, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Radiance";
 
@@ -17,4 +17,4 @@ impl MapControls for Radiance {
     }
 }
 
-impl HandleStateChange<StateChange> for Radiance {}
+impl HandleOscStateChange<StateChange> for Radiance {}

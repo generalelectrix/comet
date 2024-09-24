@@ -1,7 +1,7 @@
 use crate::fixture::aquarius::{Aquarius, StateChange};
 use crate::fixture::{ControlMessagePayload, PatchAnimatedFixture};
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Aquarius";
@@ -22,4 +22,4 @@ impl MapControls for Aquarius {
     }
 }
 
-impl HandleStateChange<StateChange> for Aquarius {}
+impl HandleOscStateChange<StateChange> for Aquarius {}

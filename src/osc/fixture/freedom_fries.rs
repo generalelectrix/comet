@@ -7,7 +7,7 @@ use crate::osc::basic_controls::{button, Button};
 use crate::osc::fixture::color::map_color;
 use crate::osc::fixture::generic::map_strobe;
 use crate::osc::label_array::LabelArray;
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::unipolar_to_range;
 
 const GROUP: &str = "FreedomFries";
@@ -56,10 +56,10 @@ fn wrap_color(sc: ColorStateChange) -> ControlMessagePayload {
     ControlMessagePayload::fixture(StateChange::Color(sc))
 }
 
-impl HandleStateChange<StateChange> for FreedomFriesFixture {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for FreedomFriesFixture {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         if let StateChange::Program(v) = sc {
             let label = v.to_string();

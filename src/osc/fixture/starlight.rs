@@ -5,7 +5,7 @@ use crate::fixture::starlight::{Starlight, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::fixture::generic::map_strobe;
-use crate::osc::HandleStateChange;
+use crate::osc::HandleOscStateChange;
 use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
@@ -32,10 +32,13 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
     ControlMessagePayload::fixture(StateChange::Strobe(sc))
 }
 
-impl HandleStateChange<StateChange> for Starlight {
-    fn emit_state_change<S>(_sc: StateChange, _send: &mut S, _talkback: crate::osc::TalkbackMode)
-    where
-        S: crate::osc::EmitControlMessage,
+impl HandleOscStateChange<StateChange> for Starlight {
+    fn emit_osc_state_change<S>(
+        _sc: StateChange,
+        _send: &mut S,
+        _talkback: crate::osc::TalkbackMode,
+    ) where
+        S: crate::osc::EmitOscMessage,
     {
         // FIXME: implement talkback
     }

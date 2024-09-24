@@ -7,7 +7,7 @@ use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::{ignore_payload, HandleOscStateChange};
 use crate::osc::{ControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
@@ -74,10 +74,10 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
     ControlMessagePayload::fixture(StateChange::Strobe(sc))
 }
 
-impl HandleStateChange<StateChange> for WizardExtreme {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for WizardExtreme {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         match sc {
             StateChange::Color(c) => {

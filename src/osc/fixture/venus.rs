@@ -2,7 +2,7 @@ use crate::fixture::venus::{StateChange, Venus};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
@@ -38,4 +38,4 @@ impl MapControls for Venus {
     }
 }
 
-impl HandleStateChange<StateChange> for Venus {}
+impl HandleOscStateChange<StateChange> for Venus {}

@@ -1,7 +1,7 @@
 use crate::fixture::color::{Color, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Color";
 
@@ -15,7 +15,7 @@ impl MapControls for Color {
     }
 }
 
-impl HandleStateChange<StateChange> for Color {}
+impl HandleOscStateChange<StateChange> for Color {}
 
 fn wrap_color(sc: StateChange) -> ControlMessagePayload {
     ControlMessagePayload::fixture(sc)

@@ -2,7 +2,7 @@ use crate::fixture::hypnotic::{Hypnotic, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Hypnotic";
@@ -28,4 +28,4 @@ impl MapControls for Hypnotic {
     }
 }
 
-impl HandleStateChange<StateChange> for Hypnotic {}
+impl HandleOscStateChange<StateChange> for Hypnotic {}

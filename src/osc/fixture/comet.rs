@@ -2,7 +2,7 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleStateChange, MapControls, RadioButton};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls, RadioButton};
 use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
     osc::quadratic,
@@ -80,10 +80,10 @@ impl MapControls for Comet {
     }
 }
 
-impl HandleStateChange<StateChange> for Comet {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for Comet {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         use StateChange::*;
         #[allow(clippy::single_match)]

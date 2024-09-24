@@ -4,7 +4,7 @@ use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 use crate::animation::ControlMessage::Animation as WrapAnimation;
 
 use crate::fixture::{ControlMessagePayload, N_ANIM};
-use crate::osc::HandleStateChange;
+use crate::osc::HandleOscStateChange;
 use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
@@ -162,17 +162,17 @@ impl MapControls for TargetAndSelectControls {
     }
 }
 
-impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
-    fn emit_state_change<S>(
+impl HandleOscStateChange<crate::animation::StateChange> for AnimationControls {
+    fn emit_osc_state_change<S>(
         sc: crate::animation::StateChange,
         send: &mut S,
         talkback: crate::osc::TalkbackMode,
     ) where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         match sc {
             crate::animation::StateChange::Animation(msg) => {
-                AnimationControls::emit_state_change(msg, send, talkback)
+                AnimationControls::emit_osc_state_change(msg, send, talkback)
             }
             crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
             crate::animation::StateChange::SelectGroup(msg) => {
@@ -189,10 +189,10 @@ impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
     }
 }
 
-impl HandleStateChange<StateChange> for AnimationControls {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for AnimationControls {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         use StateChange::*;
         match sc {

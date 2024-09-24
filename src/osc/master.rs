@@ -6,7 +6,7 @@ use crate::master::{MasterControls, StateChange};
 
 use super::basic_controls::{button, Button};
 use super::fixture::generic::map_strobe;
-use super::{ControlMap, HandleStateChange, MapControls};
+use super::{ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Master";
 
@@ -39,4 +39,4 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
     ControlMessagePayload::Master(StateChange::Strobe(sc))
 }
 
-impl HandleStateChange<StateChange> for MasterControls {}
+impl HandleOscStateChange<StateChange> for MasterControls {}

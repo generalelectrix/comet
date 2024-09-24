@@ -4,7 +4,7 @@ use crate::fixture::lumasphere::{Lumasphere, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
@@ -62,4 +62,4 @@ where
     });
 }
 
-impl HandleStateChange<StateChange> for Lumasphere {}
+impl HandleOscStateChange<StateChange> for Lumasphere {}

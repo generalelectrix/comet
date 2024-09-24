@@ -5,7 +5,7 @@ use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::{ignore_payload, HandleOscStateChange};
 use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
@@ -39,10 +39,10 @@ impl MapControls for H2O {
     }
 }
 
-impl HandleStateChange<StateChange> for H2O {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for H2O {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: crate::osc::EmitControlMessage,
+        S: crate::osc::EmitOscMessage,
     {
         #[allow(clippy::single_match)]
         match sc {

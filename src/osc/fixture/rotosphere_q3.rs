@@ -5,7 +5,7 @@ use crate::fixture::rotosphere_q3::{RotosphereQ3, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::fixture::color::map_color;
-use crate::osc::{ControlMap, HandleStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "RotosphereQ3";
@@ -34,4 +34,4 @@ fn wrap_color(sc: ColorStateChange) -> ControlMessagePayload {
     ControlMessagePayload::fixture(StateChange::Color(sc))
 }
 
-impl HandleStateChange<StateChange> for RotosphereQ3 {}
+impl HandleOscStateChange<StateChange> for RotosphereQ3 {}

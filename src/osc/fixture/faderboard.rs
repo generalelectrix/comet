@@ -3,7 +3,7 @@ use anyhow::{anyhow, bail, Context};
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
-use crate::osc::{get_unipolar, ControlMap, HandleStateChange, MapControls};
+use crate::osc::{get_unipolar, ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Faderboard";
 
@@ -32,4 +32,4 @@ impl MapControls for Faderboard {
     }
 }
 
-impl HandleStateChange<StateChange> for Faderboard {}
+impl HandleOscStateChange<StateChange> for Faderboard {}
