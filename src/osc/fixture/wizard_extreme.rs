@@ -77,7 +77,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
 impl HandleStateChange<StateChange> for WizardExtreme {
     fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitControlMessage,
     {
         match sc {
             StateChange::Color(c) => {

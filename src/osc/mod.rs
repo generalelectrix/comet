@@ -20,7 +20,7 @@ use crate::fixture::venus::Venus;
 use crate::fixture::wizard_extreme::WizardExtreme;
 use crate::fixture::{
     ControlMessage, ControlMessagePayload, EmitStateChange, FixtureGroupKey, FixtureStateChange,
-    FixtureType, StateChange,
+    FixtureType, GroupName, StateChange,
 };
 use crate::master::MasterControls;
 use anyhow::bail;
@@ -62,12 +62,22 @@ pub trait MapControls {
     fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)>;
 }
 
+/// Emit control messages.
+/// Will be extended in the future to potentially cover more cases.
+pub trait EmitControlMessage: EmitOscMessage {}
+
+pub trait EmitOscMessage {
+    fn emit_osc(&mut self, msg: OscMessage);
+}
+
+impl<T> EmitControlMessage for T where T: EmitOscMessage {}
+
 /// Process a state change message into OSC messages.
 pub trait HandleStateChange<SC> {
     /// Convert the provided state change into OSC messages and send them.
     fn emit_state_change<S>(_sc: SC, _send: &mut S, _talkback: TalkbackMode)
     where
-        S: FnMut(OscMessage),
+        S: EmitControlMessage,
     {
     }
 }
@@ -156,18 +166,30 @@ impl OscController {
     }
 }
 
+struct OscMessageWithGroupSender<'a> {
+    group: Option<&'a GroupName>,
+    send: &'a Sender<OscMessage>,
+}
+
+impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
+    fn emit_osc(&mut self, mut msg: OscMessage) {
+        if let Some(g) = self.group {
+            // If a group is set, prepend the ID to the address.
+            // FIXME: would be nice to think through this a bit and see if
+            // we can avoid this allocation by somehow transparently threading
+            // the group into the send call via something like constructor
+            // injection.
+            msg.addr = format!("/:{}{}", g, msg.addr);
+        }
+        let _ = self.send.send(msg);
+    }
+}
+
 impl EmitStateChange for OscController {
     fn emit(&mut self, sc: StateChange) {
-        let send = &mut |mut msg: OscMessage| {
-            if let Some(g) = &sc.group {
-                // If a group is set, prepend the ID to the address.
-                // FIXME: would be nice to think through this a bit and see if
-                // we can avoid this allocation by somehow transparently threading
-                // the group into the send call via something like constructor
-                // injection.
-                msg.addr = format!("/:{}{}", g, msg.addr);
-            }
-            let _ = self.send.send(msg);
+        let send = &mut OscMessageWithGroupSender {
+            group: sc.group.as_ref(),
+            send: &self.send,
         };
         match sc.sc {
             FixtureStateChange::Astroscan(sc) => {
@@ -467,11 +489,11 @@ fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
 }
 
 /// Send an OSC message setting the state of a float control.
-fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, send: &mut S)
+fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &mut S)
 where
-    S: FnMut(OscMessage),
+    S: crate::osc::EmitOscMessage,
 {
-    send(OscMessage {
+    emitter.emit_osc(OscMessage {
         addr: format!("/{group}/{control}"),
         args: vec![OscType::Float(val.into() as f32)],
     });

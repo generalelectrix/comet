@@ -35,7 +35,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
 impl HandleStateChange<StateChange> for Starlight {
     fn emit_state_change<S>(_sc: StateChange, _send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitControlMessage,
     {
         // FIXME: implement talkback
     }

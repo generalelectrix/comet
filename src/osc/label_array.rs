@@ -15,9 +15,9 @@ impl LabelArray {
     /// Write labels to this array.
     /// If there are more labels provided than defined for this array,
     /// the extra lables are ignored.
-    pub fn set<S>(&self, labels: impl Iterator<Item = String>, send: &mut S)
+    pub fn set<S>(&self, labels: impl Iterator<Item = String>, emitter: &mut S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage,
     {
         for (i, label) in labels
             .chain(std::iter::repeat(self.empty_label).map(String::from))
@@ -26,7 +26,7 @@ impl LabelArray {
             if i >= self.n {
                 return;
             }
-            send(OscMessage {
+            emitter.emit_osc(OscMessage {
                 addr: format!("/{}/{}/{}", self.group, self.control, i),
                 args: vec![OscType::String(label)],
             })

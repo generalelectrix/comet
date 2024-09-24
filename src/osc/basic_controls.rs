@@ -40,7 +40,7 @@ impl Button {
 
     pub fn send<S>(&self, val: bool, send: &mut S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage,
     {
         send_float(self.group, self.control, if val { 1.0 } else { 0.0 }, send);
     }

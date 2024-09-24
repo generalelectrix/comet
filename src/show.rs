@@ -145,7 +145,7 @@ impl Show {
                     bail!("no fixture group key was provided with a fixture control message");
                 };
                 // Identify the correct fixture to handle this message.
-                let Some(fixture) = self.patch.get_mut(group_key) else {
+                let Some(fixture) = self.patch.get_mut(&group_key) else {
                     bail!("no fixture found for key: {:?}", msg.key);
                 };
 

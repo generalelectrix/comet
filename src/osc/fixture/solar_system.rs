@@ -53,7 +53,7 @@ impl MapControls for SolarSystem {
 impl HandleStateChange<StateChange> for SolarSystem {
     fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitControlMessage,
     {
         match sc {
             StateChange::FrontGobo(v) => FRONT_GOBO_SELECT.set(v, send),

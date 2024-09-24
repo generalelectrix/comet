@@ -59,7 +59,7 @@ fn wrap_color(sc: ColorStateChange) -> ControlMessagePayload {
 impl HandleStateChange<StateChange> for FreedomFriesFixture {
     fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
     where
-        S: FnMut(rosc::OscMessage),
+        S: crate::osc::EmitControlMessage,
     {
         if let StateChange::Program(v) = sc {
             let label = v.to_string();
