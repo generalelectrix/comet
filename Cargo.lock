@@ -272,7 +272,6 @@ dependencies = [
  "anyhow",
  "crossbeam-channel",
  "derive_more",
- "dyn-clone",
  "itertools 0.13.0",
  "lazy_static",
  "local-ip-address",
@@ -547,12 +546,6 @@ dependencies = [
  "log 0.4.20",
  "walkdir",
 ]
-
-[[package]]
-name = "dyn-clone"
-version = "1.0.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
 
 [[package]]
 name = "either"

@@ -1,5 +1,4 @@
 use anyhow::{ensure, Context, Result};
-use dyn_clone::DynClone;
 use itertools::Itertools;
 use std::any::{type_name, Any};
 use std::collections::{HashMap, HashSet};
@@ -114,12 +113,6 @@ pub struct ControlMessage {
     pub key: Option<FixtureGroupKey>,
     pub msg: ControlMessagePayload,
 }
-
-pub trait FixtureControlMessageType: Any + DynClone + Debug + 'static {
-    fn fixture_type(&self) -> &str;
-}
-
-dyn_clone::clone_trait_object!(FixtureControlMessageType);
 
 #[derive(Debug)]
 pub struct FixtureControlMessage(Box<dyn Any>);
