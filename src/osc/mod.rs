@@ -16,6 +16,7 @@ use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 use thiserror::Error;
+use zmq::Socket;
 
 use self::radio_button::{EnumRadioButton, RadioButton};
 
@@ -182,6 +183,9 @@ pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
 
 pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub struct OscClientId(SocketAddr);
+
 impl<C> ControlMap<C> {
     pub fn new() -> Self {
         Self(HashMap::new())
@@ -276,21 +280,21 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
 
     let mut buf = [0u8; rosc::decoder::MTU];
 
-    let mut recv_packet = move || -> Result<OscPacket> {
-        let size = socket.recv(&mut buf)?;
+    let mut recv_packet = move || -> Result<_> {
+        let (size, sender_addr) = socket.recv_from(&mut buf)?;
         let (_, packet) = rosc::decoder::decode_udp(&buf[..size])?;
-        Ok(packet)
+        Ok((packet, OscClientId(sender_addr)))
     };
 
     thread::spawn(move || loop {
-        let packet = match recv_packet() {
-            Ok(packet) => packet,
+        let (packet, client_id) = match recv_packet() {
+            Ok(msg) => msg,
             Err(e) => {
                 error!("Error receiving from OSC input: {}", e);
                 continue;
             }
         };
-        if let Err(e) = forward_packet(packet, &send) {
+        if let Err(e) = forward_packet(packet, client_id, &send) {
             error!("Error unpacking/forwarding OSC packet: {}", e);
         }
     });
@@ -298,7 +302,8 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
 }
 
 /// Drain a control channel of OSC messages and send them.
-/// Sends each message to every provided address.
+/// Sends each message to every provided address, unless the talkback mode
+/// says otherwise.
 fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
     let (send, recv) = unbounded();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
@@ -331,7 +336,11 @@ fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
 }
 
 /// Recursively unpack OSC packets and send all the inner messages as control events.
-fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result<(), OscError> {
+fn forward_packet(
+    packet: OscPacket,
+    client_id: OscClientId,
+    send: &Sender<OscControlMessage>,
+) -> Result<(), OscError> {
     match packet {
         OscPacket::Message(m) => {
             // info!("Received OSC message: {:?}", m);
@@ -339,12 +348,12 @@ fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result
             if m.addr == "/page" {
                 return Ok(());
             }
-            let cm = OscControlMessage::new(m)?;
+            let cm = OscControlMessage::new(m, client_id)?;
             send.send(cm).unwrap();
         }
         OscPacket::Bundle(msgs) => {
             for subpacket in msgs.content {
-                forward_packet(subpacket, send)?;
+                forward_packet(subpacket, client_id, send)?;
             }
         }
     }
