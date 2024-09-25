@@ -1,14 +1,12 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::{collections::HashMap, time::Duration};
 
 use number::UnipolarFloat;
 
-use super::{
-    generic::Timer, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
-};
+use super::generic::Timer;
+use super::prelude::*;
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -19,7 +17,7 @@ pub struct Radiance {
 }
 
 impl PatchFixture for Radiance {
-    const NAME: &'static str = "radiance";
+    const NAME: FixtureType = FixtureType("radiance");
     fn channel_count(&self) -> usize {
         2
     }
@@ -34,13 +32,17 @@ impl PatchFixture for Radiance {
 }
 
 impl Radiance {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Haze(v) => self.haze = v,
             Fan(v) => self.fan = v,
         };
-        emitter.emit_radiance(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -65,24 +67,22 @@ impl ControllableFixture for Radiance {
         }
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_radiance(Haze(self.haze));
-        emitter.emit_radiance(Fan(self.fan));
+        Self::emit(Haze(self.haze), emitter);
+        Self::emit(Fan(self.fan), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Radiance(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

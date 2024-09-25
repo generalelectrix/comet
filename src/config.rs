@@ -42,7 +42,7 @@ pub struct FixtureConfig {
     /// For fixtures that we may want to separately control multiple instances,
     /// provide a group index.  Most fixtures do not use this.
     #[serde(default)]
-    pub group: GroupName,
+    pub group: Option<GroupName>,
     /// Additional key-value string options for configuring specific fixture types.
     #[serde(default)]
     pub options: Options,

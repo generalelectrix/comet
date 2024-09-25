@@ -1,10 +1,11 @@
-use rosc::OscMessage;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
+use crate::animation::AnimationUIState;
+use crate::animation::ControlMessage as AnimationControlMessage;
 use crate::animation::ControlMessage::Animation as WrapAnimation;
 
-use crate::fixture::{FixtureControlMessage, N_ANIM};
-use crate::osc::HandleStateChange;
+use crate::fixture::{ControlMessagePayload, N_ANIM};
+use crate::osc::HandleOscStateChange;
 use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
@@ -50,12 +51,10 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
     x_primary_coordinate: false,
 };
 
-pub struct AnimationControls;
-
-impl MapControls for AnimationControls {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
+impl MapControls for AnimationUIState {
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
-        use FixtureControlMessage::{Animation as FixtureAnimation, Error as ControlError};
+        use ControlMessagePayload::{Animation as FixtureAnimation, Error as ControlError};
         use StateChange::*;
         WAVEFORM_SELECT.map(map, |v| {
             match v {
@@ -91,13 +90,25 @@ impl MapControls for AnimationControls {
                 FixtureAnimation(WrapAnimation(SetClockSource(Some(ClockIdxExt(v - 1)))))
             }
         });
-        PULSE.map_trigger(map, FixtureAnimation(WrapAnimation(TogglePulse)));
-        INVERT.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleInvert)));
-        STANDING.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleStanding)));
-        USE_AUDIO_SPEED.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
-        USE_AUDIO_SIZE.map_trigger(map, FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
+        PULSE.map_trigger(map, || FixtureAnimation(WrapAnimation(TogglePulse)));
+        INVERT.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleInvert)));
+        STANDING.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleStanding)));
+        USE_AUDIO_SPEED.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
+        USE_AUDIO_SIZE.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
 
-        TargetAndSelectControls.map_controls(map);
+        ANIMATION_GROUP_SELECT.map(map, |msg| {
+            ControlMessagePayload::Animation(AnimationControlMessage::SelectGroup(msg))
+        });
+        ANIMATION_TARGET_SELECT.map(map, |msg| {
+            ControlMessagePayload::Animation(AnimationControlMessage::Target(msg))
+        });
+        ANIMATION_SELECT.map(map, |msg| {
+            ControlMessagePayload::Animation(AnimationControlMessage::SelectAnimation(msg))
+        });
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        Default::default()
     }
 }
 
@@ -141,31 +152,13 @@ const ANIMATION_GROUP_LABELS: LabelArray = LabelArray {
     empty_label: "",
 };
 
-struct TargetAndSelectControls;
-
-impl MapControls for TargetAndSelectControls {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use crate::animation::ControlMessage;
-        use FixtureControlMessage::Animation;
-
-        ANIMATION_GROUP_SELECT.map(map, |msg| Animation(ControlMessage::SelectGroup(msg)));
-        ANIMATION_TARGET_SELECT.map(map, |msg| Animation(ControlMessage::Target(msg)));
-        ANIMATION_SELECT.map(map, |msg| Animation(ControlMessage::SelectAnimation(msg)));
-    }
-}
-
-impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
-    fn emit_state_change<S>(
-        sc: crate::animation::StateChange,
-        send: &mut S,
-        talkback: crate::osc::TalkbackMode,
-    ) where
-        S: FnMut(OscMessage),
+impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
+    fn emit_osc_state_change<S>(sc: crate::animation::StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         match sc {
-            crate::animation::StateChange::Animation(msg) => {
-                AnimationControls::emit_state_change(msg, send, talkback)
-            }
+            crate::animation::StateChange::Animation(msg) => Self::emit_osc_state_change(msg, send),
             crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
             crate::animation::StateChange::SelectGroup(msg) => {
                 ANIMATION_GROUP_SELECT.set(msg.0, send)
@@ -181,10 +174,10 @@ impl HandleStateChange<crate::animation::StateChange> for AnimationControls {
     }
 }
 
-impl HandleStateChange<StateChange> for AnimationControls {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for AnimationUIState {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         use StateChange::*;
         match sc {

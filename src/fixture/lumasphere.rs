@@ -1,13 +1,11 @@
 use std::time::Duration;
 
+use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::master::FixtureGroupControls;
+use super::prelude::*;
+use crate::osc::HandleStateChange;
 use crate::util::{unipolar_to_range, RampingParameter};
 
 /// DMX 255 is too fast; restrict to a reasonable value.
@@ -49,7 +47,7 @@ pub struct Lumasphere {
 }
 
 impl PatchFixture for Lumasphere {
-    const NAME: &'static str = "lumasphere";
+    const NAME: FixtureType = FixtureType("lumasphere");
     fn channel_count(&self) -> usize {
         9
     }
@@ -94,7 +92,11 @@ impl Lumasphere {
         unipolar_to_range(0, 255, speed)
     }
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Lamp1Intensity(v) => self.lamp_1_intensity = v,
@@ -107,7 +109,7 @@ impl Lumasphere {
 
             Strobe2(sc) => self.strobe_2.handle_state_change(sc),
         };
-        emitter.emit_lumasphere(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -127,14 +129,14 @@ impl ControllableFixture for Lumasphere {
         self.ball_rotation.update(delta_t);
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_lumasphere(Lamp1Intensity(self.lamp_1_intensity));
-        emitter.emit_lumasphere(Lamp2Intensity(self.lamp_2_intensity));
-        emitter.emit_lumasphere(BallRotation(self.ball_rotation.current()));
-        emitter.emit_lumasphere(BallStart(self.ball_start));
-        emitter.emit_lumasphere(ColorRotation(self.color_rotation));
-        emitter.emit_lumasphere(ColorStart(self.color_start));
+        Self::emit(Lamp1Intensity(self.lamp_1_intensity), emitter);
+        Self::emit(Lamp2Intensity(self.lamp_2_intensity), emitter);
+        Self::emit(BallRotation(self.ball_rotation.current()), emitter);
+        Self::emit(BallStart(self.ball_start), emitter);
+        Self::emit(ColorRotation(self.color_rotation), emitter);
+        Self::emit(ColorStart(self.color_start), emitter);
         self.strobe_1.emit_state(emitter, Strobe1);
         self.strobe_2.emit_state(emitter, Strobe2);
     }
@@ -142,15 +144,13 @@ impl ControllableFixture for Lumasphere {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Lumasphere(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 
@@ -174,14 +174,14 @@ impl Strobe {
         dmx_slice[1] = rate;
     }
 
-    fn emit_state<F>(&self, emitter: &mut dyn EmitFixtureStateChange, wrap: F)
+    fn emit_state<F>(&self, emitter: &dyn crate::osc::EmitControlMessage, wrap: F)
     where
         F: Fn(StrobeStateChange) -> StateChange + 'static,
     {
         use StrobeStateChange::*;
-        emitter.emit_lumasphere(wrap(Intensity(self.intensity)));
+        Lumasphere::emit(wrap(Intensity(self.intensity)), emitter);
         let mut emit = |ssc| {
-            emitter.emit_lumasphere(wrap(State(ssc)));
+            Lumasphere::emit(wrap(State(ssc)), emitter);
         };
         self.state.emit_state(&mut emit);
     }

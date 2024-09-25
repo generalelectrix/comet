@@ -1,14 +1,11 @@
 //! Control profile for the "house light" Starlight white laser moonflower.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange as EmitShowStateChange,
-    FixtureControlMessage, PatchAnimatedFixture,
-};
-use crate::master::FixtureGroupControls;
+use super::prelude::*;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -21,21 +18,25 @@ pub struct Starlight {
 }
 
 impl PatchAnimatedFixture for Starlight {
-    const NAME: &'static str = "starlight";
+    const NAME: FixtureType = FixtureType("starlight");
     fn channel_count(&self) -> usize {
         4
     }
 }
 
 impl Starlight {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitShowStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
             Rotation(v) => self.rotation = v,
             Strobe(v) => self.strobe.handle_state_change(v),
         };
-        emitter.emit_starlight(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -70,23 +71,21 @@ impl ControllableFixture for Starlight {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitShowStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Starlight(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitShowStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_starlight(Dimmer(self.dimmer));
-        emitter.emit_starlight(Rotation(self.rotation));
+        Self::emit(Dimmer(self.dimmer), emitter);
+        Self::emit(Rotation(self.rotation), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_starlight(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
     }

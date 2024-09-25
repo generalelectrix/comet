@@ -2,16 +2,11 @@
 
 use std::time::Duration;
 
+use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    NonAnimatedFixture, PatchFixture,
-};
-use crate::{
-    master::FixtureGroupControls,
-    util::{unipolar_to_range, RampingParameter},
-};
+use super::prelude::*;
+use crate::util::{unipolar_to_range, RampingParameter};
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus
@@ -42,7 +37,7 @@ pub struct Venus {
 }
 
 impl PatchFixture for Venus {
-    const NAME: &'static str = "venus";
+    const NAME: FixtureType = FixtureType("venus");
     fn channel_count(&self) -> usize {
         8
     }
@@ -61,7 +56,11 @@ impl Default for Venus {
 }
 
 impl Venus {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             BaseRotation(v) => self.base_rotation.target = v,
@@ -70,7 +69,7 @@ impl Venus {
             ColorRotation(v) => self.color_rotation.target = v,
             LampOn(v) => self.lamp_on = v,
         };
-        emitter.emit_venus(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -97,27 +96,25 @@ impl ControllableFixture for Venus {
         self.color_rotation.update(delta_t);
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_venus(BaseRotation(self.base_rotation.target));
-        emitter.emit_venus(CradleMotion(self.cradle_motion.target));
-        emitter.emit_venus(HeadRotation(self.head_rotation.target));
-        emitter.emit_venus(ColorRotation(self.color_rotation.target));
-        emitter.emit_venus(LampOn(self.lamp_on));
+        Self::emit(BaseRotation(self.base_rotation.target), emitter);
+        Self::emit(CradleMotion(self.cradle_motion.target), emitter);
+        Self::emit(HeadRotation(self.head_rotation.target), emitter);
+        Self::emit(ColorRotation(self.color_rotation.target), emitter);
+        Self::emit(LampOn(self.lamp_on), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Venus(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

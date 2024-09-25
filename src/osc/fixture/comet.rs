@@ -1,13 +1,13 @@
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleStateChange, MapControls, RadioButton};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls, RadioButton};
 use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
     osc::quadratic,
 };
 
-use rosc::OscMessage;
 // Control group names.
 const CONTROLS: &str = "Controls";
 const MUSIC: &str = "Music";
@@ -31,35 +31,58 @@ const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
 };
 
 impl MapControls for Comet {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
-        use FixtureControlMessage::Comet;
         use StateChange::*;
-        SHUTTER.map_state(map, |v| Comet(Set(Shutter(v))));
-        STROBE_ON.map_state(map, |v| Comet(Set(Strobe(GenericStrobeStateChange::On(v)))));
-        map.add_unipolar(CONTROLS, "StrobeRate", |v| {
-            Comet(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(v)))))
+        SHUTTER.map_state(map, |v| ControlMessagePayload::fixture(Set(Shutter(v))));
+        STROBE_ON.map_state(map, |v| {
+            ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::On(v))))
         });
-        map.add_unipolar(CONTROLS, "Mspeed", |v| Comet(Set(MirrorSpeed(v))));
-        AUTO_STEP.map_state(map, |v| Comet(Set(AutoStep(v))));
-        map.add_unipolar(CONTROLS, "AutoStepRate", |v| Comet(Set(AutoStepRate(v))));
+        map.add_unipolar(CONTROLS, "StrobeRate", |v| {
+            ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(
+                v,
+            )))))
+        });
+        map.add_unipolar(CONTROLS, "Mspeed", |v| {
+            ControlMessagePayload::fixture(Set(MirrorSpeed(v)))
+        });
+        AUTO_STEP.map_state(map, |v| ControlMessagePayload::fixture(Set(AutoStep(v))));
+        map.add_unipolar(CONTROLS, "AutoStepRate", |v| {
+            ControlMessagePayload::fixture(Set(AutoStepRate(v)))
+        });
 
-        STEP_BACKWARDS.map_trigger(map, Comet(Step(Direction::Backward)));
-        STEP_FORWARDS.map_trigger(map, Comet(Step(Direction::Forward)));
+        STEP_BACKWARDS.map_trigger(map, || {
+            ControlMessagePayload::fixture(Step(Direction::Backward))
+        });
+        STEP_FORWARDS.map_trigger(map, || {
+            ControlMessagePayload::fixture(Step(Direction::Forward))
+        });
 
-        MACRO_SELECT_RADIO_BUTTON.map(map, |v| Comet(Set(SelectMacro(v))));
+        MACRO_SELECT_RADIO_BUTTON.map(map, |v| ControlMessagePayload::fixture(Set(SelectMacro(v))));
 
-        SHUTTER_SOUND_ACTIVE.map_state(map, |v| Comet(Set(ShutterSoundActive(v))));
-        TRIG_SOUND_ACTIVE.map_state(map, |v| Comet(Set(TrigSoundActive(v))));
+        SHUTTER_SOUND_ACTIVE.map_state(map, |v| {
+            ControlMessagePayload::fixture(Set(ShutterSoundActive(v)))
+        });
+        TRIG_SOUND_ACTIVE.map_state(map, |v| {
+            ControlMessagePayload::fixture(Set(TrigSoundActive(v)))
+        });
 
-        RESET.map_state(map, |v| Comet(Set(Reset(v))));
+        RESET.map_state(map, |v| ControlMessagePayload::fixture(Set(Reset(v))));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![
+            (CONTROLS.to_string(), Self::NAME),
+            (MUSIC.to_string(), Self::NAME),
+            (DEBUG.to_string(), Self::NAME),
+        ]
     }
 }
 
-impl HandleStateChange<StateChange> for Comet {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for Comet {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         use StateChange::*;
         #[allow(clippy::single_match)]

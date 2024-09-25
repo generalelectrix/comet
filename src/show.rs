@@ -8,13 +8,13 @@ use crate::{
     clock_service::ClockService,
     config::Config,
     dmx::DmxBuffer,
-    fixture::{FixtureControlMessage, FixtureGroup, Patch},
+    fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::{AnimationControls, OscController},
+    osc::OscController,
 };
 
-use anyhow::Result;
-use log::{error, warn};
+use anyhow::{bail, Result};
+use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
 
@@ -45,21 +45,21 @@ impl Show {
         for group in patch.iter() {
             if !patched_controls.contains(group.fixture_type()) {
                 osc_controller.map_controls(group);
-                patched_controls.insert(group.fixture_type().to_string());
+                patched_controls.insert(group.fixture_type());
             }
 
-            group.emit_state(&mut osc_controller);
+            group.emit_state(&osc_controller);
         }
 
         let master_controls = MasterControls::default();
         osc_controller.map_controls(&master_controls);
-        master_controls.emit_state(&mut osc_controller);
+        master_controls.emit_state(&osc_controller);
 
         // Configure animation controls.
-        osc_controller.map_controls(&AnimationControls);
         let animation_ui_state = if patch.iter().any(FixtureGroup::is_animated) {
             let state = AnimationUIState::new(Some(patch.validate_selector(0)?));
-            state.emit_state(&mut patch, &mut osc_controller)?;
+            osc_controller.map_controls(&state);
+            state.emit_state(&mut patch, &osc_controller)?;
             state
         } else {
             AnimationUIState::new(None)
@@ -115,7 +115,7 @@ impl Show {
         }
     }
 
-    fn control(&mut self, timeout: Duration) -> Result<()> {
+    fn control(&mut self, timeout: Duration) -> anyhow::Result<()> {
         let msg = match self.osc_controller.recv(timeout)? {
             Some(m) => m,
             None => {
@@ -123,43 +123,38 @@ impl Show {
             }
         };
 
-        if let FixtureControlMessage::Master(mc) = msg.msg {
-            self.master_controls.control(mc, &mut self.osc_controller);
-            return Ok(());
-        }
-
-        if let FixtureControlMessage::Animation(msg) = msg.msg {
-            return self
-                .animation_ui_state
-                .control(msg, &mut self.patch, &mut self.osc_controller);
-        }
-
-        if let FixtureControlMessage::RefreshUI = msg.msg {
-            self.master_controls.emit_state(&mut self.osc_controller);
-            for group in self.patch.iter() {
-                group.emit_state(&mut self.osc_controller);
+        match msg.msg {
+            ControlMessagePayload::Master(mc) => {
+                self.master_controls.control(mc, &self.osc_controller);
+                Ok(())
             }
-            self.animation_ui_state
-                .emit_state(&mut self.patch, &mut self.osc_controller)?;
-        }
-
-        // "Option dance" to pass ownership into/back out of handlers.
-        let mut msg = Some(msg);
-
-        for fixture in self.patch.iter_mut() {
-            match msg.take() {
-                Some(m) => {
-                    msg = fixture.control(m, &mut self.osc_controller);
+            ControlMessagePayload::Animation(msg) => {
+                self.animation_ui_state
+                    .control(msg, &mut self.patch, &self.osc_controller)
+            }
+            ControlMessagePayload::RefreshUI => {
+                self.master_controls.emit_state(&self.osc_controller);
+                for group in self.patch.iter() {
+                    group.emit_state(&self.osc_controller);
                 }
-                None => {
-                    break;
-                }
+                self.animation_ui_state
+                    .emit_state(&mut self.patch, &self.osc_controller)
+            }
+            ControlMessagePayload::Fixture(fixture_control_msg) => {
+                let Some(group_key) = msg.key.as_ref() else {
+                    bail!("no fixture group key was provided with a fixture control message");
+                };
+                // Identify the correct fixture to handle this message.
+                let Some(fixture) = self.patch.get_mut(group_key) else {
+                    bail!("no fixture found for key: {:?}", msg.key);
+                };
+
+                fixture.control(fixture_control_msg, &self.osc_controller)
+            }
+            ControlMessagePayload::Error(msg) => {
+                bail!("control processing error: {msg}")
             }
         }
-        if let Some(m) = msg {
-            warn!("Control message was not handled by any fixture: {:?}", m);
-        }
-        Ok(())
     }
 
     fn update(&mut self, delta_t: Duration) {

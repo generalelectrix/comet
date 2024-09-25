@@ -1,14 +1,12 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
+use anyhow::Context;
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::master::{Autopilot, FixtureGroupControls};
+use super::prelude::*;
+use crate::master::Autopilot;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -26,7 +24,7 @@ pub struct RushWizard {
 }
 
 impl PatchFixture for RushWizard {
-    const NAME: &'static str = "rush_wizard";
+    const NAME: FixtureType = FixtureType("rush_wizard");
     fn channel_count(&self) -> usize {
         10
     }
@@ -35,7 +33,11 @@ impl PatchFixture for RushWizard {
 impl RushWizard {
     const GOBO_COUNT: usize = 16; // includes the open position
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -54,7 +56,7 @@ impl RushWizard {
             DrumSwivel(v) => self.drum_swivel = v,
             ReflectorRotation(v) => self.reflector_rotation = v,
         };
-        emitter.emit_rush_wizard(sc);
+        Self::emit(sc, emitter);
     }
 
     fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
@@ -105,34 +107,32 @@ impl NonAnimatedFixture for RushWizard {
 }
 
 impl ControllableFixture for RushWizard {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_rush_wizard(Dimmer(self.dimmer));
+        Self::emit(Dimmer(self.dimmer), emitter);
         let mut emit_strobe = |ssc| {
-            emitter.emit_rush_wizard(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_rush_wizard(Color(self.color));
-        emitter.emit_rush_wizard(Twinkle(self.twinkle));
-        emitter.emit_rush_wizard(TwinkleSpeed(self.twinkle_speed));
-        emitter.emit_rush_wizard(Gobo(self.gobo));
-        emitter.emit_rush_wizard(DrumRotation(self.drum_rotation));
-        emitter.emit_rush_wizard(DrumSwivel(self.drum_swivel));
-        emitter.emit_rush_wizard(ReflectorRotation(self.reflector_rotation));
+        Self::emit(Color(self.color), emitter);
+        Self::emit(Twinkle(self.twinkle), emitter);
+        Self::emit(TwinkleSpeed(self.twinkle_speed), emitter);
+        Self::emit(Gobo(self.gobo), emitter);
+        Self::emit(DrumRotation(self.drum_rotation), emitter);
+        Self::emit(DrumSwivel(self.drum_swivel), emitter);
+        Self::emit(ReflectorRotation(self.reflector_rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::RushWizard(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

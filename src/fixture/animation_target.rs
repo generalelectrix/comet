@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::fmt::Display;
 
-use anyhow::{bail, Result};
+use anyhow::bail;
 use num_traits::FromPrimitive;
 use num_traits::ToPrimitive;
 use strum::IntoEnumIterator;
@@ -43,7 +43,7 @@ pub trait ControllableTargetedAnimation {
     fn target(&self) -> AnimationTargetIndex;
     /// Set the current animation target to the provided index.
     /// Return an error if the index is invalid for this target type.
-    fn set_target(&mut self, index: AnimationTargetIndex) -> Result<()>;
+    fn set_target(&mut self, index: AnimationTargetIndex) -> anyhow::Result<()>;
     /// Return the labels for the animation target type.
     fn target_labels(&self) -> Vec<String>;
 }
@@ -61,9 +61,12 @@ impl<T: AnimationTarget> ControllableTargetedAnimation for TargetedAnimation<T> 
         self.target.to_usize().unwrap()
     }
 
-    fn set_target(&mut self, index: AnimationTargetIndex) -> Result<()> {
+    fn set_target(&mut self, index: AnimationTargetIndex) -> anyhow::Result<()> {
         let Some(target) = T::from_usize(index) else {
-            bail!("animation index {index} out of range for {}", std::any::type_name::<T>());
+            bail!(
+                "animation index {index} out of range for {}",
+                std::any::type_name::<T>()
+            );
         };
         self.target = target;
         Ok(())

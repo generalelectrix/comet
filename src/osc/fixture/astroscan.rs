@@ -1,12 +1,11 @@
-use rosc::OscMessage;
-
 use super::generic::map_strobe;
 use crate::fixture::astroscan::{Astroscan, Color, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
+use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleStateChange};
+use crate::osc::{ignore_payload, HandleOscStateChange};
 use crate::osc::{ControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
@@ -32,43 +31,54 @@ const ACTIVE: Button = button(GROUP, "Active");
 impl EnumRadioButton for Color {}
 
 impl MapControls for Astroscan {
-    fn map_controls(&self, map: &mut ControlMap<FixtureControlMessage>) {
-        use FixtureControlMessage::Astroscan;
+    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use StateChange::*;
-        LAMP_ON.map_state(map, |v| Astroscan(LampOn(v)));
-        map.add_unipolar(GROUP, "Dimmer", |v| Astroscan(Dimmer(v)));
+        LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
+        map.add_unipolar(GROUP, "Dimmer", |v| {
+            ControlMessagePayload::fixture(Dimmer(v))
+        });
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
-        map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| Astroscan(Color(c)));
-        map.add_unipolar(GROUP, "Iris", |v| Astroscan(Iris(v)));
-        GOBO_SELECT.map(map, |v| Astroscan(Gobo(v)));
+        map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| {
+            ControlMessagePayload::fixture(Color(c))
+        });
+        map.add_unipolar(GROUP, "Iris", |v| ControlMessagePayload::fixture(Iris(v)));
+        GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(Gobo(v)));
         map.add_bipolar(GROUP, "GoboRotation", |v| {
-            Astroscan(GoboRotation(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(GoboRotation(bipolar_fader_with_detent(v)))
         });
-        MIRROR_GOBO_ROTATION.map_state(map, |v| Astroscan(MirrorGoboRotation(v)));
+        MIRROR_GOBO_ROTATION.map_state(map, |v| {
+            ControlMessagePayload::fixture(MirrorGoboRotation(v))
+        });
         map.add_bipolar(GROUP, "MirrorRotation", |v| {
-            Astroscan(MirrorRotation(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(MirrorRotation(bipolar_fader_with_detent(v)))
         });
-        MIRROR_MIRROR_ROTATION.map_state(map, |v| Astroscan(MirrorMirrorRotation(v)));
+        MIRROR_MIRROR_ROTATION.map_state(map, |v| {
+            ControlMessagePayload::fixture(MirrorMirrorRotation(v))
+        });
         map.add_bipolar(GROUP, "Pan", |v| {
-            Astroscan(Pan(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(Pan(bipolar_fader_with_detent(v)))
         });
-        MIRROR_PAN.map_state(map, |v| Astroscan(MirrorPan(v)));
+        MIRROR_PAN.map_state(map, |v| ControlMessagePayload::fixture(MirrorPan(v)));
         map.add_bipolar(GROUP, "Tilt", |v| {
-            Astroscan(Tilt(bipolar_fader_with_detent(v)))
+            ControlMessagePayload::fixture(Tilt(bipolar_fader_with_detent(v)))
         });
-        MIRROR_TILT.map_state(map, |v| Astroscan(MirrorTilt(v)));
-        ACTIVE.map_state(map, |v| Astroscan(Active(v)));
+        MIRROR_TILT.map_state(map, |v| ControlMessagePayload::fixture(MirrorTilt(v)));
+        ACTIVE.map_state(map, |v| ControlMessagePayload::fixture(Active(v)));
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
+        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> FixtureControlMessage {
-    FixtureControlMessage::Astroscan(StateChange::Strobe(sc))
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
+    ControlMessagePayload::fixture(StateChange::Strobe(sc))
 }
 
-impl HandleStateChange<StateChange> for Astroscan {
-    fn emit_state_change<S>(sc: StateChange, send: &mut S, _talkback: crate::osc::TalkbackMode)
+impl HandleOscStateChange<StateChange> for Astroscan {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         match sc {
             StateChange::LampOn(v) => LAMP_ON.send(v, send),

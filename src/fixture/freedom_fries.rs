@@ -3,18 +3,18 @@
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
+use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 
+use super::prelude::*;
 use super::{
     animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
 };
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
@@ -29,7 +29,7 @@ pub struct FreedomFries {
 }
 
 impl PatchAnimatedFixture for FreedomFries {
-    const NAME: &'static str = "freedom_fries";
+    const NAME: FixtureType = FixtureType("freedom_fries");
     fn channel_count(&self) -> usize {
         8
     }
@@ -37,7 +37,11 @@ impl PatchAnimatedFixture for FreedomFries {
 
 impl FreedomFries {
     pub const PROGRAM_COUNT: usize = 27;
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -54,7 +58,7 @@ impl FreedomFries {
             }
             ProgramCycleAll(v) => self.program_cycle_all = v,
         };
-        emitter.emit_freedom_fries(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -103,26 +107,24 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_freedom_fries(Dimmer(self.dimmer));
-        emitter.emit_freedom_fries(Speed(self.speed));
-        emitter.emit_freedom_fries(Program(self.program));
-        emitter.emit_freedom_fries(ProgramCycleAll(self.program_cycle_all));
+        Self::emit(Dimmer(self.dimmer), emitter);
+        Self::emit(Speed(self.speed), emitter);
+        Self::emit(Program(self.program), emitter);
+        Self::emit(ProgramCycleAll(self.program_cycle_all), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::FreedomFries(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

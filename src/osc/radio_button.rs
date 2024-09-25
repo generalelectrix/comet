@@ -4,7 +4,7 @@ use rosc::{OscMessage, OscType};
 use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;
 
-use crate::fixture::FixtureControlMessage;
+use crate::fixture::ControlMessagePayload;
 
 use super::{control_message::OscControlMessage, ControlMap, OscError};
 
@@ -25,9 +25,9 @@ pub struct RadioButton {
 
 impl RadioButton {
     /// Wire up this radio button to a control map.
-    pub fn map<F>(self, map: &mut ControlMap<FixtureControlMessage>, process: F)
+    pub fn map<F>(self, map: &mut ControlMap<ControlMessagePayload>, process: F)
     where
-        F: Fn(usize) -> FixtureControlMessage + 'static + Copy,
+        F: Fn(usize) -> ControlMessagePayload + 'static + Copy,
     {
         map.add_fetch_process(
             self.group,
@@ -71,9 +71,9 @@ impl RadioButton {
 
     /// Send OSC messages to set the current state of the button.
     /// Error conditions are logged.
-    pub fn set<S>(&self, n: usize, send: &mut S)
+    pub fn set<S>(&self, n: usize, emitter: &S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         if n >= self.n {
             error!(
@@ -89,7 +89,7 @@ impl RadioButton {
             } else {
                 (1, i + 1)
             };
-            send(OscMessage {
+            emitter.emit_osc(OscMessage {
                 addr: format!("/{}/{}/{}/{}", self.group, self.control, x, y),
                 args: vec![OscType::Float(val)],
             })
@@ -139,12 +139,12 @@ where
     /// Update the state of a "radio select enum".
     /// Each enum variant is mapped to a button with the name of the address as the
     /// last piece of the address.
-    fn set<S>(&self, group: &str, control: &str, send: &mut S)
+    fn set<S>(&self, group: &str, control: &str, emitter: &S)
     where
-        S: FnMut(OscMessage),
+        S: crate::osc::EmitOscMessage + ?Sized,
     {
         for choice in Self::iter() {
-            send(OscMessage {
+            emitter.emit_osc(OscMessage {
                 addr: format!("/{}/{}/{}", group, control, choice),
                 args: vec![OscType::Float(if choice == *self { 1.0 } else { 0.0 })],
             });

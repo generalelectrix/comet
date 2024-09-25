@@ -1,4 +1,3 @@
-use anyhow::Result;
 use clock_service::prompt_start_clock_service;
 use local_ip_address::local_ip;
 use log::info;
@@ -21,7 +20,7 @@ mod osc;
 mod show;
 mod util;
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let config_path = env::args()
         .nth(1)
         .expect("Provide config path as first arg.");

@@ -1,15 +1,12 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 //! Also
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    ControllableFixture, EmitFixtureStateChange, FixtureControlMessage, NonAnimatedFixture,
-    PatchFixture,
-};
-use crate::master::{Autopilot, FixtureGroupControls};
+use super::prelude::*;
+use crate::master::Autopilot;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -37,7 +34,7 @@ const QUAD_PHASE_CHANNEL_COUNT: usize = 4;
 const GALAXIAN_CHANNEL_COUNT: usize = 5;
 
 impl PatchFixture for Swarmolon {
-    const NAME: &'static str = "swarmolon";
+    const NAME: FixtureType = FixtureType("swarmolon");
     fn channel_count(&self) -> usize {
         let mut count = CHANNEL_COUNT;
         if self.quad_phase_mindmeld {
@@ -62,7 +59,11 @@ impl PatchFixture for Swarmolon {
 }
 
 impl Swarmolon {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             DerbyColor(color, state) => {
@@ -81,7 +82,7 @@ impl Swarmolon {
             LaserStrobe(sc) => self.laser_strobe.handle_state_change(sc),
             LaserRotation(v) => self.laser_rotation = v,
         };
-        emitter.emit_swarmolon(sc);
+        Self::emit(sc, emitter);
     }
 
     fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
@@ -192,60 +193,55 @@ impl NonAnimatedFixture for Swarmolon {
 }
 
 impl ControllableFixture for Swarmolon {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);
         let mut emit_derby_strobe = |ssc| {
-            emitter.emit_swarmolon(DerbyStrobe(ssc));
+            Self::emit(DerbyStrobe(ssc), emitter);
         };
         self.derby_strobe.emit_state(&mut emit_derby_strobe);
-        emitter.emit_swarmolon(DerbyRotation(self.derby_rotation));
+        Self::emit(DerbyRotation(self.derby_rotation), emitter);
         let mut emit_white_strobe = |ssc| {
-            emitter.emit_swarmolon(WhiteStrobe(ssc));
+            Self::emit(WhiteStrobe(ssc), emitter);
         };
         self.white_strobe.emit_state(&mut emit_white_strobe);
-        emitter.emit_swarmolon(RedLaserOn(self.red_laser_on));
-        emitter.emit_swarmolon(GreenLaserOn(self.green_laser_on));
+        Self::emit(RedLaserOn(self.red_laser_on), emitter);
+        Self::emit(GreenLaserOn(self.green_laser_on), emitter);
         let mut emit_laser_strobe = |ssc| {
-            emitter.emit_swarmolon(LaserStrobe(ssc));
+            Self::emit(LaserStrobe(ssc), emitter);
         };
         self.laser_strobe.emit_state(&mut emit_laser_strobe);
-        emitter.emit_swarmolon(LaserRotation(self.laser_rotation));
+        Self::emit(LaserRotation(self.laser_rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Swarmolon(msg) => {
-                match msg {
-                    ControlMessage::Set(sc) => {
-                        self.handle_state_change(sc, emitter);
-                    }
-                    ControlMessage::StrobeRate(v) => {
-                        self.handle_state_change(
-                            StateChange::DerbyStrobe(GenericStrobeStateChange::Rate(v)),
-                            emitter,
-                        );
-                        self.handle_state_change(
-                            StateChange::WhiteStrobe(WhiteStrobeStateChange::State(
-                                GenericStrobeStateChange::Rate(v),
-                            )),
-                            emitter,
-                        );
-                        self.handle_state_change(
-                            StateChange::LaserStrobe(GenericStrobeStateChange::Rate(v)),
-                            emitter,
-                        );
-                    }
-                }
-
-                None
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        match *msg.unpack_as::<ControlMessage>().context(Self::NAME)? {
+            ControlMessage::Set(sc) => {
+                self.handle_state_change(sc, emitter);
             }
-            other => Some(other),
+            ControlMessage::StrobeRate(v) => {
+                self.handle_state_change(
+                    StateChange::DerbyStrobe(GenericStrobeStateChange::Rate(v)),
+                    emitter,
+                );
+                self.handle_state_change(
+                    StateChange::WhiteStrobe(WhiteStrobeStateChange::State(
+                        GenericStrobeStateChange::Rate(v),
+                    )),
+                    emitter,
+                );
+                self.handle_state_change(
+                    StateChange::LaserStrobe(GenericStrobeStateChange::Rate(v)),
+                    emitter,
+                );
+            }
         }
+
+        Ok(())
     }
 }
 
@@ -306,10 +302,10 @@ impl DerbyColorState {
         self.0.sort();
     }
 
-    pub fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    pub fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         for color in DerbyColor::iter() {
             let state = self.0.contains(&color);
-            emitter.emit_swarmolon(StateChange::DerbyColor(color, state));
+            Swarmolon::emit(StateChange::DerbyColor(color, state), emitter);
         }
     }
 

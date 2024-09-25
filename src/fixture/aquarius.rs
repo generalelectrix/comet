@@ -1,12 +1,11 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
+
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
+use super::prelude::*;
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -16,20 +15,24 @@ pub struct Aquarius {
 }
 
 impl PatchAnimatedFixture for Aquarius {
-    const NAME: &'static str = "aquarius";
+    const NAME: FixtureType = FixtureType("aquarius");
     fn channel_count(&self) -> usize {
         2
     }
 }
 
 impl Aquarius {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             LampOn(v) => self.lamp_on = v,
             Rotation(v) => self.rotation = v,
         };
-        emitter.emit_aquarius(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -54,24 +57,22 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_aquarius(LampOn(self.lamp_on));
-        emitter.emit_aquarius(Rotation(self.rotation));
+        Self::emit(LampOn(self.lamp_on), emitter);
+        Self::emit(Rotation(self.rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::Aquarius(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

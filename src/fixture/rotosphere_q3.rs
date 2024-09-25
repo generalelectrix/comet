@@ -1,5 +1,6 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
+use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -10,10 +11,7 @@ use super::color::{
     StateChange as ColorStateChange,
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
+use super::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 
@@ -35,21 +33,25 @@ impl Default for RotosphereQ3 {
 }
 
 impl PatchAnimatedFixture for RotosphereQ3 {
-    const NAME: &'static str = "rotosphere_q3";
+    const NAME: FixtureType = FixtureType("rotosphere_q3");
     fn channel_count(&self) -> usize {
         9
     }
 }
 
 impl RotosphereQ3 {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Color(c) => self.color.update_state(c),
             Strobe(sc) => self.strobe.handle_state_change(sc),
             Rotation(v) => self.rotation = v,
         };
-        emitter.emit_rotosphere_q3(sc);
+        Self::emit(sc, emitter);
     }
 }
 
@@ -76,12 +78,9 @@ impl AnimatedFixture for RotosphereQ3 {
         }
         self.color
             .render_with_animations(group_controls, &color_anim_vals, &mut dmx_buf[0..4]);
-        dmx_buf[4] = self.strobe.render_range_with_master(
-            group_controls.strobe(),
-            0,
-            1,
-            250,
-        );
+        dmx_buf[4] = self
+            .strobe
+            .render_range_with_master(group_controls.strobe(), 0, 1, 250);
         dmx_buf[5] = bipolar_to_split_range(BipolarFloat::new(rotation), 1, 127, 129, 255, 0);
         dmx_buf[6] = 0;
         dmx_buf[7] = 0;
@@ -90,31 +89,29 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         let mut emit_color = |sc| {
-            emitter.emit_rotosphere_q3(Color(sc));
+            Self::emit(Color(sc), emitter);
         };
         self.color.state(&mut emit_color);
         let mut emit_strobe = |ssc| {
-            emitter.emit_rotosphere_q3(Strobe(ssc));
+            Self::emit(Strobe(ssc), emitter);
         };
         self.strobe.emit_state(&mut emit_strobe);
-        emitter.emit_rotosphere_q3(Rotation(self.rotation));
+        Self::emit(Rotation(self.rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::RotosphereQ3(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

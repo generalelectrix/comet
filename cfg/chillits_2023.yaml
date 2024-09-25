@@ -1,29 +1,18 @@
 receive_port: 8000
 controllers:
-  - host: 10.0.1.4
+  - host: 192.168.1.220
     port: 9000
-debug: False
+debug: True
 fixtures:
   - name: wizard_extreme
     addr: 16
     selector: True
   - name: wizard_extreme
+    addr: 300
+    selector: True	
+  - name: wizard_extreme
     addr: 32
     selector: True
-  - name: solar_system
-    addr: 50
-    selector: True
-  - name: solar_system
-    addr: 60
-    group: ss2
-    selector: True
-  - name: colordynamic
-    addr: 81
-  - name: dimmer
-    addr: 200
-    group: fp_s4_0
-  - name: dimmer
-    addr: 201
-    group: fp_s4_1
+    group: stage_wiz
   - name: starlight
     addr: 210

@@ -1,15 +1,12 @@
 //! Optikinetics Solar System - the grand champion gobo rotator
 
+use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 
 use super::animation_target::TargetedAnimationValues;
-use super::{
-    AnimatedFixture, ControllableFixture, EmitFixtureStateChange, FixtureControlMessage,
-    PatchAnimatedFixture,
-};
-use crate::master::FixtureGroupControls;
+use super::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -24,7 +21,7 @@ pub struct SolarSystem {
 }
 
 impl PatchAnimatedFixture for SolarSystem {
-    const NAME: &'static str = "solar_system";
+    const NAME: FixtureType = FixtureType("solar_system");
     fn channel_count(&self) -> usize {
         7
     }
@@ -33,7 +30,11 @@ impl PatchAnimatedFixture for SolarSystem {
 impl SolarSystem {
     pub const GOBO_COUNT: usize = 8;
 
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &mut dyn EmitFixtureStateChange) {
+    fn handle_state_change(
+        &mut self,
+        sc: StateChange,
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             ShutterOpen(v) => self.shutter_open = v,
@@ -55,33 +56,31 @@ impl SolarSystem {
             }
             RearRotation(v) => self.rear_rotation = v,
         };
-        emitter.emit_solar_system(sc);
+        Self::emit(sc, emitter);
     }
 }
 
 impl ControllableFixture for SolarSystem {
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
-        emitter.emit_solar_system(ShutterOpen(self.shutter_open));
-        emitter.emit_solar_system(AutoShutter(self.auto_shutter));
-        emitter.emit_solar_system(FrontGobo(self.front_gobo));
-        emitter.emit_solar_system(FrontRotation(self.front_rotation));
-        emitter.emit_solar_system(RearGobo(self.rear_gobo));
-        emitter.emit_solar_system(RearRotation(self.rear_rotation));
+        Self::emit(ShutterOpen(self.shutter_open), emitter);
+        Self::emit(AutoShutter(self.auto_shutter), emitter);
+        Self::emit(FrontGobo(self.front_gobo), emitter);
+        Self::emit(FrontRotation(self.front_rotation), emitter);
+        Self::emit(RearGobo(self.rear_gobo), emitter);
+        Self::emit(RearRotation(self.rear_rotation), emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
-        match msg {
-            FixtureControlMessage::SolarSystem(msg) => {
-                self.handle_state_change(msg, emitter);
-                None
-            }
-            other => Some(other),
-        }
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        self.handle_state_change(
+            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
+            emitter,
+        );
+        Ok(())
     }
 }
 

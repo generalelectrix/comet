@@ -1,10 +1,13 @@
-use anyhow::{ensure, Result};
+use anyhow::{ensure, Context, Result};
+use itertools::Itertools;
+use std::any::{type_name, Any};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use lazy_static::lazy_static;
 use log::{debug, info};
 use number::{Phase, UnipolarFloat};
@@ -13,73 +16,32 @@ use serde::{Deserialize, Serialize};
 use self::animation_target::{
     ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
 };
-use self::aquarius::{
-    Aquarius, ControlMessage as AquariusControlMessage, StateChange as AquariusStateChange,
-};
-use self::astroscan::{
-    Astroscan, ControlMessage as AstroscanControlMessage, StateChange as AstroscanStateChange,
-};
-use self::color::{Color, ControlMessage as ColorControlMessage, StateChange as ColorStateChange};
-use self::colordynamic::{
-    ControlMessage as ColordynamicControlMessage, StateChange as ColordynamicStateChange,
-};
-use self::comet::{Comet, ControlMessage as CometControlMessage, StateChange as CometStateChange};
-use self::dimmer::{
-    ControlMessage as DimmerControlMessage, Dimmer, StateChange as DimmerStateChange,
-};
-use self::faderboard::{
-    ControlMessage as FaderboardControlMessage, Faderboard, StateChange as FaderboardStateChange,
-};
-use self::freedom_fries::{
-    ControlMessage as FreedomFriesControlMessage, FreedomFries,
-    StateChange as FreedomFriesStateChange,
-};
-use self::h2o::{ControlMessage as H2OControlMessage, StateChange as H2OStateChange, H2O};
-use self::hypnotic::{
-    ControlMessage as HypnoticControlMessage, Hypnotic, StateChange as HypnoticStateChange,
-};
-use self::lumasphere::{
-    ControlMessage as LumasphereControlMessage, Lumasphere, StateChange as LumasphereStateChange,
-};
-use self::radiance::{
-    ControlMessage as RadianceControlMessage, Radiance, StateChange as RadianceStateChange,
-};
-use self::rotosphere_q3::{
-    ControlMessage as RotosphereQ3ControlMessage, RotosphereQ3,
-    StateChange as RotosphereQ3StateChange,
-};
-use self::rush_wizard::{
-    ControlMessage as RushWizardControlMessage, RushWizard, StateChange as RushWizardStateChange,
-};
-use self::solar_system::{
-    ControlMessage as SolarSystemControlMessage, SolarSystem, StateChange as SolarSystemStateChange,
-};
-use self::starlight::{
-    ControlMessage as StarlightControlMessage, Starlight, StateChange as StarlightStateChange,
-};
-use self::swarmolon::{
-    ControlMessage as SwarmolonControlMessage, StateChange as SwarmolonStateChange, Swarmolon,
-};
-use self::uv_led_brick::{
-    ControlMessage as UvLedBrickControlMessage, StateChange as UvLedBrickStateChange, UvLedBrick,
-};
-use self::venus::{ControlMessage as VenusControlMessage, StateChange as VenusStateChange, Venus};
-use self::wizard_extreme::{
-    ControlMessage as WizardExtremeControlMessage, StateChange as WizardExtremeStateChange,
-    WizardExtreme,
-};
-use crate::animation::{
-    ControlMessage as AnimationControlMessage, GroupSelection, StateChange as AnimationStateChange,
-};
+use self::aquarius::Aquarius;
+use self::astroscan::Astroscan;
+use self::color::Color;
+use self::comet::Comet;
+use self::dimmer::Dimmer;
+use self::faderboard::Faderboard;
+use self::freedom_fries::FreedomFries;
+use self::h2o::H2O;
+use self::hypnotic::Hypnotic;
+use self::lumasphere::Lumasphere;
+use self::radiance::Radiance;
+use self::rotosphere_q3::RotosphereQ3;
+use self::rush_wizard::RushWizard;
+use self::solar_system::SolarSystem;
+use self::starlight::Starlight;
+use self::swarmolon::Swarmolon;
+use self::uv_led_brick::UvLedBrick;
+use self::venus::Venus;
+use self::wizard_extreme::WizardExtreme;
+use crate::animation::{ControlMessage as AnimationControlMessage, GroupSelection};
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
-use crate::master::{
-    Autopilot, ControlMessage as MasterControlMessage, MasterControls,
-    StateChange as MasterStateChange, Strobe,
-};
-use crate::osc::MapControls;
+use crate::master::{Autopilot, ControlMessage as MasterControlMessage, MasterControls, Strobe};
+use crate::osc::{MapControls, OscMessageWithGroupSender};
 
 pub mod animation_target;
 pub mod aquarius;
@@ -106,205 +68,77 @@ pub mod wizard_extreme;
 
 /// Identify a named group of a particular type of fixture.
 #[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct GroupName(Option<Arc<String>>);
+pub struct GroupName(Arc<String>);
 
 impl GroupName {
-    pub fn none() -> Self {
-        Self(None)
-    }
-
-    pub fn is_none(&self) -> bool {
-        self.0.is_none()
-    }
-
     pub fn new<S: Into<String>>(v: S) -> Self {
-        Self(Some(Arc::new(v.into())))
-    }
-
-    pub fn inner(&self) -> &Option<Arc<String>> {
-        &self.0
+        Self(Arc::new(v.into()))
     }
 }
 
-impl From<&Option<String>> for GroupName {
-    fn from(v: &Option<String>) -> Self {
-        match v {
-            None => Self::none(),
-            Some(v) => Self::new(v),
-        }
+impl Deref for GroupName {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        self.0.as_str()
     }
 }
 
 impl Display for GroupName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Uniquely identify a specific fixture group.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct FixtureGroupKey {
+    pub fixture: FixtureType,
+    pub group: Option<GroupName>,
+}
+
+impl Display for FixtureGroupKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}",
-            self.0.as_ref().map(|g| g.as_str()).unwrap_or("none")
+            "{}({})",
+            self.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none"),
+            self.fixture
         )
     }
 }
 
-/// Uniquely identify the a specific fixture group.
-#[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct FixtureGroupKey {
-    fixture: &'static str,
-    group: GroupName,
-}
-
-pub trait EmitStateChange {
-    fn emit(&mut self, sc: StateChange);
-}
-
-pub trait EmitFixtureStateChange {
-    fn emit(&mut self, sc: FixtureStateChange);
-
-    fn emit_astroscan(&mut self, sc: AstroscanStateChange) {
-        self.emit(FixtureStateChange::Astroscan(sc));
-    }
-
-    fn emit_comet(&mut self, sc: CometStateChange) {
-        self.emit(FixtureStateChange::Comet(sc));
-    }
-
-    fn emit_colordynamic(&mut self, sc: ColordynamicStateChange) {
-        self.emit(FixtureStateChange::Colordynamic(sc));
-    }
-
-    fn emit_lumasphere(&mut self, sc: LumasphereStateChange) {
-        self.emit(FixtureStateChange::Lumasphere(sc));
-    }
-
-    fn emit_venus(&mut self, sc: VenusStateChange) {
-        self.emit(FixtureStateChange::Venus(sc));
-    }
-
-    fn emit_h2o(&mut self, sc: H2OStateChange) {
-        self.emit(FixtureStateChange::H2O(sc));
-    }
-
-    fn emit_hypnotic(&mut self, sc: HypnoticStateChange) {
-        self.emit(FixtureStateChange::Hypnotic(sc));
-    }
-
-    fn emit_aquarius(&mut self, sc: AquariusStateChange) {
-        self.emit(FixtureStateChange::Aquarius(sc));
-    }
-
-    fn emit_radiance(&mut self, sc: RadianceStateChange) {
-        self.emit(FixtureStateChange::Radiance(sc));
-    }
-
-    fn emit_swarmolon(&mut self, sc: SwarmolonStateChange) {
-        self.emit(FixtureStateChange::Swarmolon(sc));
-    }
-
-    fn emit_rotosphere_q3(&mut self, sc: RotosphereQ3StateChange) {
-        self.emit(FixtureStateChange::RotosphereQ3(sc));
-    }
-
-    fn emit_freedom_fries(&mut self, sc: FreedomFriesStateChange) {
-        self.emit(FixtureStateChange::FreedomFries(sc));
-    }
-
-    fn emit_faderboard(&mut self, sc: FaderboardStateChange) {
-        self.emit(FixtureStateChange::Faderboard(sc));
-    }
-
-    fn emit_rush_wizard(&mut self, sc: RushWizardStateChange) {
-        self.emit(FixtureStateChange::RushWizard(sc));
-    }
-
-    fn emit_wizard_extreme(&mut self, sc: WizardExtremeStateChange) {
-        self.emit(FixtureStateChange::WizardExtreme(sc));
-    }
-
-    fn emit_solar_system(&mut self, sc: SolarSystemStateChange) {
-        self.emit(FixtureStateChange::SolarSystem(sc));
-    }
-
-    fn emit_color(&mut self, sc: ColorStateChange) {
-        self.emit(FixtureStateChange::Color(sc));
-    }
-
-    fn emit_dimmer(&mut self, sc: DimmerStateChange) {
-        self.emit(FixtureStateChange::Dimmer(sc));
-    }
-
-    fn emit_uv_led_brick(&mut self, sc: UvLedBrickStateChange) {
-        self.emit(FixtureStateChange::UvLedBrick(sc));
-    }
-
-    fn emit_starlight(&mut self, sc: StarlightStateChange) {
-        self.emit(FixtureStateChange::Starlight(sc));
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct StateChange {
-    pub group: GroupName,
-    pub sc: FixtureStateChange,
-}
-
-#[derive(Clone, Debug)]
-pub enum FixtureStateChange {
-    Astroscan(AstroscanStateChange),
-    Comet(CometStateChange),
-    Lumasphere(LumasphereStateChange),
-    Venus(VenusStateChange),
-    H2O(H2OStateChange),
-    Hypnotic(HypnoticStateChange),
-    Aquarius(AquariusStateChange),
-    Radiance(RadianceStateChange),
-    Swarmolon(SwarmolonStateChange),
-    RotosphereQ3(RotosphereQ3StateChange),
-    FreedomFries(FreedomFriesStateChange),
-    Faderboard(FaderboardStateChange),
-    RushWizard(RushWizardStateChange),
-    Starlight(StarlightStateChange),
-    WizardExtreme(WizardExtremeStateChange),
-    SolarSystem(SolarSystemStateChange),
-    Color(ColorStateChange),
-    Colordynamic(ColordynamicStateChange),
-    Dimmer(DimmerControlMessage),
-    UvLedBrick(UvLedBrickControlMessage),
-    Master(MasterStateChange),
-    Animation(AnimationStateChange),
-}
-
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ControlMessage {
-    pub group: GroupName,
-    pub msg: FixtureControlMessage,
+    // FIXME: this should be tied to the fixture message payload, not this scope!
+    pub key: Option<FixtureGroupKey>,
+    pub msg: ControlMessagePayload,
 }
 
-#[derive(Clone, Debug)]
-pub enum FixtureControlMessage {
-    Astroscan(AstroscanControlMessage),
-    Comet(CometControlMessage),
-    Lumasphere(LumasphereControlMessage),
-    Venus(VenusControlMessage),
-    H2O(H2OControlMessage),
-    Hypnotic(HypnoticControlMessage),
-    Aquarius(AquariusControlMessage),
-    Radiance(RadianceControlMessage),
-    Swarmolon(SwarmolonControlMessage),
-    Starlight(StarlightControlMessage),
-    RotosphereQ3(RotosphereQ3ControlMessage),
-    FreedomFries(FreedomFriesControlMessage),
-    Faderboard(FaderboardControlMessage),
-    RushWizard(RushWizardControlMessage),
-    WizardExtreme(WizardExtremeControlMessage),
-    SolarSystem(SolarSystemControlMessage),
-    Color(ColorControlMessage),
-    Colordynamic(ColordynamicControlMessage),
-    Dimmer(DimmerControlMessage),
-    UvLedBrick(UvLedBrickControlMessage),
+#[derive(Debug)]
+pub struct FixtureControlMessage(Box<dyn Any>);
+
+impl FixtureControlMessage {
+    fn unpack_as<T: 'static>(self) -> Result<Box<T>> {
+        self.0
+            .downcast::<T>()
+            .map_err(|_| anyhow!("failed to unpack message as type {}", type_name::<T>()))
+    }
+}
+
+#[derive(Debug)]
+pub enum ControlMessagePayload {
+    Fixture(FixtureControlMessage),
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
     /// FIXME: horrible hack around OSC control map handlers currently being infallible
     Error(String),
+}
+
+impl ControlMessagePayload {
+    pub fn fixture<T: Any>(msg: T) -> Self {
+        Self::Fixture(FixtureControlMessage(Box::new(msg)))
+    }
 }
 
 pub const N_ANIM: usize = 4;
@@ -336,12 +170,12 @@ impl FixtureGroup {
     pub fn key(&self) -> &FixtureGroupKey {
         &self.key
     }
-    pub fn fixture_type(&self) -> &str {
-        self.key.fixture
+    pub fn fixture_type(&self) -> &FixtureType {
+        &self.key.fixture
     }
 
-    pub fn name(&self) -> &GroupName {
-        &self.key.group
+    pub fn name(&self) -> Option<&GroupName> {
+        self.key.group.as_ref()
     }
 
     pub fn get_animation(
@@ -356,34 +190,28 @@ impl FixtureGroup {
     }
 
     /// Emit the current state of all controls.
-    pub fn emit_state(&self, emitter: &mut dyn EmitStateChange) {
-        let mut emitter = StateChangeWithGroupEmitter {
+    pub fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+        let mut emitter = OscMessageWithGroupSender {
+            group: self.name().cloned(),
             emitter,
-            group: self.name().clone(),
         };
         self.fixture.emit_state(&mut emitter);
     }
 
-    /// Potentially process the provided control message.
-    /// If this fixture will not process it, return it back to the caller.
+    /// Process the provided control message.
+    /// Return an error if fixture couldn't handle it.
     pub fn control(
         &mut self,
-        msg: ControlMessage,
-        emitter: &mut dyn EmitStateChange,
-    ) -> Option<ControlMessage> {
-        if *self.name() != msg.group {
-            return Some(msg);
-        }
-        let mut emitter = StateChangeWithGroupEmitter {
+        msg: FixtureControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        let mut emitter = OscMessageWithGroupSender {
+            group: self.name().cloned(),
             emitter,
-            group: self.name().clone(),
         };
         self.fixture
-            .control(msg.msg, &mut emitter)
-            .map(|m| ControlMessage {
-                group: msg.group,
-                msg: m,
-            })
+            .control(msg, &mut emitter)
+            .with_context(|| self.key.clone())
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {
@@ -406,29 +234,23 @@ impl FixtureGroup {
                 },
                 dmx_buf,
             );
-            debug!("{} ({}): {:?}", self.fixture_type(), self.name(), dmx_buf);
+            debug!(
+                "{} ({}): {:?}",
+                self.fixture_type(),
+                self.name().map(|g| g.0.as_str()).unwrap_or("none"),
+                dmx_buf
+            );
         }
     }
 }
 
-/// Wrap a state change emitter,
-struct StateChangeWithGroupEmitter<'a> {
-    emitter: &'a mut dyn EmitStateChange,
-    group: GroupName,
-}
-
-impl<'a> EmitFixtureStateChange for StateChangeWithGroupEmitter<'a> {
-    fn emit(&mut self, sc: FixtureStateChange) {
-        self.emitter.emit(StateChange {
-            group: self.group.clone(),
-            sc,
-        });
-    }
-}
-
 impl MapControls for FixtureGroup {
-    fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map);
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)> {
+        self.fixture.fixture_type_aliases()
     }
 }
 
@@ -436,10 +258,10 @@ type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 
 #[derive(Default)]
 pub struct Patch {
-    fixtures: Vec<FixtureGroup>,
+    fixtures: HashMap<FixtureGroupKey, FixtureGroup>,
     used_addrs: UsedAddrs,
-    // Lookup from selector index to the fixture index assigned to that selector.
-    selector_index: Vec<usize>,
+    // Lookup from selector index to the fixture group assigned to that selector.
+    selector_index: Vec<FixtureGroupKey>,
 }
 
 lazy_static! {
@@ -468,7 +290,7 @@ lazy_static! {
 }
 
 impl Patch {
-    pub fn patch(&mut self, cfg: FixtureConfig) -> Result<()> {
+    pub fn patch(&mut self, cfg: FixtureConfig) -> anyhow::Result<()> {
         let mut candidates = PATCHERS
             .iter()
             .flat_map(|p| p(&cfg))
@@ -478,31 +300,10 @@ impl Patch {
             1 => candidates.pop().unwrap(),
             _ => bail!(
                 "multiple fixture patch candidates: {:?}",
-                candidates
-                    .iter()
-                    .map(|c| c.fixture_type)
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                candidates.iter().map(|c| &c.fixture_type).join(", ")
             ),
         };
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
-        info!(
-            "Controlling {} at {} (group: {}).",
-            cfg.name, cfg.addr, cfg.group
-        );
-        let key = FixtureGroupKey {
-            fixture: candidate.fixture_type,
-            group: cfg.group,
-        };
-        // Either identify an existing appropriate group or create a new one.
-        if let Some(group) = self.group_mut(&key) {
-            group.fixture_configs.push(GroupFixtureConfig {
-                universe: cfg.universe,
-                dmx_addr: cfg.addr.dmx_index(),
-                mirror: cfg.mirror,
-            });
-            return Ok(());
-        }
         // Add selector mapping index if provided.  Ensure this is an animatable fixture.
         if cfg.selector {
             ensure!(
@@ -511,20 +312,42 @@ impl Patch {
                 candidate.fixture_type
             );
         }
-        // No existing group; create a new one.
-        self.fixtures.push(FixtureGroup {
-            key,
-            fixture_configs: vec![GroupFixtureConfig {
+        info!(
+            "Controlling {} at {} (group: {}).",
+            cfg.name,
+            cfg.addr,
+            cfg.group.as_ref().map(|g| g.0.as_str()).unwrap_or("none")
+        );
+        let key = FixtureGroupKey {
+            fixture: candidate.fixture_type,
+            group: cfg.group,
+        };
+        // Either identify an existing appropriate group or create a new one.
+        if let Some(group) = self.fixtures.get_mut(&key) {
+            group.fixture_configs.push(GroupFixtureConfig {
                 universe: cfg.universe,
                 dmx_addr: cfg.addr.dmx_index(),
                 mirror: cfg.mirror,
-            }],
-            channel_count: candidate.channel_count,
-            fixture: candidate.fixture,
-        });
-        if cfg.selector {
-            self.selector_index.push(self.fixtures.len() - 1);
+            });
+            return Ok(());
         }
+        // No existing group; create a new one.
+        if cfg.selector {
+            self.selector_index.push(key.clone());
+        }
+        self.fixtures.insert(
+            key.clone(),
+            FixtureGroup {
+                key,
+                fixture_configs: vec![GroupFixtureConfig {
+                    universe: cfg.universe,
+                    dmx_addr: cfg.addr.dmx_index(),
+                    mirror: cfg.mirror,
+                }],
+                channel_count: candidate.channel_count,
+                fixture: candidate.fixture,
+            },
+        );
 
         Ok(())
     }
@@ -532,7 +355,7 @@ impl Patch {
     /// Dynamically get the universe count.
     pub fn universe_count(&self) -> usize {
         let mut universes = HashSet::new();
-        for group in &self.fixtures {
+        for group in self.fixtures.values() {
             for element in &group.fixture_configs {
                 universes.insert(element.universe);
             }
@@ -570,27 +393,25 @@ impl Patch {
         Ok(used_addrs)
     }
 
-    pub fn group_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
-        self.fixtures.iter_mut().find(|g| g.key == *key)
-    }
-
+    /// Get a fixture group by selector index.
     pub fn group_by_selector_mut(
         &mut self,
         selection: &GroupSelection,
     ) -> Result<&mut FixtureGroup> {
-        let Some(fixture_index) = self.selector_index.get(selection.0) else {
+        let Some(fixture_key) = self.selector_index.get(selection.0) else {
             bail!("tried to get out-of-range selector {}.", selection.0);
         };
-        if let Some(fixture) = self.fixtures.get_mut(*fixture_index) {
+        if let Some(fixture) = self.fixtures.get_mut(fixture_key) {
             Ok(fixture)
         } else {
             bail!(
-                "selector ID {} mapped to out-of-range fixture index {fixture_index}",
+                "selector ID {} mapped to non-existent fixture key {fixture_key}",
                 selection.0
             );
         }
     }
 
+    /// Validate that a selector index refers to a selector that actually exists.
     pub fn validate_selector(&self, selector: usize) -> Result<GroupSelection> {
         if selector < self.selector_index.len() {
             Ok(GroupSelection(selector))
@@ -599,30 +420,44 @@ impl Patch {
         }
     }
 
+    /// Iterate over all of the labels for each selector.
     pub fn selector_labels(&self) -> impl Iterator<Item = String> + '_ {
         self.selector_index
             .iter()
-            .filter_map(|i| self.fixtures.get(*i))
-            .map(|f| {
-                if f.key.group.is_none() {
-                    f.key.fixture.to_string()
-                } else {
-                    format!("{}({})", f.key.fixture, f.key.group)
-                }
+            .filter_map(|i| self.fixtures.get(i))
+            .map(|f| match f.key.group.as_ref() {
+                None => f.key.fixture.to_string(),
+                Some(g) => format!("{g}({})", f.key.fixture),
             })
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {
-        self.fixtures.iter()
+    /// Get the fixture patched with this key, mutably.
+    pub fn get_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
+        self.fixtures.get_mut(key)
     }
 
+    /// Iterate over all patched fixtures.
+    pub fn iter(&self) -> impl Iterator<Item = &FixtureGroup> {
+        self.fixtures.values()
+    }
+
+    /// Iterate over all patched fixtures, mutably.
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut FixtureGroup> {
-        self.fixtures.iter_mut()
+        self.fixtures.values_mut()
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FixtureType(&'static str);
+
+impl Display for FixtureType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
     }
 }
 
 pub struct PatchCandidate {
-    fixture_type: &'static str,
+    fixture_type: FixtureType,
     channel_count: usize,
     fixture: Box<dyn Fixture>,
 }
@@ -631,12 +466,12 @@ pub type Patcher = Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate>> 
 
 /// Fixture constructor trait to handle patching non-animating fixtures.
 pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
-    const NAME: &'static str;
+    const NAME: FixtureType;
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
     fn patcher() -> Patcher {
         Box::new(|cfg| {
-            if cfg.name != Self::NAME {
+            if cfg.name != Self::NAME.0 {
                 return None;
             }
             match Self::new(&cfg.options) {
@@ -663,12 +498,12 @@ pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
 
 /// Fixture constructor trait to handle patching non-animating fixtures.
 pub trait PatchAnimatedFixture: AnimatedFixture + Default + 'static {
-    const NAME: &'static str;
+    const NAME: FixtureType;
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
     fn patcher() -> Patcher {
         Box::new(|cfg| {
-            if cfg.name != Self::NAME {
+            if cfg.name != Self::NAME.0 {
                 return None;
             }
             match Self::new(&cfg.options) {
@@ -698,15 +533,15 @@ pub trait PatchAnimatedFixture: AnimatedFixture + Default + 'static {
 
 pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange);
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage);
 
-    /// Potentially process the provided control message.
-    /// If this fixture will not process it, return it back to the caller.
+    /// Process the provided control message.
+    /// Return the message if this fixture cannot process it.
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage>;
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()>;
 
     fn update(&mut self, _: Duration) {}
 }
@@ -798,8 +633,12 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
 }
 
 impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
-    fn map_controls(&self, map: &mut crate::osc::ControlMap<FixtureControlMessage>) {
+    fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map)
+    }
+
+    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)> {
+        self.fixture.fixture_type_aliases()
     }
 }
 
@@ -807,12 +646,12 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn EmitFixtureStateChange,
-    ) -> Option<FixtureControlMessage> {
+        emitter: &mut dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
         self.fixture.control(msg, emitter)
     }
 
-    fn emit_state(&self, emitter: &mut dyn EmitFixtureStateChange) {
+    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
         self.fixture.emit_state(emitter);
     }
 
@@ -855,4 +694,13 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
         let animation = self.animations.get_mut(index)?;
         Some(&mut *animation)
     }
+}
+
+pub mod prelude {
+    #[allow(unused)]
+    pub use super::{
+        AnimatedFixture, ControllableFixture, FixtureControlMessage, FixtureGroupControls,
+        FixtureType, NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
+    };
+    pub use crate::osc::HandleStateChange;
 }
