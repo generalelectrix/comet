@@ -10,7 +10,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::OscController,
+    osc::{OscController, OscMessageWithMetadataSender, TalkbackMode},
 };
 
 use anyhow::{bail, Result};
@@ -48,18 +48,21 @@ impl Show {
                 patched_controls.insert(group.fixture_type());
             }
 
-            group.emit_state(&osc_controller);
+            group.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
         }
 
         let master_controls = MasterControls::default();
         osc_controller.map_controls(&master_controls);
-        master_controls.emit_state(&osc_controller);
+        master_controls.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
 
         // Configure animation controls.
         let animation_ui_state = if patch.iter().any(FixtureGroup::is_animated) {
             let state = AnimationUIState::new(Some(patch.validate_selector(0)?));
             osc_controller.map_controls(&state);
-            state.emit_state(&mut patch, &osc_controller)?;
+            state.emit_state(
+                &mut patch,
+                &osc_controller.sender_with_metadata(None, TalkbackMode::All),
+            )?;
             state
         } else {
             AnimationUIState::new(None)
@@ -123,22 +126,25 @@ impl Show {
             }
         };
 
+        let sender = self
+            .osc_controller
+            .sender_with_metadata(Some(&msg.sender_id), msg.talkback);
+
         match msg.msg {
             ControlMessagePayload::Master(mc) => {
-                self.master_controls.control(mc, &self.osc_controller);
+                self.master_controls.control(mc, &sender);
                 Ok(())
             }
             ControlMessagePayload::Animation(msg) => {
                 self.animation_ui_state
-                    .control(msg, &mut self.patch, &self.osc_controller)
+                    .control(msg, &mut self.patch, &sender)
             }
             ControlMessagePayload::RefreshUI => {
-                self.master_controls.emit_state(&self.osc_controller);
+                self.master_controls.emit_state(&sender);
                 for group in self.patch.iter() {
-                    group.emit_state(&self.osc_controller);
+                    group.emit_state(&sender);
                 }
-                self.animation_ui_state
-                    .emit_state(&mut self.patch, &self.osc_controller)
+                self.animation_ui_state.emit_state(&mut self.patch, &sender)
             }
             ControlMessagePayload::Fixture(fixture_control_msg) => {
                 let Some(group_key) = msg.key.as_ref() else {
@@ -149,7 +155,7 @@ impl Show {
                     bail!("no fixture found for key: {:?}", msg.key);
                 };
 
-                fixture.control(fixture_control_msg, &self.osc_controller)
+                fixture.control(fixture_control_msg, &sender)
             }
             ControlMessagePayload::Error(msg) => {
                 bail!("control processing error: {msg}")

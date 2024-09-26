@@ -12,7 +12,7 @@ use super::{OscClientId, OscError};
 #[derive(Debug)]
 pub struct OscControlMessage {
     /// The ID of the client that originated this message.
-    client_id: OscClientId,
+    pub client_id: OscClientId,
     /// The raw/full OSC address.
     addr: String,
     /// Single OSC payload extracted from the incoming message.
