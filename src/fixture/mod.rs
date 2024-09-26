@@ -133,8 +133,6 @@ pub enum ControlMessagePayload {
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
-    /// FIXME: horrible hack around OSC control map handlers currently being infallible
-    Error(String),
 }
 
 impl ControlMessagePayload {

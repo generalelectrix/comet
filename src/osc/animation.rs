@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
 use crate::animation::AnimationUIState;
@@ -54,9 +55,9 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
 impl MapControls for AnimationUIState {
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
-        use ControlMessagePayload::{Animation as FixtureAnimation, Error as ControlError};
+        use ControlMessagePayload::Animation as FixtureAnimation;
         use StateChange::*;
-        WAVEFORM_SELECT.map(map, |v| {
+        WAVEFORM_SELECT.map_fallible(map, |v| {
             match v {
                 0 => Some(Sine),
                 1 => Some(Triangle),
@@ -66,7 +67,7 @@ impl MapControls for AnimationUIState {
                 _ => None,
             }
             .map(|waveform| FixtureAnimation(WrapAnimation(Set(Waveform(waveform)))))
-            .unwrap_or_else(|| ControlError(format!("waveform select out of range: {v}")))
+            .ok_or_else(|| anyhow!("waveform select out of range: {v}"))
         });
 
         map.add_bipolar(GROUP, SPEED, |v| {

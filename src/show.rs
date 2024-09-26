@@ -10,7 +10,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::{OscController, OscMessageWithMetadataSender, TalkbackMode},
+    osc::{OscController, TalkbackMode},
 };
 
 use anyhow::{bail, Result};
@@ -156,9 +156,6 @@ impl Show {
                 };
 
                 fixture.control(fixture_control_msg, &sender)
-            }
-            ControlMessagePayload::Error(msg) => {
-                bail!("control processing error: {msg}")
             }
         }
     }
