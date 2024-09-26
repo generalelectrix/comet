@@ -29,9 +29,7 @@ impl RadioButton {
     where
         F: Fn(usize) -> ControlMessagePayload + 'static + Copy,
     {
-        map.add(self.group, self.control, move |m| {
-            Ok(self.parse(m)?.map(process))
-        })
+        self.map_fallible(map, move |x| Ok(process(x)));
     }
 
     /// Wire up this radio button to a control map, with a fallible processor.

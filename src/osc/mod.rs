@@ -216,13 +216,6 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
     }
 }
 
-type ControlMessageCreator<C> =
-    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
-
-pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
-
-pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
-
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct OscClientId(SocketAddr);
 
@@ -231,6 +224,13 @@ impl OscClientId {
         &self.0
     }
 }
+
+type ControlMessageCreator<C> =
+    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
+
+pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
+
+pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
 
 impl Display for OscClientId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
