@@ -120,19 +120,21 @@ impl OscController {
                 bail!("OSC receiver disconnected");
             }
         };
-        Ok(self.control_map.handle(&msg)?.map(|m| ControlMessage {
-            sender_id: msg.client_id,
-            // FIXME: need to update controls to provide talkback mode
-            talkback: TalkbackMode::All,
-            msg: m,
-            key: self
-                .key_map
-                .get(msg.entity_type())
-                .map(|fixture| FixtureGroupKey {
-                    fixture: *fixture,
-                    group: msg.group,
-                }),
-        }))
+        Ok(self
+            .control_map
+            .handle(&msg)?
+            .map(|(m, talkback)| ControlMessage {
+                sender_id: msg.client_id,
+                talkback,
+                msg: m,
+                key: self
+                    .key_map
+                    .get(msg.entity_type())
+                    .map(|fixture| FixtureGroupKey {
+                        fixture: *fixture,
+                        group: msg.group,
+                    }),
+            }))
     }
 
     pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
@@ -214,7 +216,8 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
     }
 }
 
-type ControlMessageCreator<C> = Box<dyn Fn(&OscControlMessage) -> Result<Option<C>>>;
+type ControlMessageCreator<C> =
+    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
 
 pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
 
@@ -240,7 +243,7 @@ impl<C> ControlMap<C> {
         Self(HashMap::new())
     }
 
-    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<C>> {
+    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
         let key = msg.control_key();
         match self.0.get(key) {
             None => {
@@ -260,7 +263,9 @@ impl<C> ControlMap<C> {
                 let key = e.key();
                 panic!("Duplicate control definition for {}", key,)
             }
-            Entry::Vacant(v) => v.insert(Box::new(handler)),
+            Entry::Vacant(v) => v.insert(Box::new(move |m| {
+                Ok(handler(m)?.map(|msg| (msg, TalkbackMode::All)))
+            })),
         };
     }
 
