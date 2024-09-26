@@ -4,13 +4,15 @@ use rosc::{OscMessage, OscType};
 
 use crate::fixture::GroupName;
 
-use super::OscError;
+use super::{OscClientId, OscError};
 
 /// Wrapper type for OSC messages that provides a simplification for our domain.
 /// This includes pre-processing of the address to identify the breaks, as well
 /// as parsing of the group ID (or filling in a placeholder).
 #[derive(Debug)]
 pub struct OscControlMessage {
+    /// The ID of the client that originated this message.
+    pub client_id: OscClientId,
     /// The raw/full OSC address.
     addr: String,
     /// Single OSC payload extracted from the incoming message.
@@ -31,7 +33,7 @@ pub struct OscControlMessage {
 }
 
 impl OscControlMessage {
-    pub fn new(msg: OscMessage) -> Result<Self, OscError> {
+    pub fn new(msg: OscMessage, client_id: OscClientId) -> Result<Self, OscError> {
         let wrap_err = |m| OscError {
             addr: msg.addr.clone(),
             msg: m,
@@ -42,6 +44,7 @@ impl OscControlMessage {
         let arg = get_single_arg(msg.args).map_err(wrap_err)?;
 
         Ok(Self {
+            client_id,
             addr: msg.addr,
             arg,
             key_start,
@@ -119,6 +122,8 @@ fn get_single_arg(mut args: Vec<OscType>) -> Result<OscType, String> {
 
 #[cfg(test)]
 mod test {
+    use std::{net::SocketAddr, str::FromStr};
+
     use super::*;
     use rosc::OscType;
     #[test]
@@ -133,10 +138,13 @@ mod test {
     }
 
     fn get_control_key(addr: &str) -> Result<String, OscError> {
-        let msg = OscControlMessage::new(OscMessage {
-            addr: addr.to_string(),
-            args: vec![OscType::Nil],
-        })?;
+        let msg = OscControlMessage::new(
+            OscMessage {
+                addr: addr.to_string(),
+                args: vec![OscType::Nil],
+            },
+            OscClientId(SocketAddr::from_str("127.0.0.1:1234").unwrap()),
+        )?;
         Ok(msg.control_key().to_string())
     }
 }

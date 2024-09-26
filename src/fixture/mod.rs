@@ -41,7 +41,7 @@ use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{Autopilot, ControlMessage as MasterControlMessage, MasterControls, Strobe};
-use crate::osc::{MapControls, OscMessageWithGroupSender};
+use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
 
 pub mod animation_target;
 pub mod aquarius;
@@ -109,6 +109,8 @@ impl Display for FixtureGroupKey {
 
 #[derive(Debug)]
 pub struct ControlMessage {
+    pub sender_id: OscClientId,
+    pub talkback: TalkbackMode,
     // FIXME: this should be tied to the fixture message payload, not this scope!
     pub key: Option<FixtureGroupKey>,
     pub msg: ControlMessagePayload,
@@ -131,8 +133,6 @@ pub enum ControlMessagePayload {
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
-    /// FIXME: horrible hack around OSC control map handlers currently being infallible
-    Error(String),
 }
 
 impl ControlMessagePayload {

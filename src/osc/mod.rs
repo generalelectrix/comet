@@ -11,6 +11,7 @@ use rosc::{encoder, OscMessage, OscPacket, OscType};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::thread;
@@ -73,7 +74,7 @@ pub struct OscController {
     control_map: ControlMap<ControlMessagePayload>,
     key_map: HashMap<String, FixtureType>,
     recv: Receiver<OscControlMessage>,
-    send: Sender<OscMessage>,
+    send: Sender<OscControlResponse>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -97,6 +98,7 @@ impl OscController {
         let send_addrs = send_configs
             .iter()
             .map(OscSenderConfig::as_socket_addr)
+            .map(|r| r.map(OscClientId))
             .collect::<Result<_>>()?;
         let control_recv = start_listener(recv_addr)?;
         let response_send = start_sender(send_addrs)?;
@@ -118,16 +120,21 @@ impl OscController {
                 bail!("OSC receiver disconnected");
             }
         };
-        Ok(self.control_map.handle(&msg)?.map(|m| ControlMessage {
-            msg: m,
-            key: self
-                .key_map
-                .get(msg.entity_type())
-                .map(|fixture| FixtureGroupKey {
-                    fixture: *fixture,
-                    group: msg.group,
-                }),
-        }))
+        Ok(self
+            .control_map
+            .handle(&msg)?
+            .map(|(m, talkback)| ControlMessage {
+                sender_id: msg.client_id,
+                talkback,
+                msg: m,
+                key: self
+                    .key_map
+                    .get(msg.entity_type())
+                    .map(|fixture| FixtureGroupKey {
+                        fixture: *fixture,
+                        group: msg.group,
+                    }),
+            }))
     }
 
     pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
@@ -149,14 +156,47 @@ impl OscController {
             }
         }
     }
-}
 
-impl EmitOscMessage for OscController {
-    fn emit_osc(&self, msg: OscMessage) {
-        let _ = self.send.send(msg);
+    /// Return a decorated version of self that will include the provided
+    /// metadata when sending OSC response messages.
+    pub fn sender_with_metadata<'a>(
+        &'a self,
+        sender_id: Option<&'a OscClientId>,
+        talkback: TalkbackMode,
+    ) -> OscMessageWithMetadataSender<'_> {
+        OscMessageWithMetadataSender {
+            sender_id,
+            talkback,
+            controller: self,
+        }
     }
 }
 
+/// Decorate the OscController to add message metedata to control responses.
+pub struct OscMessageWithMetadataSender<'a> {
+    pub sender_id: Option<&'a OscClientId>,
+    pub talkback: TalkbackMode,
+    pub controller: &'a OscController,
+}
+
+impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
+    fn emit_osc(&self, msg: OscMessage) {
+        if self
+            .controller
+            .send
+            .send(OscControlResponse {
+                sender_id: self.sender_id.cloned(),
+                talkback: self.talkback,
+                msg,
+            })
+            .is_err()
+        {
+            error!("OSC send channel is disconnected.");
+        }
+    }
+}
+
+/// Decorate a control message emitter to inject a group into the address.
 pub struct OscMessageWithGroupSender<'a> {
     pub group: Option<GroupName>,
     pub emitter: &'a dyn EmitControlMessage,
@@ -176,18 +216,34 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
     }
 }
 
-type ControlMessageCreator<C> = Box<dyn Fn(&OscControlMessage) -> Result<Option<C>>>;
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub struct OscClientId(SocketAddr);
+
+impl OscClientId {
+    pub fn addr(&self) -> &SocketAddr {
+        &self.0
+    }
+}
+
+type ControlMessageCreator<C> =
+    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
 
 pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
 
 pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
+
+impl Display for OscClientId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "OSC client at {}", self.0)
+    }
+}
 
 impl<C> ControlMap<C> {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<C>> {
+    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
         let key = msg.control_key();
         match self.0.get(key) {
             None => {
@@ -207,7 +263,9 @@ impl<C> ControlMap<C> {
                 let key = e.key();
                 panic!("Duplicate control definition for {}", key,)
             }
-            Entry::Vacant(v) => v.insert(Box::new(handler)),
+            Entry::Vacant(v) => v.insert(Box::new(move |m| {
+                Ok(handler(m)?.map(|msg| (msg, TalkbackMode::All)))
+            })),
         };
     }
 
@@ -276,43 +334,55 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
 
     let mut buf = [0u8; rosc::decoder::MTU];
 
-    let mut recv_packet = move || -> Result<OscPacket> {
-        let size = socket.recv(&mut buf)?;
+    let mut recv_packet = move || -> Result<_> {
+        let (size, sender_addr) = socket.recv_from(&mut buf)?;
         let (_, packet) = rosc::decoder::decode_udp(&buf[..size])?;
-        Ok(packet)
+        Ok((packet, OscClientId(sender_addr)))
     };
 
     thread::spawn(move || loop {
-        let packet = match recv_packet() {
-            Ok(packet) => packet,
+        let (packet, client_id) = match recv_packet() {
+            Ok(msg) => msg,
             Err(e) => {
                 error!("Error receiving from OSC input: {}", e);
                 continue;
             }
         };
-        if let Err(e) = forward_packet(packet, &send) {
+        if let Err(e) = forward_packet(packet, client_id, &send) {
             error!("Error unpacking/forwarding OSC packet: {}", e);
         }
     });
     Ok(recv)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TalkbackMode {
+    /// Control responses should be sent to all clients.
+    All,
+    /// Control responses should be sent to all clients except the sender.
+    Off,
+}
+
+pub struct OscControlResponse {
+    sender_id: Option<OscClientId>,
+    talkback: TalkbackMode,
+    msg: OscMessage,
+}
+
 /// Drain a control channel of OSC messages and send them.
-/// Sends each message to every provided address.
-fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
-    let (send, recv) = unbounded();
+/// Sends each message to every provided address, unless the talkback mode
+/// says otherwise.
+fn start_sender(clients: Vec<OscClientId>) -> Result<Sender<OscControlResponse>> {
+    let (send, recv) = unbounded::<OscControlResponse>();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
 
     thread::spawn(move || loop {
-        let msg = match recv.recv() {
-            Err(_) => {
-                info!("OSC sender channel hung up, terminating sender thread.");
-                return;
-            }
-            Ok(m) => m,
+        let Ok(resp) = recv.recv() else {
+            info!("OSC sender channel hung up, terminating sender thread.");
+            return;
         };
         // Encode the message.
-        let packet = OscPacket::Message(msg);
+        let packet = OscPacket::Message(resp.msg);
         let msg_buf = match encoder::encode(&packet) {
             Ok(buf) => buf,
             Err(err) => {
@@ -320,10 +390,13 @@ fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
                 continue;
             }
         };
-        // info!("Sending OSC message: {:?}", msg);
-        for addr in &addrs {
-            if let Err(err) = socket.send_to(&msg_buf, addr) {
-                error!("OSC send error to address {addr}: {}.", err);
+        // debug!("Sending OSC message: {:?}", msg);
+        for client in &clients {
+            if resp.talkback == TalkbackMode::Off && resp.sender_id == Some(*client) {
+                continue;
+            }
+            if let Err(err) = socket.send_to(&msg_buf, client.addr()) {
+                error!("OSC send error to {client}: {}.", err);
             }
         }
     });
@@ -331,7 +404,11 @@ fn start_sender(addrs: Vec<SocketAddr>) -> Result<Sender<OscMessage>> {
 }
 
 /// Recursively unpack OSC packets and send all the inner messages as control events.
-fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result<(), OscError> {
+fn forward_packet(
+    packet: OscPacket,
+    client_id: OscClientId,
+    send: &Sender<OscControlMessage>,
+) -> Result<(), OscError> {
     match packet {
         OscPacket::Message(m) => {
             // info!("Received OSC message: {:?}", m);
@@ -339,12 +416,12 @@ fn forward_packet(packet: OscPacket, send: &Sender<OscControlMessage>) -> Result
             if m.addr == "/page" {
                 return Ok(());
             }
-            let cm = OscControlMessage::new(m)?;
+            let cm = OscControlMessage::new(m, client_id)?;
             send.send(cm).unwrap();
         }
         OscPacket::Bundle(msgs) => {
             for subpacket in msgs.content {
-                forward_packet(subpacket, send)?;
+                forward_packet(subpacket, client_id, send)?;
             }
         }
     }
