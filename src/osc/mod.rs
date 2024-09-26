@@ -27,6 +27,9 @@ mod fixture;
 mod label_array;
 mod master;
 mod radio_button;
+mod register;
+
+pub use register::prompt_osc_config;
 
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
@@ -77,29 +80,9 @@ pub struct OscController {
     send: Sender<OscControlResponse>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct OscSenderConfig {
-    host: String,
-    port: u16,
-}
-
-impl OscSenderConfig {
-    pub fn as_socket_addr(&self) -> Result<SocketAddr> {
-        Ok(SocketAddr::from_str(&format!(
-            "{}:{}",
-            self.host, self.port
-        ))?)
-    }
-}
-
 impl OscController {
-    pub fn new(receive_port: u16, send_configs: &[OscSenderConfig]) -> Result<Self> {
+    pub fn new(receive_port: u16, send_addrs: Vec<OscClientId>) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
-        let send_addrs = send_configs
-            .iter()
-            .map(OscSenderConfig::as_socket_addr)
-            .map(|r| r.map(OscClientId))
-            .collect::<Result<_>>()?;
         let control_recv = start_listener(recv_addr)?;
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
@@ -216,7 +199,7 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Deserialize)]
 pub struct OscClientId(SocketAddr);
 
 impl OscClientId {

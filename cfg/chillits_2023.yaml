@@ -1,7 +1,3 @@
-receive_port: 8000
-controllers:
-  - host: 192.168.1.220
-    port: 9000
 debug: True
 fixtures:
   - name: wizard_extreme
@@ -9,7 +5,7 @@ fixtures:
     selector: True
   - name: wizard_extreme
     addr: 300
-    selector: True	
+    selector: True
   - name: wizard_extreme
     addr: 32
     selector: True

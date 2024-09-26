@@ -23,7 +23,7 @@ regex = "1.6"
 tunnels = { git = "https://github.com/generalelectrix/tunnels", branch = "main" }
 tunnels_lib = { git = "https://github.com/generalelectrix/tunnels", branch = "main" }
 zmq = "0.10.0"
-anyhow = "1.0.70"
+anyhow = { version = "1.0.70", features = ["backtrace"] }
 thiserror = "1.0.40"
 num-derive = "0.3.3"
 num-traits = "0.2.15"
