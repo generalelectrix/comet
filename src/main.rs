@@ -27,7 +27,6 @@ fn main() -> anyhow::Result<()> {
         .nth(1)
         .expect("Provide config path as first arg.");
     let mut cfg = Config::load(&config_path)?;
-    println!("{cfg:?}");
     let log_level = if cfg.debug {
         LevelFilter::Debug
     } else {

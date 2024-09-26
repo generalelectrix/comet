@@ -1,7 +1,8 @@
 //! Provide auto-registration of OSC controllers by listening for client messages.
 
-use anyhow::{Result};
+use anyhow::Result;
 use std::{
+    collections::HashSet,
     net::{SocketAddr, UdpSocket},
     str::FromStr,
 };
@@ -22,13 +23,13 @@ pub fn prompt_osc_config(receive_port: u16) -> Result<Option<Vec<OscClientId>>> 
     if !prompt_bool("Auto-register OSC controllers?")? {
         return Ok(None);
     }
-    let mut clients = Vec::new();
+    let mut clients = HashSet::new();
     loop {
         println!("Waiting for incoming message...");
         match register_client(receive_port) {
             Ok(client) => {
                 println!("Registered {client}.");
-                clients.push(client);
+                clients.insert(client);
             }
             Err(err) => {
                 println!("OSC client registration error: {err:#}");
@@ -38,5 +39,5 @@ pub fn prompt_osc_config(receive_port: u16) -> Result<Option<Vec<OscClientId>>> 
             break;
         }
     }
-    Ok(Some(clients))
+    Ok(Some(clients.into_iter().collect()))
 }

@@ -4,16 +4,16 @@ use crate::fixture::{
 use anyhow::bail;
 use anyhow::Result;
 use control_message::OscControlMessage;
-use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
-use serde::{Deserialize};
+use serde::Deserialize;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
+use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::thread;
 use std::time::Duration;
 use thiserror::Error;
@@ -312,7 +312,7 @@ impl<C> ControlMap<C> {
 /// Forward OSC messages to the provided sender.
 /// Spawns a new thread to handle listening for messages.
 fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
-    let (send, recv) = unbounded();
+    let (send, recv) = channel();
     let socket = UdpSocket::bind(addr)?;
 
     let mut buf = [0u8; rosc::decoder::MTU];
@@ -356,7 +356,7 @@ pub struct OscControlResponse {
 /// Sends each message to every provided address, unless the talkback mode
 /// says otherwise.
 fn start_sender(clients: Vec<OscClientId>) -> Result<Sender<OscControlResponse>> {
-    let (send, recv) = unbounded::<OscControlResponse>();
+    let (send, recv) = channel::<OscControlResponse>();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
 
     thread::spawn(move || loop {
