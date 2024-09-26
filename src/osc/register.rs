@@ -1,10 +1,9 @@
 //! Provide auto-registration of OSC controllers by listening for client messages.
 
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use std::{
     net::{SocketAddr, UdpSocket},
     str::FromStr,
-    time::Duration,
 };
 use tunnels_lib::prompt::prompt_bool;
 

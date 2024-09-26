@@ -5,8 +5,6 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
-use std::net::SocketAddr;
-use std::str::FromStr;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {

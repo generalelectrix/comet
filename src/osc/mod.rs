@@ -8,7 +8,7 @@ use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::Display;
