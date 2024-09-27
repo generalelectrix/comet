@@ -10,18 +10,20 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::{OscController, TalkbackMode},
+    osc::{EmitControlMessage, HandleStateChange, OscController, TalkbackMode},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
+use serde::Deserialize;
 
 pub struct Show {
     osc_controller: OscController,
     patch: Patch,
     master_controls: MasterControls,
+    show_ui_state: ShowUIState,
     animation_ui_state: AnimationUIState,
     clock_service: Option<ClockService>,
 }
@@ -55,23 +57,34 @@ impl Show {
         osc_controller.map_controls(&master_controls);
         master_controls.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
 
-        // Configure animation controls.
-        let animation_ui_state = if patch.iter().any(FixtureGroup::is_animated) {
-            let state = AnimationUIState::new(Some(patch.validate_selector(0)?));
-            osc_controller.map_controls(&state);
-            state.emit_state(
+        let initial_channel = patch.validate_selector(0).ok();
+
+        let show_ui_state = ShowUIState {
+            current_group: initial_channel,
+        };
+        osc_controller.map_controls(&show_ui_state);
+        show_ui_state.emit_state(
+            &mut patch,
+            &osc_controller.sender_with_metadata(None, TalkbackMode::All),
+        );
+
+        let animation_ui_state = AnimationUIState::new(initial_channel);
+
+        // Configure animation controls if we have at least one animated fixture.
+        if patch.iter().any(FixtureGroup::is_animated) {
+            osc_controller.map_controls(&animation_ui_state);
+            animation_ui_state.emit_state(
+                initial_channel.unwrap(),
                 &mut patch,
                 &osc_controller.sender_with_metadata(None, TalkbackMode::All),
             )?;
-            state
-        } else {
-            AnimationUIState::new(None)
         };
 
         Ok(Self {
             patch,
             osc_controller,
             master_controls,
+            show_ui_state,
             animation_ui_state,
             clock_service,
         })
@@ -136,15 +149,26 @@ impl Show {
                 Ok(())
             }
             ControlMessagePayload::Animation(msg) => {
+                let Some(channel) = self.show_ui_state.current_group else {
+                    bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
+                };
                 self.animation_ui_state
-                    .control(msg, &mut self.patch, &sender)
+                    .control(msg, channel, &mut self.patch, &sender)
+            }
+            ControlMessagePayload::Show(msg) => {
+                self.show_ui_state.control(msg, &mut self.patch, &sender)
             }
             ControlMessagePayload::RefreshUI => {
                 self.master_controls.emit_state(&sender);
+                self.show_ui_state.emit_state(&mut self.patch, &sender);
                 for group in self.patch.iter() {
                     group.emit_state(&sender);
                 }
-                self.animation_ui_state.emit_state(&mut self.patch, &sender)
+                if let Some(channel) = self.show_ui_state.current_group {
+                    self.animation_ui_state
+                        .emit_state(channel, &mut self.patch, &sender)?;
+                }
+                Ok(())
             }
             ControlMessagePayload::Fixture(fixture_control_msg) => {
                 let Some(group_key) = msg.key.as_ref() else {
@@ -179,4 +203,58 @@ impl Show {
             group.render(&self.master_controls, dmx_buffers);
         }
     }
+}
+
+/// Which channel is currently selected.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
+pub struct GroupSelection(pub usize);
+
+pub struct ShowUIState {
+    current_group: Option<GroupSelection>,
+}
+
+impl ShowUIState {
+    /// Emit all current animation state, including target and selection.
+    pub fn emit_state(&self, patch: &mut Patch, emitter: &dyn EmitControlMessage) {
+        if let Some(selector) = self.current_group {
+            Self::emit(StateChange::SelectGroup(selector), emitter);
+        }
+        Self::emit(
+            StateChange::GroupLabels(patch.selector_labels().collect()),
+            emitter,
+        );
+    }
+
+    /// Handle a control message.
+    pub fn control(
+        &mut self,
+        msg: ControlMessage,
+        patch: &mut Patch,
+        emitter: &dyn EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        match msg {
+            ControlMessage::SelectGroup(g) => {
+                // Validate the group.
+                let selector = patch.validate_selector(g)?;
+                if self.current_group == Some(selector) {
+                    // Group is not changed, ignore.
+                    return Ok(());
+                }
+                self.current_group = Some(selector);
+                self.emit_state(patch, emitter);
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum ControlMessage {
+    SelectGroup(usize),
+}
+
+#[derive(Clone, Debug)]
+pub enum StateChange {
+    SelectGroup(GroupSelection),
+    GroupLabels(Vec<String>),
 }

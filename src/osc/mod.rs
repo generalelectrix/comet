@@ -28,6 +28,7 @@ mod label_array;
 mod master;
 mod radio_button;
 mod register;
+mod show;
 
 pub use register::prompt_osc_config;
 

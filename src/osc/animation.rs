@@ -97,9 +97,6 @@ impl MapControls for AnimationUIState {
         USE_AUDIO_SPEED.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
         USE_AUDIO_SIZE.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
 
-        ANIMATION_GROUP_SELECT.map(map, |msg| {
-            ControlMessagePayload::Animation(AnimationControlMessage::SelectGroup(msg))
-        });
         ANIMATION_TARGET_SELECT.map(map, |msg| {
             ControlMessagePayload::Animation(AnimationControlMessage::Target(msg))
         });
@@ -116,7 +113,6 @@ impl MapControls for AnimationUIState {
 // Targeting/selection
 
 const N_ANIM_TARGET: usize = 8;
-const N_ANIM_GROUP: usize = 8;
 
 const ANIMATION_SELECT: RadioButton = RadioButton {
     group: GROUP,
@@ -139,20 +135,6 @@ const ANIMATION_TARGET_LABELS: LabelArray = LabelArray {
     empty_label: "",
 };
 
-const ANIMATION_GROUP_SELECT: RadioButton = RadioButton {
-    group: GROUP,
-    control: "Group",
-    n: N_ANIM_GROUP,
-    x_primary_coordinate: false,
-};
-
-const ANIMATION_GROUP_LABELS: LabelArray = LabelArray {
-    group: GROUP,
-    control: "GroupLabel",
-    n: N_ANIM_GROUP,
-    empty_label: "",
-};
-
 impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
     fn emit_osc_state_change<S>(sc: crate::animation::StateChange, send: &S)
     where
@@ -161,15 +143,9 @@ impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
         match sc {
             crate::animation::StateChange::Animation(msg) => Self::emit_osc_state_change(msg, send),
             crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
-            crate::animation::StateChange::SelectGroup(msg) => {
-                ANIMATION_GROUP_SELECT.set(msg.0, send)
-            }
             crate::animation::StateChange::Target(msg) => ANIMATION_TARGET_SELECT.set(msg, send),
             crate::animation::StateChange::TargetLabels(labels) => {
                 ANIMATION_TARGET_LABELS.set(labels.into_iter(), send)
-            }
-            crate::animation::StateChange::GroupLabels(labels) => {
-                ANIMATION_GROUP_LABELS.set(labels.into_iter(), send)
             }
         }
     }

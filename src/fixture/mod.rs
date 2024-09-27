@@ -35,13 +35,14 @@ use self::swarmolon::Swarmolon;
 use self::uv_led_brick::UvLedBrick;
 use self::venus::Venus;
 use self::wizard_extreme::WizardExtreme;
-use crate::animation::{ControlMessage as AnimationControlMessage, GroupSelection};
+use crate::animation::ControlMessage as AnimationControlMessage;
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
+use crate::show::{ControlMessage as ShowControlMessage, GroupSelection};
 
 pub mod animation_target;
 pub mod aquarius;
@@ -133,6 +134,7 @@ pub enum ControlMessagePayload {
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
+    Show(ShowControlMessage),
 }
 
 impl ControlMessagePayload {
@@ -396,7 +398,7 @@ impl Patch {
     /// Get a fixture group by selector index.
     pub fn group_by_selector_mut(
         &mut self,
-        selection: &GroupSelection,
+        selection: GroupSelection,
     ) -> Result<&mut FixtureGroup> {
         let Some(fixture_key) = self.selector_index.get(selection.0) else {
             bail!("tried to get out-of-range selector {}.", selection.0);
