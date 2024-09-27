@@ -1,7 +1,6 @@
 //! Maintain UI state for animations.
-use anyhow::{anyhow, bail, Result};
-use serde::Deserialize;
-use std::{collections::HashMap, hash::Hash};
+use anyhow::{bail, Result};
+use std::collections::HashMap;
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{

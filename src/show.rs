@@ -13,7 +13,7 @@ use crate::{
     osc::{EmitControlMessage, HandleStateChange, OscController, TalkbackMode},
 };
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;

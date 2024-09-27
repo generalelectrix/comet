@@ -1,13 +1,10 @@
-use anyhow::anyhow;
-
 use crate::show::ShowUIState;
 use crate::show::{ControlMessage, StateChange};
 
-use crate::fixture::{ControlMessagePayload, N_ANIM};
+use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
+use crate::osc::{ControlMap, MapControls, RadioButton};
 
-use super::basic_controls::{button, Button};
 use super::label_array::LabelArray;
 
 const N_ANIM_GROUP: usize = 8;
