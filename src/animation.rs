@@ -9,20 +9,20 @@ use crate::{
         Patch, N_ANIM,
     },
     osc::{EmitControlMessage, HandleStateChange},
-    show::GroupSelection,
+    show::ChannelId,
 };
 
 pub struct AnimationUIState {
-    selected_animator_by_group: HashMap<GroupSelection, usize>,
+    selected_animator_by_channel: HashMap<ChannelId, usize>,
 }
 
 impl AnimationUIState {
-    pub fn new(initial_selection: Option<GroupSelection>) -> Self {
+    pub fn new(initial_channel: Option<ChannelId>) -> Self {
         let mut state = Self {
-            selected_animator_by_group: Default::default(),
+            selected_animator_by_channel: Default::default(),
         };
-        if let Some(selector) = initial_selection {
-            state.selected_animator_by_group.insert(selector, 0);
+        if let Some(channel) = initial_channel {
+            state.selected_animator_by_channel.insert(channel, 0);
         }
         state
     }
@@ -30,7 +30,7 @@ impl AnimationUIState {
     /// Emit all current animation state, including target and selection.
     pub fn emit_state(
         &self,
-        channel: GroupSelection,
+        channel: ChannelId,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
@@ -46,7 +46,7 @@ impl AnimationUIState {
     pub fn control(
         &mut self,
         msg: ControlMessage,
-        channel: GroupSelection,
+        channel: ChannelId,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
@@ -65,7 +65,7 @@ impl AnimationUIState {
                 Self::emit(StateChange::Target(msg), emitter);
             }
             ControlMessage::SelectAnimation(n) => {
-                if self.animation_index_for_selector(channel) == n {
+                if self.animation_index_for_channel(channel) == n {
                     return Ok(());
                 }
                 self.set_current_animation(channel, n)?;
@@ -77,11 +77,11 @@ impl AnimationUIState {
 
     fn current_animation_with_index<'a>(
         &self,
-        selector: GroupSelection,
+        channel: ChannelId,
         patch: &'a mut Patch,
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
-        let animation_index = self.animation_index_for_selector(selector);
-        let group = patch.group_by_selector_mut(selector)?;
+        let animation_index = self.animation_index_for_channel(channel);
+        let group = patch.group_by_channel_mut(channel)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation(animation_index) {
             return Ok((anim, animation_index));
@@ -91,26 +91,26 @@ impl AnimationUIState {
 
     fn current_animation<'a>(
         &self,
-        selector: GroupSelection,
+        channel: ChannelId,
         patch: &'a mut Patch,
     ) -> Result<&'a mut dyn ControllableTargetedAnimation> {
-        let (ta, _) = self.current_animation_with_index(selector, patch)?;
+        let (ta, _) = self.current_animation_with_index(channel, patch)?;
         Ok(ta)
     }
 
-    fn animation_index_for_selector(&self, key: GroupSelection) -> usize {
-        self.selected_animator_by_group
-            .get(&key)
+    fn animation_index_for_channel(&self, channel: ChannelId) -> usize {
+        self.selected_animator_by_channel
+            .get(&channel)
             .cloned()
             .unwrap_or_default()
     }
 
     /// Set the current animation for the current channel to the provided value.
-    pub fn set_current_animation(&mut self, group: GroupSelection, n: usize) -> anyhow::Result<()> {
+    pub fn set_current_animation(&mut self, channel: ChannelId, n: usize) -> anyhow::Result<()> {
         if n > N_ANIM {
             bail!("animator index {n} out of range");
         }
-        self.selected_animator_by_group.insert(group, n);
+        self.selected_animator_by_channel.insert(channel, n);
         Ok(())
     }
 }

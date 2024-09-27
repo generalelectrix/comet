@@ -11,25 +11,25 @@ fixtures:
       galaxian: yes # 14
   - name: rotosphere_q3
     addr: 20
-    selector: True
+    channel: True
   - name: freedom_fries
     addr: 30
-    selector: True
+    channel: True
   - name: color
     addr: 60
     group: MirrorBall
     options:
       kind: sabre_spot
-    selector: True
+    channel: True
   - name: dimmer
     addr: 80
     group: UV
   - name: starlight
     addr: 100
-    selector: True
+    channel: True
   - name: aquarius
     addr: 128
-    selector: True
+    channel: True
   - name: wizard_extreme
     addr: 256
-    selector: True
+    channel: True

@@ -6,31 +6,31 @@ debug: False
 fixtures:
   - name: wizard_extreme
     addr: 16
-    selector: True
+    channel: True
   - name: wizard_extreme
     addr: 32
-    selector: True
+    channel: True
   - name: solar_system
     addr: 50
-    selector: True
+    channel: True
   - name: solar_system
     addr: 60
     group: ss2
-    selector: True
+    channel: True
   - name: colordynamic
     addr: 81
   - name: dimmer
     addr: 300
     group: fp_s4_0
-    selector: True
+    channel: True
   - name: dimmer
     addr: 301
     group: fp_s4_1
-    selector: True
+    channel: True
   - name: starlight
     addr: 70
-    selector: True
+    channel: True
   - name: starlight
     addr: 75
-    selector: True
+    channel: True
     group: tree_star

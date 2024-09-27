@@ -57,10 +57,10 @@ impl Show {
         osc_controller.map_controls(&master_controls);
         master_controls.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
 
-        let initial_channel = patch.validate_selector(0).ok();
+        let initial_channel = patch.validate_channel(0).ok();
 
         let show_ui_state = ShowUIState {
-            current_group: initial_channel,
+            current_channel: initial_channel,
         };
         osc_controller.map_controls(&show_ui_state);
         show_ui_state.emit_state(
@@ -149,7 +149,7 @@ impl Show {
                 Ok(())
             }
             ControlMessagePayload::Animation(msg) => {
-                let Some(channel) = self.show_ui_state.current_group else {
+                let Some(channel) = self.show_ui_state.current_channel else {
                     bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                 };
                 self.animation_ui_state
@@ -164,7 +164,7 @@ impl Show {
                 for group in self.patch.iter() {
                     group.emit_state(&sender);
                 }
-                if let Some(channel) = self.show_ui_state.current_group {
+                if let Some(channel) = self.show_ui_state.current_channel {
                     self.animation_ui_state
                         .emit_state(channel, &mut self.patch, &sender)?;
                 }
@@ -207,20 +207,20 @@ impl Show {
 
 /// Which channel is currently selected.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
-pub struct GroupSelection(pub usize);
+pub struct ChannelId(pub usize);
 
 pub struct ShowUIState {
-    current_group: Option<GroupSelection>,
+    current_channel: Option<ChannelId>,
 }
 
 impl ShowUIState {
     /// Emit all current animation state, including target and selection.
     pub fn emit_state(&self, patch: &mut Patch, emitter: &dyn EmitControlMessage) {
-        if let Some(selector) = self.current_group {
-            Self::emit(StateChange::SelectGroup(selector), emitter);
+        if let Some(channel) = self.current_channel {
+            Self::emit(StateChange::SelectChannel(channel), emitter);
         }
         Self::emit(
-            StateChange::GroupLabels(patch.selector_labels().collect()),
+            StateChange::ChannelLabels(patch.channel_labels().collect()),
             emitter,
         );
     }
@@ -233,14 +233,14 @@ impl ShowUIState {
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         match msg {
-            ControlMessage::SelectGroup(g) => {
-                // Validate the group.
-                let selector = patch.validate_selector(g)?;
-                if self.current_group == Some(selector) {
-                    // Group is not changed, ignore.
+            ControlMessage::SelectChannel(g) => {
+                // Validate the channel.
+                let channel = patch.validate_channel(g)?;
+                if self.current_channel == Some(channel) {
+                    // Channel is not changed, ignore.
                     return Ok(());
                 }
-                self.current_group = Some(selector);
+                self.current_channel = Some(channel);
                 self.emit_state(patch, emitter);
             }
         }
@@ -250,11 +250,11 @@ impl ShowUIState {
 
 #[derive(Clone, Debug)]
 pub enum ControlMessage {
-    SelectGroup(usize),
+    SelectChannel(usize),
 }
 
 #[derive(Clone, Debug)]
 pub enum StateChange {
-    SelectGroup(GroupSelection),
-    GroupLabels(Vec<String>),
+    SelectChannel(ChannelId),
+    ChannelLabels(Vec<String>),
 }

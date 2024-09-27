@@ -49,9 +49,9 @@ pub struct FixtureConfig {
     /// Additional key-value string options for configuring specific fixture types.
     #[serde(default)]
     pub options: Options,
-    /// If present, assign to a group selector.
+    /// If true, assign to a channel.
     #[serde(default)]
-    pub selector: bool,
+    pub channel: bool,
 }
 
 pub type Options = HashMap<String, String>;

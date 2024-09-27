@@ -7,32 +7,32 @@ fixtures:
   - name: wizard_extreme
     universe: 0
     addr: 123
-    selector: True
+    channel: True
 
   - name: wizard_extreme
     universe: 0
     addr: 134
-    selector: True
+    channel: True
 
   - name: astroscan
     universe: 0
     addr: 423
-    selector: True
+    channel: True
 
   - name: wizard_extreme
     universe: 0
     addr: 145
-    selector: True
+    channel: True
     mirror: True
 
   - name: wizard_extreme
     universe: 0
     addr: 297
-    selector: True
+    channel: True
     mirror: True
 
   - name: astroscan
     universe: 0
     addr: 437
-    selector: True
+    channel: True
     mirror: True

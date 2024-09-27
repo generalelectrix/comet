@@ -7,14 +7,14 @@ use crate::osc::{ControlMap, MapControls, RadioButton};
 
 use super::label_array::LabelArray;
 
-const N_ANIM_GROUP: usize = 8;
+const N_CHANNELS: usize = 8;
 
 const GROUP: &str = "Show";
 
 impl MapControls for ShowUIState {
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
-        ANIMATION_GROUP_SELECT.map(map, |msg| {
-            ControlMessagePayload::Show(ControlMessage::SelectGroup(msg))
+        CHANNEL_SELECT.map(map, |msg| {
+            ControlMessagePayload::Show(ControlMessage::SelectChannel(msg))
         });
     }
 
@@ -23,17 +23,17 @@ impl MapControls for ShowUIState {
     }
 }
 
-const ANIMATION_GROUP_SELECT: RadioButton = RadioButton {
+const CHANNEL_SELECT: RadioButton = RadioButton {
     group: GROUP,
-    control: "Group",
-    n: N_ANIM_GROUP,
+    control: "Channel",
+    n: N_CHANNELS,
     x_primary_coordinate: false,
 };
 
-const ANIMATION_GROUP_LABELS: LabelArray = LabelArray {
+const CHANNEL_LABELS: LabelArray = LabelArray {
     group: GROUP,
-    control: "GroupLabel",
-    n: N_ANIM_GROUP,
+    control: "ChannelLabel",
+    n: N_CHANNELS,
     empty_label: "",
 };
 
@@ -43,10 +43,8 @@ impl HandleOscStateChange<StateChange> for ShowUIState {
         S: crate::osc::EmitOscMessage + ?Sized,
     {
         match sc {
-            StateChange::SelectGroup(msg) => ANIMATION_GROUP_SELECT.set(msg.0, send),
-            StateChange::GroupLabels(labels) => {
-                ANIMATION_GROUP_LABELS.set(labels.into_iter(), send)
-            }
+            StateChange::SelectChannel(msg) => CHANNEL_SELECT.set(msg.0, send),
+            StateChange::ChannelLabels(labels) => CHANNEL_LABELS.set(labels.into_iter(), send),
         }
     }
 }

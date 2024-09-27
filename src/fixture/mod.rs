@@ -42,7 +42,7 @@ use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
-use crate::show::{ControlMessage as ShowControlMessage, GroupSelection};
+use crate::show::{ChannelId, ControlMessage as ShowControlMessage};
 
 pub mod animation_target;
 pub mod aquarius;
@@ -262,8 +262,8 @@ type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 pub struct Patch {
     fixtures: HashMap<FixtureGroupKey, FixtureGroup>,
     used_addrs: UsedAddrs,
-    // Lookup from selector index to the fixture group assigned to that selector.
-    selector_index: Vec<FixtureGroupKey>,
+    // Lookup from channel index to the fixture group assigned to that channel.
+    channel_index: Vec<FixtureGroupKey>,
 }
 
 lazy_static! {
@@ -306,11 +306,11 @@ impl Patch {
             ),
         };
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
-        // Add selector mapping index if provided.  Ensure this is an animatable fixture.
-        if cfg.selector {
+        // Add channel mapping index if provided.  Ensure this is an animatable fixture.
+        if cfg.channel {
             ensure!(
                 candidate.fixture.is_animated(),
-                "cannot assign non-animatable fixture {} to a selector",
+                "cannot assign non-animatable fixture {} to a channel",
                 candidate.fixture_type
             );
         }
@@ -334,8 +334,8 @@ impl Patch {
             return Ok(());
         }
         // No existing group; create a new one.
-        if cfg.selector {
-            self.selector_index.push(key.clone());
+        if cfg.channel {
+            self.channel_index.push(key.clone());
         }
         self.fixtures.insert(
             key.clone(),
@@ -395,36 +395,36 @@ impl Patch {
         Ok(used_addrs)
     }
 
-    /// Get a fixture group by selector index.
-    pub fn group_by_selector_mut(
-        &mut self,
-        selection: GroupSelection,
-    ) -> Result<&mut FixtureGroup> {
-        let Some(fixture_key) = self.selector_index.get(selection.0) else {
-            bail!("tried to get out-of-range selector {}.", selection.0);
+    /// Get a fixture group by channel ID.
+    pub fn group_by_channel_mut(&mut self, channel: ChannelId) -> Result<&mut FixtureGroup> {
+        let Some(fixture_key) = self.channel_index.get(channel.0) else {
+            bail!("tried to get out-of-range channel {}.", channel.0);
         };
         if let Some(fixture) = self.fixtures.get_mut(fixture_key) {
             Ok(fixture)
         } else {
             bail!(
-                "selector ID {} mapped to non-existent fixture key {fixture_key}",
-                selection.0
+                "channel ID {} mapped to non-existent fixture key {fixture_key}",
+                channel.0
             );
         }
     }
 
-    /// Validate that a selector index refers to a selector that actually exists.
-    pub fn validate_selector(&self, selector: usize) -> Result<GroupSelection> {
-        if selector < self.selector_index.len() {
-            Ok(GroupSelection(selector))
+    /// Validate that a channel index refers to a channel that actually exists.
+    pub fn validate_channel(&self, channel: usize) -> Result<ChannelId> {
+        if channel < self.channel_index.len() {
+            Ok(ChannelId(channel))
         } else {
-            bail!("group selector {selector} out of range");
+            bail!(
+                "channel selector {channel} out of range, only {} channels are configured",
+                self.channel_index.len()
+            );
         }
     }
 
-    /// Iterate over all of the labels for each selector.
-    pub fn selector_labels(&self) -> impl Iterator<Item = String> + '_ {
-        self.selector_index
+    /// Iterate over all of the labels for each channels.
+    pub fn channel_labels(&self) -> impl Iterator<Item = String> + '_ {
+        self.channel_index
             .iter()
             .filter_map(|i| self.fixtures.get(i))
             .map(|f| match f.key.group.as_ref() {

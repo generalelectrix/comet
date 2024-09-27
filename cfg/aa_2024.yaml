@@ -6,9 +6,9 @@ debug: False
 fixtures:
   - name: solar_system
     addr: 50
-    selector: True
+    channel: True
     group: left
   - name: solar_system
     addr: 60
-    selector: True
+    channel: True
     group: right
