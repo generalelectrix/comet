@@ -4,16 +4,16 @@ use crate::fixture::{
 use anyhow::bail;
 use anyhow::Result;
 use control_message::OscControlMessage;
-use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
+use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::thread;
 use std::time::Duration;
 use thiserror::Error;
@@ -27,6 +27,9 @@ mod fixture;
 mod label_array;
 mod master;
 mod radio_button;
+mod register;
+
+pub use register::prompt_osc_config;
 
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
@@ -77,29 +80,9 @@ pub struct OscController {
     send: Sender<OscControlResponse>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct OscSenderConfig {
-    host: String,
-    port: u16,
-}
-
-impl OscSenderConfig {
-    pub fn as_socket_addr(&self) -> Result<SocketAddr> {
-        Ok(SocketAddr::from_str(&format!(
-            "{}:{}",
-            self.host, self.port
-        ))?)
-    }
-}
-
 impl OscController {
-    pub fn new(receive_port: u16, send_configs: &[OscSenderConfig]) -> Result<Self> {
+    pub fn new(receive_port: u16, send_addrs: Vec<OscClientId>) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
-        let send_addrs = send_configs
-            .iter()
-            .map(OscSenderConfig::as_socket_addr)
-            .map(|r| r.map(OscClientId))
-            .collect::<Result<_>>()?;
         let control_recv = start_listener(recv_addr)?;
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
@@ -216,7 +199,7 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Deserialize)]
 pub struct OscClientId(SocketAddr);
 
 impl OscClientId {
@@ -329,7 +312,7 @@ impl<C> ControlMap<C> {
 /// Forward OSC messages to the provided sender.
 /// Spawns a new thread to handle listening for messages.
 fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
-    let (send, recv) = unbounded();
+    let (send, recv) = channel();
     let socket = UdpSocket::bind(addr)?;
 
     let mut buf = [0u8; rosc::decoder::MTU];
@@ -373,7 +356,7 @@ pub struct OscControlResponse {
 /// Sends each message to every provided address, unless the talkback mode
 /// says otherwise.
 fn start_sender(clients: Vec<OscClientId>) -> Result<Sender<OscControlResponse>> {
-    let (send, recv) = unbounded::<OscControlResponse>();
+    let (send, recv) = channel::<OscControlResponse>();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
 
     thread::spawn(move || loop {

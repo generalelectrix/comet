@@ -1,6 +1,6 @@
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
-use crate::osc::OscSenderConfig;
+use crate::osc::OscClientId;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,8 +8,11 @@ use std::fs::File;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    #[serde(default = "default_receive_port")]
     pub receive_port: u16,
-    pub controllers: Vec<OscSenderConfig>,
+    #[serde(default)]
+    pub controllers: Vec<OscClientId>,
+    #[serde(default)]
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,
 }
@@ -52,3 +55,7 @@ pub struct FixtureConfig {
 }
 
 pub type Options = HashMap<String, String>;
+
+const fn default_receive_port() -> u16 {
+    8000
+}

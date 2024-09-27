@@ -36,11 +36,14 @@ pub fn prompt_start_clock_service(ctx: Context) -> Result<Option<ClockService>> 
         bail!("No clock providers found.");
     }
     println!("Available clock providers:");
-    for provider in providers {
+    for provider in &providers {
         println!("{provider}");
     }
-    let provider = prompt_parse("Select a provider", |s| Ok(s.to_string()))?;
-    println!("Connecting...");
+    let provider = if providers.len() == 1 {
+        providers[0].clone()
+    } else {
+        prompt_parse("Select a provider", |s| Ok(s.to_string()))?
+    };
     let mut receiver = service.subscribe(&provider, None)?;
     let storage = Arc::new(Mutex::new(SharedClockData::default()));
     let storage_handle = storage.clone();
@@ -58,5 +61,6 @@ pub fn prompt_start_clock_service(ctx: Context) -> Result<Option<ClockService>> 
         let mut clock_state = storage_handle.lock().unwrap();
         *clock_state = msg;
     });
+    println!("Connected to {provider}.");
     Ok(Some(ClockService(storage)))
 }
