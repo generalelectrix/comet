@@ -9,7 +9,6 @@ edition = "2021"
 serde = { version = "^1", features = ["derive", "rc"] }
 log = "0.4"
 simplelog = "0.12"
-derive_more = { version = "1", features = ["full"] }
 lazy_static = "^1"
 rosc = "0.10"
 rust_dmx = "0.5"
