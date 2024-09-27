@@ -88,18 +88,12 @@ impl AnimatedFixture for FreedomFries {
             .strobe
             .render_range_with_master(group_controls.strobe(), 0, 11, 255);
         dmx_buf[6] = {
-            let autopilot = group_controls.autopilot();
-            let program = if autopilot.on() {
-                autopilot.program() % Self::PROGRAM_COUNT
-            } else {
-                self.program
-            };
             if !self.run_program {
                 0
-            } else if !autopilot.on() && self.program_cycle_all {
+            } else if self.program_cycle_all {
                 227
             } else {
-                ((program * 8) + 11) as u8
+                ((self.program * 8) + 11) as u8
             }
         };
         dmx_buf[7] = unipolar_to_range(0, 255, UnipolarFloat::new(speed));

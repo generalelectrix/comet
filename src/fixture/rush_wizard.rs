@@ -6,7 +6,6 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::prelude::*;
-use crate::master::Autopilot;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -58,33 +57,10 @@ impl RushWizard {
         };
         Self::emit(sc, emitter);
     }
-
-    fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = 0;
-        dmx_buf[1] = unipolar_to_range(0, 255, self.dimmer);
-        dmx_buf[2] = 0;
-        dmx_buf[3] = 0;
-        dmx_buf[4] = 0;
-        dmx_buf[5] = 0;
-        dmx_buf[6] = 0;
-        dmx_buf[7] = 0;
-
-        dmx_buf[8] = if autopilot.sound_active() {
-            135
-        } else {
-            let program = (autopilot.program() % 20) as u8;
-            (program * 5) + 15
-        };
-        dmx_buf[9] = 50; // TODO hardcoded FX speed
-    }
 }
 
 impl NonAnimatedFixture for RushWizard {
     fn render(&self, group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
-        if group_controls.autopilot().on() {
-            self.render_autopilot(group_controls.autopilot(), dmx_buf);
-            return;
-        }
         dmx_buf[0] = self
             .strobe
             .render_range_with_master(group_controls.strobe(), 8, 16, 131);

@@ -40,7 +40,7 @@ use crate::config::{FixtureConfig, Options};
 use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::fixture::colordynamic::Colordynamic;
-use crate::master::{Autopilot, ControlMessage as MasterControlMessage, MasterControls, Strobe};
+use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
 
 pub mod animation_target;
@@ -558,10 +558,6 @@ pub struct FixtureGroupControls<'a> {
 impl<'a> FixtureGroupControls<'a> {
     pub fn strobe(&self) -> &Strobe {
         self.master_controls.strobe()
-    }
-
-    pub fn autopilot(&self) -> &Autopilot {
-        self.master_controls.autopilot()
     }
 }
 

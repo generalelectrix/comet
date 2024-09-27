@@ -6,7 +6,6 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use super::prelude::*;
-use crate::master::Autopilot;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -84,48 +83,10 @@ impl Swarmolon {
         };
         Self::emit(sc, emitter);
     }
-
-    fn render_autopilot(&self, autopilot: &Autopilot, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = if autopilot.sound_active() { 130 } else { 25 };
-        dmx_buf[1] = 0;
-        dmx_buf[2] = 0;
-        dmx_buf[3] = 0;
-        dmx_buf[4] = 0;
-        dmx_buf[5] = 0;
-        dmx_buf[6] = 0;
-        dmx_buf[7] = 0;
-        dmx_buf[8] = 0;
-        let mut offset = CHANNEL_COUNT;
-        if self.quad_phase_mindmeld {
-            let slice = &mut dmx_buf[offset..offset + QUAD_PHASE_CHANNEL_COUNT];
-            offset += QUAD_PHASE_CHANNEL_COUNT;
-            slice[0] = 51; // just use white, it's gonna be a massive color clusterfuck anyway...
-            slice[1] = if autopilot.sound_active() { 255 } else { 30 };
-            slice[2] = 0;
-            slice[3] = 255;
-        }
-        if self.galaxian_mindmeld {
-            let slice = &mut dmx_buf[offset..offset + GALAXIAN_CHANNEL_COUNT];
-            slice[0] = 0;
-            slice[1] = 0;
-            slice[2] = 0;
-            slice[3] = 0;
-            let program = (autopilot.program() % 15) as u8;
-            slice[4] = if autopilot.sound_active() {
-                255
-            } else {
-                (program * 16) + 8
-            };
-        }
-    }
 }
 
 impl NonAnimatedFixture for Swarmolon {
     fn render(&self, group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
-        if group_controls.autopilot().on() {
-            self.render_autopilot(group_controls.autopilot(), dmx_buf);
-            return;
-        }
         dmx_buf[0] = 255; // always set to DMX mode
         dmx_buf[1] = self.derby_color.render();
         dmx_buf[2] = 0; // Not using automatic derby programs.

@@ -11,8 +11,6 @@ use super::{ControlMap, HandleOscStateChange, MapControls};
 const GROUP: &str = "Master";
 
 const USE_MASTER_STROBE_RATE: Button = button(GROUP, "UseMasterStrobeRate");
-const AUTOPILOT_ON: Button = button(GROUP, "AutopilotOn");
-const AUTOPILOT_SOUND_ACTIVE: Button = button(GROUP, "AutopilotSoundActive");
 const REFRESH_UI: Button = button(GROUP, "RefreshUI");
 
 impl MapControls for MasterControls {
@@ -20,12 +18,6 @@ impl MapControls for MasterControls {
         map_strobe(map, GROUP, "Strobe", &wrap_strobe);
         USE_MASTER_STROBE_RATE.map_state(map, |v| {
             ControlMessagePayload::Master(StateChange::UseMasterStrobeRate(v))
-        });
-        AUTOPILOT_ON.map_state(map, |v| {
-            ControlMessagePayload::Master(StateChange::AutopilotOn(v))
-        });
-        AUTOPILOT_SOUND_ACTIVE.map_state(map, |v| {
-            ControlMessagePayload::Master(StateChange::AutopilotSoundActive(v))
         });
         REFRESH_UI.map_trigger(map, || ControlMessagePayload::RefreshUI)
     }
