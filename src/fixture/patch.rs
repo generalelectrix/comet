@@ -30,6 +30,7 @@ use super::profile::swarmolon::Swarmolon;
 use super::profile::uv_led_brick::UvLedBrick;
 use super::profile::venus::Venus;
 use super::profile::wizard_extreme::WizardExtreme;
+use crate::channel::{ChannelControls, Channels};
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::UniverseIdx;
 use crate::fixture::group::GroupFixtureConfig;
@@ -41,8 +42,6 @@ type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 pub struct Patch {
     fixtures: HashMap<FixtureGroupKey, FixtureGroup>,
     used_addrs: UsedAddrs,
-    // Lookup from channel index to the fixture group assigned to that channel.
-    channel_index: Vec<FixtureGroupKey>,
 }
 
 lazy_static! {
@@ -71,7 +70,7 @@ lazy_static! {
 }
 
 impl Patch {
-    pub fn patch(&mut self, cfg: FixtureConfig) -> anyhow::Result<()> {
+    pub fn patch(&mut self, channels: &mut Channels, cfg: FixtureConfig) -> anyhow::Result<()> {
         let mut candidates = PATCHERS
             .iter()
             .flat_map(|p| p(&cfg))
@@ -113,22 +112,19 @@ impl Patch {
             return Ok(());
         }
         // No existing group; create a new one.
-        if cfg.channel {
-            self.channel_index.push(key.clone());
-        }
-        self.fixtures.insert(
+        let channel_id = cfg.channel.then(|| channels.add(key.clone()));
+        let group = FixtureGroup::new(
             key.clone(),
-            FixtureGroup::new(
-                key,
-                GroupFixtureConfig {
-                    universe: cfg.universe,
-                    dmx_addr: cfg.addr.dmx_index(),
-                    mirror: cfg.mirror,
-                },
-                candidate.channel_count,
-                candidate.fixture,
-            ),
+            channel_id,
+            GroupFixtureConfig {
+                universe: cfg.universe,
+                dmx_addr: cfg.addr.dmx_index(),
+                mirror: cfg.mirror,
+            },
+            candidate.channel_count,
+            candidate.fixture,
         );
+        self.fixtures.insert(key, group);
 
         Ok(())
     }
@@ -174,45 +170,12 @@ impl Patch {
         Ok(used_addrs)
     }
 
-    /// Get a fixture group by channel ID.
-    pub fn group_by_channel_mut(&mut self, channel: ChannelId) -> Result<&mut FixtureGroup> {
-        let Some(fixture_key) = self.channel_index.get(channel.0) else {
-            bail!("tried to get out-of-range channel {}.", channel.0);
-        };
-        if let Some(fixture) = self.fixtures.get_mut(fixture_key) {
-            Ok(fixture)
-        } else {
-            bail!(
-                "channel ID {} mapped to non-existent fixture key {fixture_key}",
-                channel.0
-            );
-        }
+    /// Get the fixture/channel patched with this key.
+    pub fn get(&self, key: &FixtureGroupKey) -> Option<&FixtureGroup> {
+        self.fixtures.get(key)
     }
 
-    /// Validate that a channel index refers to a channel that actually exists.
-    pub fn validate_channel(&self, channel: usize) -> Result<ChannelId> {
-        if channel < self.channel_index.len() {
-            Ok(ChannelId(channel))
-        } else {
-            bail!(
-                "channel selector {channel} out of range, only {} channels are configured",
-                self.channel_index.len()
-            );
-        }
-    }
-
-    /// Iterate over all of the labels for each channels.
-    pub fn channel_labels(&self) -> impl Iterator<Item = String> + '_ {
-        self.channel_index
-            .iter()
-            .filter_map(|i| self.fixtures.get(i))
-            .map(|f| match f.name() {
-                None => f.fixture_type().to_string(),
-                Some(g) => format!("{g}({})", f.fixture_type()),
-            })
-    }
-
-    /// Get the fixture patched with this key, mutably.
+    /// Get the fixture/channel patched with this key, mutably.
     pub fn get_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
         self.fixtures.get_mut(key)
     }

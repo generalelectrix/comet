@@ -13,14 +13,18 @@ use serde::{Deserialize, Serialize};
 use super::animation_target::ControllableTargetedAnimation;
 use super::fixture::{Fixture, FixtureControlMessage, FixtureType};
 use super::ControlMessagePayload;
+use crate::channel::{ChannelControls, Channels};
 use crate::dmx::DmxBuffer;
 use crate::master::{FixtureGroupControls, MasterControls};
 use crate::osc::{MapControls, OscMessageWithGroupSender};
+use crate::show::ChannelId;
 
 #[derive(Debug)]
 pub struct FixtureGroup {
     /// The unique identifier of this group.
     key: FixtureGroupKey,
+    /// The channel this group is assigned to, if any.
+    channel_id: Option<ChannelId>,
     /// The configurations for the fixtures in the group.
     fixture_configs: Vec<GroupFixtureConfig>,
     /// The number of DMX channels used by this fixture.
@@ -33,12 +37,14 @@ impl FixtureGroup {
     /// Create a fixture group, containing a single fixture config.
     pub fn new(
         key: FixtureGroupKey,
+        channel_id: Option<ChannelId>,
         fixture_config: GroupFixtureConfig,
         channel_count: usize,
         fixture: Box<dyn Fixture>,
     ) -> Self {
         Self {
             key,
+            channel_id,
             fixture_configs: vec![fixture_config],
             channel_count,
             fixture,
@@ -107,7 +113,12 @@ impl FixtureGroup {
 
     /// Render into the provided DMX universe.
     /// The master controls are provided to potentially alter the render.
-    pub fn render(&self, master_controls: &MasterControls, dmx_buffers: &mut [DmxBuffer]) {
+    pub fn render(
+        &self,
+        master_controls: &MasterControls,
+        channels: &Channels,
+        dmx_buffers: &mut [DmxBuffer],
+    ) {
         let phase_offset_per_fixture = Phase::new(1.0 / self.fixture_configs.len() as f64);
         for (i, cfg) in self.fixture_configs.iter().enumerate() {
             let phase_offset = phase_offset_per_fixture * i as f64;
@@ -117,6 +128,10 @@ impl FixtureGroup {
                 phase_offset,
                 &FixtureGroupControls {
                     master_controls,
+                    channel_controls: self
+                        .channel_id
+                        .and_then(|id| channels.get(id))
+                        .unwrap_or(&ChannelControls::TRANSPARENT),
                     mirror: cfg.mirror,
                 },
                 dmx_buf,

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
+    channel::Channels,
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
         Patch,
@@ -31,10 +32,11 @@ impl AnimationUIState {
     pub fn emit_state(
         &self,
         channel: ChannelId,
+        channels: &Channels,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
-        let (ta, index) = self.current_animation_with_index(channel, patch)?;
+        let (ta, index) = self.current_animation_with_index(channel, channels, patch)?;
         ta.anim().emit_state(&mut InnerAnimationEmitter(emitter));
         Self::emit(StateChange::Target(ta.target()), emitter);
         Self::emit(StateChange::SelectAnimation(index), emitter);
@@ -47,17 +49,18 @@ impl AnimationUIState {
         &mut self,
         msg: ControlMessage,
         channel: ChannelId,
+        channels: &Channels,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         match msg {
             ControlMessage::Animation(msg) => {
-                self.current_animation(channel, patch)?
+                self.current_animation(channel, channels, patch)?
                     .anim_mut()
                     .control(msg, &mut InnerAnimationEmitter(emitter));
             }
             ControlMessage::Target(msg) => {
-                let anim = self.current_animation(channel, patch)?;
+                let anim = self.current_animation(channel, channels, patch)?;
                 if anim.target() == msg {
                     return Ok(());
                 }
@@ -69,7 +72,7 @@ impl AnimationUIState {
                     return Ok(());
                 }
                 self.set_current_animation(channel, n)?;
-                self.emit_state(channel, patch, emitter)?;
+                self.emit_state(channel, channels, patch, emitter)?;
             }
         }
         Ok(())
@@ -78,10 +81,11 @@ impl AnimationUIState {
     fn current_animation_with_index<'a>(
         &self,
         channel: ChannelId,
+        channels: &'a Channels,
         patch: &'a mut Patch,
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
         let animation_index = self.animation_index_for_channel(channel);
-        let group = patch.group_by_channel_mut(channel)?;
+        let group = channels.group_by_channel_mut(patch, channel)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation(animation_index) {
             return Ok((anim, animation_index));
@@ -92,9 +96,10 @@ impl AnimationUIState {
     fn current_animation<'a>(
         &self,
         channel: ChannelId,
+        channels: &'a Channels,
         patch: &'a mut Patch,
     ) -> Result<&'a mut dyn ControllableTargetedAnimation> {
-        let (ta, _) = self.current_animation_with_index(channel, patch)?;
+        let (ta, _) = self.current_animation_with_index(channel, channels, patch)?;
         Ok(ta)
     }
 

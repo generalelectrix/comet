@@ -5,6 +5,7 @@ use std::{
 
 use crate::{
     animation::AnimationUIState,
+    channel::Channels,
     clock_service::ClockService,
     config::Config,
     dmx::DmxBuffer,
@@ -22,6 +23,7 @@ use rust_dmx::DmxPort;
 pub struct Show {
     osc_controller: OscController,
     patch: Patch,
+    channels: Channels,
     master_controls: MasterControls,
     show_ui_state: ShowUIState,
     animation_ui_state: AnimationUIState,
@@ -33,12 +35,13 @@ const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
     pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
+        let mut channels = Channels::default();
         let mut patch = Patch::default();
 
         let mut osc_controller = OscController::new(cfg.receive_port, cfg.controllers)?;
 
         for fixture in cfg.fixtures.into_iter() {
-            patch.patch(fixture)?;
+            patch.patch(&mut channels, fixture)?;
         }
 
         // Only patch a fixture type's controls once.
@@ -57,13 +60,14 @@ impl Show {
         osc_controller.map_controls(&master_controls);
         master_controls.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
 
-        let initial_channel = patch.validate_channel(0).ok();
+        let initial_channel = channels.validate_channel(0).ok();
 
         let show_ui_state = ShowUIState {
             current_channel: initial_channel,
         };
         osc_controller.map_controls(&show_ui_state);
         show_ui_state.emit_state(
+            &channels,
             &mut patch,
             &osc_controller.sender_with_metadata(None, TalkbackMode::All),
         );
@@ -75,14 +79,16 @@ impl Show {
             osc_controller.map_controls(&animation_ui_state);
             animation_ui_state.emit_state(
                 initial_channel.unwrap(),
+                &channels,
                 &mut patch,
                 &osc_controller.sender_with_metadata(None, TalkbackMode::All),
             )?;
         };
 
         Ok(Self {
-            patch,
             osc_controller,
+            patch,
+            channels,
             master_controls,
             show_ui_state,
             animation_ui_state,
@@ -152,21 +158,32 @@ impl Show {
                 let Some(channel) = self.show_ui_state.current_channel else {
                     bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                 };
-                self.animation_ui_state
-                    .control(msg, channel, &mut self.patch, &sender)
+                self.animation_ui_state.control(
+                    msg,
+                    channel,
+                    &self.channels,
+                    &mut self.patch,
+                    &sender,
+                )
             }
             ControlMessagePayload::Show(msg) => {
-                self.show_ui_state.control(msg, &mut self.patch, &sender)
+                self.show_ui_state
+                    .control(msg, &self.channels, &mut self.patch, &sender)
             }
             ControlMessagePayload::RefreshUI => {
                 self.master_controls.emit_state(&sender);
-                self.show_ui_state.emit_state(&mut self.patch, &sender);
+                self.show_ui_state
+                    .emit_state(&self.channels, &mut self.patch, &sender);
                 for group in self.patch.iter() {
                     group.emit_state(&sender);
                 }
                 if let Some(channel) = self.show_ui_state.current_channel {
-                    self.animation_ui_state
-                        .emit_state(channel, &mut self.patch, &sender)?;
+                    self.animation_ui_state.emit_state(
+                        channel,
+                        &self.channels,
+                        &mut self.patch,
+                        &sender,
+                    )?;
                 }
                 Ok(())
             }
@@ -200,7 +217,7 @@ impl Show {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
         for group in self.patch.iter() {
-            group.render(&self.master_controls, dmx_buffers);
+            group.render(&self.master_controls, &self.channels, dmx_buffers);
         }
     }
 }
@@ -212,12 +229,17 @@ pub struct ShowUIState {
 
 impl ShowUIState {
     /// Emit all current animation state, including target and selection.
-    pub fn emit_state(&self, patch: &mut Patch, emitter: &dyn EmitControlMessage) {
+    pub fn emit_state(
+        &self,
+        channels: &Channels,
+        patch: &mut Patch,
+        emitter: &dyn EmitControlMessage,
+    ) {
         if let Some(channel) = self.current_channel {
             Self::emit(StateChange::SelectChannel(channel), emitter);
         }
         Self::emit(
-            StateChange::ChannelLabels(patch.channel_labels().collect()),
+            StateChange::ChannelLabels(channels.channel_labels(patch).collect()),
             emitter,
         );
     }
@@ -226,19 +248,20 @@ impl ShowUIState {
     pub fn control(
         &mut self,
         msg: ControlMessage,
+        channels: &Channels,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         match msg {
             ControlMessage::SelectChannel(g) => {
                 // Validate the channel.
-                let channel = patch.validate_channel(g)?;
+                let channel = channels.validate_channel(g)?;
                 if self.current_channel == Some(channel) {
                     // Channel is not changed, ignore.
                     return Ok(());
                 }
                 self.current_channel = Some(channel);
-                self.emit_state(patch, emitter);
+                self.emit_state(channels, patch, emitter);
             }
         }
         Ok(())
