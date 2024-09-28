@@ -1,6 +1,5 @@
 //! Types related to specifying and controlling individual fixture models.
 use anyhow::Result;
-use itertools::Itertools;
 use std::any::{type_name, Any};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;

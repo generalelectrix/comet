@@ -1,7 +1,6 @@
 //! Define groups of fixtures, sharing a common fixture
 
 use anyhow::Context;
-use itertools::Itertools;
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 use std::sync::Arc;

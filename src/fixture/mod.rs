@@ -9,10 +9,11 @@ use crate::osc::{OscClientId, TalkbackMode};
 use crate::show::ControlMessage as ShowControlMessage;
 
 pub mod animation_target;
+#[allow(clippy::module_inception)]
 mod fixture;
 mod group;
 mod patch;
-pub mod profile;
+mod profile;
 
 pub use fixture::FixtureType;
 pub use group::{FixtureGroup, FixtureGroupKey, GroupName};
