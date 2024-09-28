@@ -1,6 +1,5 @@
-use crate::fixture::{
-    ControlMessage, ControlMessagePayload, FixtureGroupKey, FixtureType, GroupName,
-};
+use crate::fixture::FixtureGroupKey;
+use crate::fixture::{ControlMessage, ControlMessagePayload, FixtureType, GroupName};
 use anyhow::bail;
 use anyhow::Result;
 use control_message::OscControlMessage;
