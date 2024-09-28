@@ -30,11 +30,10 @@ use super::profile::swarmolon::Swarmolon;
 use super::profile::uv_led_brick::UvLedBrick;
 use super::profile::venus::Venus;
 use super::profile::wizard_extreme::WizardExtreme;
-use crate::channel::{ChannelControls, Channels};
+use crate::channel::Channels;
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::UniverseIdx;
 use crate::fixture::group::GroupFixtureConfig;
-use crate::show::ChannelId;
 
 type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 
