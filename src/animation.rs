@@ -5,8 +5,8 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
     fixture::{
-        animation_target::{AnimationTargetIndex, ControllableTargetedAnimation},
-        Patch, N_ANIM,
+        animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
+        Patch,
     },
     osc::{EmitControlMessage, HandleStateChange},
     show::ChannelId,

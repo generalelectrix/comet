@@ -2,7 +2,6 @@ use fixture::FixtureControlMessage;
 use std::any::Any;
 use std::fmt::Debug;
 
-use self::animation_target::TargetedAnimation;
 use crate::animation::ControlMessage as AnimationControlMessage;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{OscClientId, TalkbackMode};
@@ -44,9 +43,6 @@ impl ControlMessagePayload {
     }
 }
 
-pub const N_ANIM: usize = 4;
-pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
-
 /// Wrap up the master and group-level controls into a single struct to pass
 /// into fixtures.
 pub struct FixtureGroupControls<'a> {
@@ -68,7 +64,6 @@ pub mod prelude {
         NonAnimatedFixture,
     };
     pub use super::patch::{PatchAnimatedFixture, PatchFixture};
-    #[allow(unused)]
     pub use super::FixtureGroupControls;
     pub use crate::fixture::animation_target::TargetedAnimationValues;
     pub use crate::osc::HandleStateChange;

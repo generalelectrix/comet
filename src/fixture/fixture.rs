@@ -9,8 +9,10 @@ use anyhow::anyhow;
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
-use super::animation_target::{ControllableTargetedAnimation, TargetedAnimationValues};
-use super::{ControlMessagePayload, FixtureGroupControls, TargetedAnimations, N_ANIM};
+use super::animation_target::{
+    ControllableTargetedAnimation, TargetedAnimationValues, TargetedAnimations, N_ANIM,
+};
+use super::{ControlMessagePayload, FixtureGroupControls};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::osc::MapControls;
 

@@ -5,7 +5,8 @@ use crate::animation::AnimationUIState;
 use crate::animation::ControlMessage as AnimationControlMessage;
 use crate::animation::ControlMessage::Animation as WrapAnimation;
 
-use crate::fixture::{ControlMessagePayload, N_ANIM};
+use crate::fixture::animation_target::N_ANIM;
+use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
 use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
 
