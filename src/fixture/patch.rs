@@ -1,21 +1,11 @@
-use anyhow::{ensure, Context, Result};
+use anyhow::{ensure, Result};
 use itertools::Itertools;
-use std::any::{type_name, Any};
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display};
-use std::ops::Deref;
-use std::sync::Arc;
-use std::time::Duration;
 
-use anyhow::{anyhow, bail};
+use anyhow::bail;
 use lazy_static::lazy_static;
-use log::{debug, info};
-use number::{Phase, UnipolarFloat};
-use serde::{Deserialize, Serialize};
+use log::info;
 
-use super::animation_target::{
-    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
-};
 use super::fixture::{
     AnimatedFixture, Fixture, FixtureType, FixtureWithAnimations, NonAnimatedFixture,
 };
@@ -40,14 +30,10 @@ use super::profile::swarmolon::Swarmolon;
 use super::profile::uv_led_brick::UvLedBrick;
 use super::profile::venus::Venus;
 use super::profile::wizard_extreme::WizardExtreme;
-use crate::animation::ControlMessage as AnimationControlMessage;
 use crate::config::{FixtureConfig, Options};
-use crate::dmx::{DmxBuffer, UniverseIdx};
-use crate::fixture::animation_target::AnimationTarget;
+use crate::dmx::UniverseIdx;
 use crate::fixture::group::GroupFixtureConfig;
-use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
-use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
-use crate::show::{ChannelId, ControlMessage as ShowControlMessage};
+use crate::show::ChannelId;
 
 type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 
@@ -111,7 +97,7 @@ impl Patch {
             "Controlling {} at {} (group: {}).",
             cfg.name,
             cfg.addr,
-            cfg.group.as_ref().map(|g| g.deref()).unwrap_or("none")
+            cfg.group.as_deref().unwrap_or("none")
         );
         let key = FixtureGroupKey {
             fixture: candidate.fixture_type,

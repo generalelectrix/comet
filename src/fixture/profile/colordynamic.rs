@@ -5,7 +5,6 @@ use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::prelude::*;
 use crate::master::FixtureGroupControls;

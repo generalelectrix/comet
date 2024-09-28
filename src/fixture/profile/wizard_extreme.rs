@@ -5,7 +5,6 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};

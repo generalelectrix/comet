@@ -1,49 +1,12 @@
-use anyhow::{ensure, Context, Result};
 use fixture::FixtureControlMessage;
-use itertools::Itertools;
-use std::any::{type_name, Any};
-use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display};
-use std::ops::Deref;
-use std::sync::Arc;
-use std::time::Duration;
+use std::any::Any;
+use std::fmt::Debug;
 
-use anyhow::{anyhow, bail};
-use lazy_static::lazy_static;
-use log::{debug, info};
-use number::{Phase, UnipolarFloat};
-use serde::{Deserialize, Serialize};
-
-use self::animation_target::{
-    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
-};
-use self::profile::aquarius::Aquarius;
-use self::profile::astroscan::Astroscan;
-use self::profile::color::Color;
-use self::profile::colordynamic::Colordynamic;
-use self::profile::comet::Comet;
-use self::profile::dimmer::Dimmer;
-use self::profile::faderboard::Faderboard;
-use self::profile::freedom_fries::FreedomFries;
-use self::profile::h2o::H2O;
-use self::profile::hypnotic::Hypnotic;
-use self::profile::lumasphere::Lumasphere;
-use self::profile::radiance::Radiance;
-use self::profile::rotosphere_q3::RotosphereQ3;
-use self::profile::rush_wizard::RushWizard;
-use self::profile::solar_system::SolarSystem;
-use self::profile::starlight::Starlight;
-use self::profile::swarmolon::Swarmolon;
-use self::profile::uv_led_brick::UvLedBrick;
-use self::profile::venus::Venus;
-use self::profile::wizard_extreme::WizardExtreme;
+use self::animation_target::TargetedAnimation;
 use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::config::{FixtureConfig, Options};
-use crate::dmx::{DmxBuffer, UniverseIdx};
-use crate::fixture::animation_target::AnimationTarget;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
-use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
-use crate::show::{ChannelId, ControlMessage as ShowControlMessage};
+use crate::osc::{OscClientId, TalkbackMode};
+use crate::show::ControlMessage as ShowControlMessage;
 
 pub mod animation_target;
 mod fixture;

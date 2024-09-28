@@ -1,30 +1,19 @@
 //! Types related to specifying and controlling individual fixture models.
-use anyhow::{ensure, Context, Result};
+use anyhow::Result;
 use itertools::Itertools;
 use std::any::{type_name, Any};
-use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
-use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{anyhow, bail};
-use lazy_static::lazy_static;
-use log::{debug, info};
+use anyhow::anyhow;
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
-use super::animation_target::{
-    ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
-};
+use super::animation_target::{ControllableTargetedAnimation, TargetedAnimationValues};
 use super::{ControlMessagePayload, FixtureGroupControls, TargetedAnimations, N_ANIM};
-use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::config::{FixtureConfig, Options};
-use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
-use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
-use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
-use crate::show::{ChannelId, ControlMessage as ShowControlMessage};
+use crate::osc::MapControls;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FixtureType(pub &'static str);
@@ -32,7 +21,7 @@ pub struct FixtureType(pub &'static str);
 impl Deref for FixtureType {
     type Target = str;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 

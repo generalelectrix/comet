@@ -5,7 +5,6 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-
 use super::color::{
     AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
     StateChange as ColorStateChange,

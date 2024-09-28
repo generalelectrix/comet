@@ -1,32 +1,22 @@
 //! Define groups of fixtures, sharing a common fixture
 
-use anyhow::{ensure, Context, Result};
-use itertools::{Group, Itertools};
-use std::any::{type_name, Any};
-use std::collections::{HashMap, HashSet};
+use anyhow::Context;
+use itertools::Itertools;
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{anyhow, bail};
-use lazy_static::lazy_static;
-use log::{debug, info};
+use log::debug;
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
 use super::animation_target::ControllableTargetedAnimation;
 use super::fixture::{Fixture, FixtureControlMessage, FixtureType};
 use super::ControlMessagePayload;
-use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::config::{FixtureConfig, Options};
-use crate::dmx::{DmxBuffer, UniverseIdx};
-use crate::fixture::animation_target::AnimationTarget;
-use crate::master::{
-    ControlMessage as MasterControlMessage, FixtureGroupControls, MasterControls, Strobe,
-};
-use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
-use crate::show::{ChannelId, ControlMessage as ShowControlMessage};
+use crate::dmx::DmxBuffer;
+use crate::master::{FixtureGroupControls, MasterControls};
+use crate::osc::{MapControls, OscMessageWithGroupSender};
 
 #[derive(Debug)]
 pub struct FixtureGroup {
