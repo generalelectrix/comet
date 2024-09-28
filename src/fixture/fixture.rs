@@ -33,13 +33,21 @@ impl Display for FixtureType {
 }
 
 #[derive(Debug)]
-pub struct FixtureControlMessage(pub Box<dyn Any>);
+pub struct OwnedFixtureControlMessage(pub Box<dyn Any>);
 
-impl FixtureControlMessage {
-    pub fn unpack_as<T: 'static>(self) -> Result<Box<T>> {
+impl OwnedFixtureControlMessage {
+    pub fn borrowed(&self) -> FixtureControlMessage<'_> {
+        FixtureControlMessage(self.0.as_ref())
+    }
+}
+
+pub struct FixtureControlMessage<'a>(&'a dyn Any);
+
+impl<'a> FixtureControlMessage<'a> {
+    pub fn unpack_as<T: 'static>(&self) -> Result<&'a T> {
         self.0
-            .downcast::<T>()
-            .map_err(|_| anyhow!("failed to unpack message as type {}", type_name::<T>()))
+            .downcast_ref()
+            .ok_or_else(|| anyhow!("could not unpack message as {}", type_name::<T>()))
     }
 }
 

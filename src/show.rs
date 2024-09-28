@@ -196,7 +196,7 @@ impl Show {
                     bail!("no fixture found for key: {:?}", msg.key);
                 };
 
-                fixture.control(fixture_control_msg, &sender)
+                fixture.control(fixture_control_msg.borrowed(), &sender)
             }
         }
     }

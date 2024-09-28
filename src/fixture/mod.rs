@@ -1,4 +1,4 @@
-use fixture::FixtureControlMessage;
+use fixture::{FixtureControlMessage, OwnedFixtureControlMessage};
 use std::any::Any;
 use std::fmt::Debug;
 
@@ -31,7 +31,7 @@ pub struct ControlMessage {
 
 #[derive(Debug)]
 pub enum ControlMessagePayload {
-    Fixture(FixtureControlMessage),
+    Fixture(OwnedFixtureControlMessage),
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
@@ -40,7 +40,7 @@ pub enum ControlMessagePayload {
 
 impl ControlMessagePayload {
     pub fn fixture<T: Any>(msg: T) -> Self {
-        Self::Fixture(FixtureControlMessage(Box::new(msg)))
+        Self::Fixture(OwnedFixtureControlMessage(Box::new(msg)))
     }
 }
 
