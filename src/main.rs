@@ -13,6 +13,7 @@ use crate::config::Config;
 use crate::show::Show;
 
 mod animation;
+mod channel;
 mod clock_service;
 mod config;
 mod dmx;

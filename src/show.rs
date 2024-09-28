@@ -13,11 +13,11 @@ use crate::{
     osc::{EmitControlMessage, HandleStateChange, OscController, TalkbackMode},
 };
 
+pub use crate::channel::ChannelId;
 use anyhow::{bail, Result};
 use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
-use serde::Deserialize;
 
 pub struct Show {
     osc_controller: OscController,
@@ -205,11 +205,8 @@ impl Show {
     }
 }
 
-/// Which channel is currently selected.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
-pub struct ChannelId(pub usize);
-
 pub struct ShowUIState {
+    /// The channel ID that is currently selected.
     current_channel: Option<ChannelId>,
 }
 
