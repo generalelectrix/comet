@@ -6,7 +6,7 @@ use std::{collections::HashMap, time::Duration};
 use number::UnipolarFloat;
 
 use super::generic::Timer;
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]

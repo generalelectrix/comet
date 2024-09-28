@@ -5,9 +5,9 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::animation_target::TargetedAnimationValues;
+
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 

@@ -16,56 +16,38 @@ use serde::{Deserialize, Serialize};
 use self::animation_target::{
     ControllableTargetedAnimation, TargetedAnimation, TargetedAnimationValues,
 };
-use self::aquarius::Aquarius;
-use self::astroscan::Astroscan;
-use self::color::Color;
-use self::comet::Comet;
-use self::dimmer::Dimmer;
-use self::faderboard::Faderboard;
-use self::freedom_fries::FreedomFries;
-use self::h2o::H2O;
-use self::hypnotic::Hypnotic;
-use self::lumasphere::Lumasphere;
-use self::radiance::Radiance;
-use self::rotosphere_q3::RotosphereQ3;
-use self::rush_wizard::RushWizard;
-use self::solar_system::SolarSystem;
-use self::starlight::Starlight;
-use self::swarmolon::Swarmolon;
-use self::uv_led_brick::UvLedBrick;
-use self::venus::Venus;
-use self::wizard_extreme::WizardExtreme;
+use self::profile::aquarius::Aquarius;
+use self::profile::astroscan::Astroscan;
+use self::profile::color::Color;
+use self::profile::colordynamic::Colordynamic;
+use self::profile::comet::Comet;
+use self::profile::dimmer::Dimmer;
+use self::profile::faderboard::Faderboard;
+use self::profile::freedom_fries::FreedomFries;
+use self::profile::h2o::H2O;
+use self::profile::hypnotic::Hypnotic;
+use self::profile::lumasphere::Lumasphere;
+use self::profile::radiance::Radiance;
+use self::profile::rotosphere_q3::RotosphereQ3;
+use self::profile::rush_wizard::RushWizard;
+use self::profile::solar_system::SolarSystem;
+use self::profile::starlight::Starlight;
+use self::profile::swarmolon::Swarmolon;
+use self::profile::uv_led_brick::UvLedBrick;
+use self::profile::venus::Venus;
+use self::profile::wizard_extreme::WizardExtreme;
 use crate::animation::ControlMessage as AnimationControlMessage;
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::{DmxBuffer, UniverseIdx};
 use crate::fixture::animation_target::AnimationTarget;
-use crate::fixture::colordynamic::Colordynamic;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{MapControls, OscClientId, OscMessageWithGroupSender, TalkbackMode};
 use crate::show::{ChannelId, ControlMessage as ShowControlMessage};
 
 pub mod animation_target;
-pub mod aquarius;
-pub mod astroscan;
-pub mod color;
-pub mod colordynamic;
-pub mod comet;
-pub mod dimmer;
-pub mod faderboard;
-pub mod freedom_fries;
-pub mod generic;
-pub mod h2o;
-pub mod hypnotic;
-pub mod lumasphere;
-pub mod radiance;
-pub mod rotosphere_q3;
-pub mod rush_wizard;
-pub mod solar_system;
-pub mod starlight;
-pub mod swarmolon;
-pub mod uv_led_brick;
-pub mod venus;
-pub mod wizard_extreme;
+pub mod profile;
+
+pub use profile::*;
 
 /// Identify a named group of a particular type of fixture.
 #[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
@@ -700,5 +682,6 @@ pub mod prelude {
         AnimatedFixture, ControllableFixture, FixtureControlMessage, FixtureGroupControls,
         FixtureType, NonAnimatedFixture, PatchAnimatedFixture, PatchFixture,
     };
+    pub use crate::fixture::animation_target::TargetedAnimationValues;
     pub use crate::osc::HandleStateChange;
 }

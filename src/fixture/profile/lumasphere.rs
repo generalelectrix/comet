@@ -4,7 +4,7 @@ use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::osc::HandleStateChange;
 use crate::util::{unipolar_to_range, RampingParameter};
 

@@ -4,7 +4,7 @@ use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Debug)]

@@ -4,7 +4,7 @@ use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -49,7 +49,7 @@ impl AnimatedFixture for H2O {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut color_rotation = self.color_rotation.val();

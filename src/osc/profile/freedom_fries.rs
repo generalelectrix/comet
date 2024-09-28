@@ -4,9 +4,9 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::fixture::color::map_color;
-use crate::osc::fixture::generic::map_strobe;
 use crate::osc::label_array::LabelArray;
+use crate::osc::profile::color::map_color;
+use crate::osc::profile::generic::map_strobe;
 use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::unipolar_to_range;
 

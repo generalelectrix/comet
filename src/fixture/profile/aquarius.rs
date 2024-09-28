@@ -5,7 +5,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -41,7 +41,7 @@ impl AnimatedFixture for Aquarius {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut rotation = self.rotation.val();

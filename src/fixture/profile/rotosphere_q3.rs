@@ -5,13 +5,13 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::animation_target::TargetedAnimationValues;
+
 use super::color::{
     AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
     StateChange as ColorStateChange,
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 

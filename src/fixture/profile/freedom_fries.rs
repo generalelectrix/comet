@@ -8,12 +8,11 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 
-use super::prelude::*;
 use super::{
-    animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
 };
+use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
