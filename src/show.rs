@@ -11,7 +11,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::{EmitControlMessage, HandleStateChange, OscController, TalkbackMode},
+    osc::{OscController, TalkbackMode},
 };
 
 pub use crate::channel::ChannelId;
