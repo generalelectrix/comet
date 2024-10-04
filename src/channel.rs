@@ -1,9 +1,14 @@
 //! State and control definitions for fixture group channels.
 
 use anyhow::{bail, Result};
+use number::UnipolarFloat;
 use serde::Deserialize;
 
-use crate::fixture::{FixtureGroup, FixtureGroupKey, Patch};
+use crate::{
+    fixture::{FixtureGroup, FixtureGroupKey, Patch},
+    osc::EmitControlMessage,
+    osc::HandleStateChange,
+};
 
 /// The index of a channel.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
@@ -13,6 +18,8 @@ pub struct ChannelId(pub usize);
 pub struct Channels {
     /// Lookup from channel index to the fixture group assigned to that channel.
     channel_index: Vec<FixtureGroupKey>,
+    /// The channel ID that is currently selected.
+    current_channel: Option<ChannelId>,
 }
 
 impl Channels {
@@ -64,4 +71,64 @@ impl Channels {
             );
         }
     }
+
+    pub fn current_channel(&self) -> Option<ChannelId> {
+        self.current_channel
+    }
+
+    /// Emit all current channel state.
+    pub fn emit_state(&self, patch: &mut Patch, emitter: &dyn EmitControlMessage) {
+        if let Some(channel) = self.current_channel {
+            Self::emit(StateChange::SelectChannel(channel), emitter);
+        }
+        Self::emit(
+            StateChange::ChannelLabels(self.channel_labels(patch).collect()),
+            emitter,
+        );
+    }
+
+    /// Handle a control message.
+    pub fn control(
+        &mut self,
+        msg: ControlMessage,
+        patch: &mut Patch,
+        emitter: &dyn EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        match msg {
+            ControlMessage::SelectChannel(g) => {
+                // Validate the channel.
+                let channel = self.validate_channel(g)?;
+                if self.current_channel == Some(channel) {
+                    // Channel is not changed, ignore.
+                    return Ok(());
+                }
+                self.current_channel = Some(channel);
+                self.emit_state(patch, emitter);
+            }
+            ControlMessage::Control(channel_id, msg) => {
+                unimplemented!()
+            }
+        }
+        Ok(())
+    }
 }
+
+#[derive(Clone, Debug)]
+pub enum ControlMessage {
+    SelectChannel(usize),
+    Control(usize, ChannelControlMessage),
+}
+
+#[derive(Clone, Debug)]
+pub enum StateChange {
+    SelectChannel(ChannelId),
+    ChannelLabels(Vec<String>),
+    State(ChannelId, ChannelStateChange),
+}
+
+#[derive(Clone, Debug)]
+pub enum ChannelStateChange {
+    Level(UnipolarFloat),
+}
+
+pub type ChannelControlMessage = ChannelStateChange;

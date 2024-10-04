@@ -25,7 +25,6 @@ pub struct Show {
     patch: Patch,
     channels: Channels,
     master_controls: MasterControls,
-    show_ui_state: ShowUIState,
     animation_ui_state: AnimationUIState,
     clock_service: Option<ClockService>,
 }
@@ -62,12 +61,8 @@ impl Show {
 
         let initial_channel = channels.validate_channel(0).ok();
 
-        let show_ui_state = ShowUIState {
-            current_channel: initial_channel,
-        };
-        osc_controller.map_controls(&show_ui_state);
-        show_ui_state.emit_state(
-            &channels,
+        osc_controller.map_controls(&channels);
+        channels.emit_state(
             &mut patch,
             &osc_controller.sender_with_metadata(None, TalkbackMode::All),
         );
@@ -90,7 +85,6 @@ impl Show {
             patch,
             channels,
             master_controls,
-            show_ui_state,
             animation_ui_state,
             clock_service,
         })
@@ -155,7 +149,7 @@ impl Show {
                 Ok(())
             }
             ControlMessagePayload::Animation(msg) => {
-                let Some(channel) = self.show_ui_state.current_channel else {
+                let Some(channel) = self.channels.current_channel() else {
                     bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                 };
                 self.animation_ui_state.control(
@@ -166,18 +160,16 @@ impl Show {
                     &sender,
                 )
             }
-            ControlMessagePayload::Show(msg) => {
-                self.show_ui_state
-                    .control(msg, &self.channels, &mut self.patch, &sender)
+            ControlMessagePayload::Channel(msg) => {
+                self.channels.control(msg, &mut self.patch, &sender)
             }
             ControlMessagePayload::RefreshUI => {
                 self.master_controls.emit_state(&sender);
-                self.show_ui_state
-                    .emit_state(&self.channels, &mut self.patch, &sender);
+                self.channels.emit_state(&mut self.patch, &sender);
                 for group in self.patch.iter() {
                     group.emit_state(&sender);
                 }
-                if let Some(channel) = self.show_ui_state.current_channel {
+                if let Some(channel) = self.channels.current_channel() {
                     self.animation_ui_state.emit_state(
                         channel,
                         &self.channels,
@@ -220,61 +212,4 @@ impl Show {
             group.render(&self.master_controls, dmx_buffers);
         }
     }
-}
-
-pub struct ShowUIState {
-    /// The channel ID that is currently selected.
-    current_channel: Option<ChannelId>,
-}
-
-impl ShowUIState {
-    /// Emit all current animation state, including target and selection.
-    pub fn emit_state(
-        &self,
-        channels: &Channels,
-        patch: &mut Patch,
-        emitter: &dyn EmitControlMessage,
-    ) {
-        if let Some(channel) = self.current_channel {
-            Self::emit(StateChange::SelectChannel(channel), emitter);
-        }
-        Self::emit(
-            StateChange::ChannelLabels(channels.channel_labels(patch).collect()),
-            emitter,
-        );
-    }
-
-    /// Handle a control message.
-    pub fn control(
-        &mut self,
-        msg: ControlMessage,
-        channels: &Channels,
-        patch: &mut Patch,
-        emitter: &dyn EmitControlMessage,
-    ) -> anyhow::Result<()> {
-        match msg {
-            ControlMessage::SelectChannel(g) => {
-                // Validate the channel.
-                let channel = channels.validate_channel(g)?;
-                if self.current_channel == Some(channel) {
-                    // Channel is not changed, ignore.
-                    return Ok(());
-                }
-                self.current_channel = Some(channel);
-                self.emit_state(channels, patch, emitter);
-            }
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum ControlMessage {
-    SelectChannel(usize),
-}
-
-#[derive(Clone, Debug)]
-pub enum StateChange {
-    SelectChannel(ChannelId),
-    ChannelLabels(Vec<String>),
 }

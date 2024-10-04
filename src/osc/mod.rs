@@ -21,13 +21,13 @@ use self::radio_button::{EnumRadioButton, RadioButton};
 
 mod animation;
 mod basic_controls;
+mod channels;
 mod control_message;
 mod label_array;
 mod master;
 mod profile;
 mod radio_button;
 mod register;
-mod show;
 
 pub use register::prompt_osc_config;
 

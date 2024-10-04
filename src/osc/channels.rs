@@ -1,5 +1,5 @@
-use crate::show::ShowUIState;
-use crate::show::{ControlMessage, StateChange};
+use crate::channel::Channels;
+use crate::channel::{ControlMessage, StateChange};
 
 use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
@@ -11,10 +11,10 @@ const N_CHANNELS: usize = 8;
 
 const GROUP: &str = "Show";
 
-impl MapControls for ShowUIState {
+impl MapControls for Channels {
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         CHANNEL_SELECT.map(map, |msg| {
-            ControlMessagePayload::Show(ControlMessage::SelectChannel(msg))
+            ControlMessagePayload::Channel(ControlMessage::SelectChannel(msg))
         });
     }
 
@@ -37,7 +37,7 @@ const CHANNEL_LABELS: LabelArray = LabelArray {
     empty_label: "",
 };
 
-impl HandleOscStateChange<StateChange> for ShowUIState {
+impl HandleOscStateChange<StateChange> for Channels {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
         S: crate::osc::EmitOscMessage + ?Sized,
@@ -45,6 +45,9 @@ impl HandleOscStateChange<StateChange> for ShowUIState {
         match sc {
             StateChange::SelectChannel(msg) => CHANNEL_SELECT.set(msg.0, send),
             StateChange::ChannelLabels(labels) => CHANNEL_LABELS.set(labels.into_iter(), send),
+            StateChange::State(channel_id, msg) => {
+                unimplemented!()
+            }
         }
     }
 }

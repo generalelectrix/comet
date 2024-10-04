@@ -3,9 +3,9 @@ use std::any::Any;
 use std::fmt::Debug;
 
 use crate::animation::ControlMessage as AnimationControlMessage;
+use crate::channel::ControlMessage as ChannelsControlMessage;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{OscClientId, TalkbackMode};
-use crate::show::ControlMessage as ShowControlMessage;
 
 pub mod animation_target;
 #[allow(clippy::module_inception)]
@@ -34,7 +34,7 @@ pub enum ControlMessagePayload {
     Master(MasterControlMessage),
     RefreshUI,
     Animation(AnimationControlMessage),
-    Show(ShowControlMessage),
+    Channel(ChannelsControlMessage),
 }
 
 impl ControlMessagePayload {
