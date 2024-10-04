@@ -1,7 +1,6 @@
 //! State and control definitions for fixture group channels.
 
 use anyhow::{bail, Result};
-use number::UnipolarFloat;
 use serde::Deserialize;
 
 use crate::fixture::{FixtureGroup, FixtureGroupKey, Patch};

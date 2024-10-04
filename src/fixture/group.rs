@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 use super::animation_target::ControllableTargetedAnimation;
 use super::fixture::{Fixture, FixtureControlMessage, FixtureType};
 use super::ControlMessagePayload;
-use crate::channel::Channels;
 use crate::dmx::DmxBuffer;
 use crate::master::{FixtureGroupControls, MasterControls};
 use crate::osc::{MapControls, OscMessageWithGroupSender};
