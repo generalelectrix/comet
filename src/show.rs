@@ -217,7 +217,7 @@ impl Show {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
         for group in self.patch.iter() {
-            group.render(&self.master_controls, &self.channels, dmx_buffers);
+            group.render(&self.master_controls, dmx_buffers);
         }
     }
 }

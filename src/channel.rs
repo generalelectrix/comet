@@ -10,23 +10,8 @@ use crate::fixture::{FixtureGroup, FixtureGroupKey, Patch};
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
 pub struct ChannelId(pub usize);
 
-#[derive(Debug, Default)]
-pub struct ChannelControls {
-    pub level: UnipolarFloat,
-}
-
-impl ChannelControls {
-    /// Return channel controls with level set to on.
-    /// Used for fixtures that aren't wired up to actual channel selectors.
-    pub const TRANSPARENT: Self = Self {
-        level: UnipolarFloat::ONE,
-    };
-}
-
 #[derive(Default)]
 pub struct Channels {
-    /// The control parameters for each channel.
-    controls: Vec<ChannelControls>,
     /// Lookup from channel index to the fixture group assigned to that channel.
     channel_index: Vec<FixtureGroupKey>,
 }
@@ -34,8 +19,7 @@ pub struct Channels {
 impl Channels {
     /// Add new channel controls, wired to the specified fixture.
     pub fn add(&mut self, group: FixtureGroupKey) -> ChannelId {
-        let id = ChannelId(self.controls.len());
-        self.controls.push(Default::default());
+        let id = ChannelId(self.channel_index.len());
         self.channel_index.push(group);
         id
     }
@@ -50,11 +34,6 @@ impl Channels {
                 self.channel_index.len()
             );
         }
-    }
-
-    /// Get the channel with the specified ID.
-    pub fn get(&self, id: ChannelId) -> Option<&ChannelControls> {
-        self.controls.get(id.0)
     }
 
     /// Iterate over all of the labels for each channels.

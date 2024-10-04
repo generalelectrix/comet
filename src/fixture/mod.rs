@@ -1,9 +1,8 @@
-use fixture::{FixtureControlMessage, OwnedFixtureControlMessage};
+use fixture::OwnedFixtureControlMessage;
 use std::any::Any;
 use std::fmt::Debug;
 
 use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::channel::ChannelControls;
 use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
 use crate::osc::{OscClientId, TalkbackMode};
 use crate::show::ControlMessage as ShowControlMessage;
@@ -49,8 +48,6 @@ impl ControlMessagePayload {
 pub struct FixtureGroupControls<'a> {
     /// Master controls.
     master_controls: &'a MasterControls,
-    /// Channel controls.
-    channel_controls: &'a ChannelControls,
     /// True if the fixture should render in mirrored mode.
     mirror: bool,
 }
