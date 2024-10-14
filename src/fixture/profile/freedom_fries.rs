@@ -39,7 +39,7 @@ impl FreedomFries {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) {
         use StateChange::*;
         match sc {
@@ -100,7 +100,7 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
         Self::emit(Speed(self.speed), emitter);
@@ -111,7 +111,7 @@ impl ControllableFixture for FreedomFries {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

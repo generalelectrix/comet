@@ -111,10 +111,9 @@ impl Patch {
             return Ok(());
         }
         // No existing group; create a new one.
-        let channel_id = cfg.channel.then(|| channels.add(key.clone()));
+        cfg.channel.then(|| channels.add(key.clone()));
         let group = FixtureGroup::new(
             key.clone(),
-            channel_id,
             GroupFixtureConfig {
                 universe: cfg.universe,
                 dmx_addr: cfg.addr.dmx_index(),

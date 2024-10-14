@@ -45,7 +45,7 @@ impl Colordynamic {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) {
         use StateChange::*;
         match sc {
@@ -61,7 +61,7 @@ impl Colordynamic {
 }
 
 impl ControllableFixture for Colordynamic {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
         let mut emit_strobe = |ssc| {
@@ -77,7 +77,7 @@ impl ControllableFixture for Colordynamic {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

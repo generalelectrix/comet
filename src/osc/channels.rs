@@ -45,8 +45,8 @@ impl HandleOscStateChange<StateChange> for Channels {
         match sc {
             StateChange::SelectChannel(msg) => CHANNEL_SELECT.set(msg.0, send),
             StateChange::ChannelLabels(labels) => CHANNEL_LABELS.set(labels.into_iter(), send),
-            StateChange::State(channel_id, msg) => {
-                unimplemented!()
+            StateChange::State { .. } => {
+                todo!()
             }
         }
     }

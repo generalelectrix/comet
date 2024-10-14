@@ -44,7 +44,7 @@ impl Comet {
         unipolar_to_range(0, 255, self.mirror_speed)
     }
 
-    fn control(&mut self, msg: ControlMessage, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn control(&mut self, msg: ControlMessage, emitter: &dyn crate::osc::EmitControlMessage) {
         use ControlMessage::*;
         match msg {
             Set(sc) => self.handle_state_change(sc, emitter),
@@ -55,7 +55,7 @@ impl Comet {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) {
         use StateChange::*;
         match sc {
@@ -93,7 +93,7 @@ impl ControllableFixture for Comet {
         self.trigger_state.update(delta_t);
     }
 
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         Self::emit(Shutter(self.shutter_open), emitter);
         let mut emit_strobe = |ssc| {
@@ -112,7 +112,7 @@ impl ControllableFixture for Comet {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.control(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

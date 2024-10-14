@@ -13,6 +13,7 @@ use super::animation_target::{
     ControllableTargetedAnimation, TargetedAnimationValues, TargetedAnimations, N_ANIM,
 };
 use super::{ControlMessagePayload, FixtureGroupControls};
+use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::osc::MapControls;
 
@@ -53,15 +54,26 @@ impl<'a> FixtureControlMessage<'a> {
 
 pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage);
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage);
 
     /// Process the provided control message.
-    /// Return the message if this fixture cannot process it.
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()>;
+
+    /// Process a channel control message, if the fixture uses it.
+    #[allow(unused)]
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        channel_emitter: &ChannelStateEmitter,
+        emitter: &dyn crate::osc::EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        // Ignore channel control messages by default.
+        Ok(())
+    }
 
     fn update(&mut self, _: Duration) {}
 }
@@ -147,12 +159,12 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.fixture.control(msg, emitter)
     }
 
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         self.fixture.emit_state(emitter);
     }
 

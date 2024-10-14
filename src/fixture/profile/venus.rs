@@ -59,7 +59,7 @@ impl Venus {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) {
         use StateChange::*;
         match sc {
@@ -96,7 +96,7 @@ impl ControllableFixture for Venus {
         self.color_rotation.update(delta_t);
     }
 
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         Self::emit(BaseRotation(self.base_rotation.target), emitter);
         Self::emit(CradleMotion(self.cradle_motion.target), emitter);
@@ -108,7 +108,7 @@ impl ControllableFixture for Venus {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

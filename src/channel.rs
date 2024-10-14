@@ -1,6 +1,6 @@
 //! State and control definitions for fixture group channels.
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use number::UnipolarFloat;
 use serde::Deserialize;
 
@@ -85,6 +85,7 @@ impl Channels {
             StateChange::ChannelLabels(self.channel_labels(patch).collect()),
             emitter,
         );
+        todo!("emit fixture channel control state");
     }
 
     /// Handle a control message.
@@ -104,26 +105,60 @@ impl Channels {
                 }
                 self.current_channel = Some(channel);
                 self.emit_state(patch, emitter);
+                Ok(())
             }
-            ControlMessage::Control(channel_id, msg) => {
-                unimplemented!()
+            ControlMessage::Control { channel_id, msg } => {
+                let channel_id = if let Some(id) = channel_id {
+                    self.validate_channel(id)?
+                } else {
+                    self.current_channel.ok_or_else(||
+                        anyhow!("no channel ID provided or selected for channel control message {msg:?}")
+                    )?
+                };
+                let target_fixture = &self.channel_index[channel_id.0];
+                let Some(target_fixture) = patch.get_mut(target_fixture) else {
+                    bail!("fixture key {target_fixture:?} assigned to channel {} unexpectedly missing from patch", channel_id.0);
+                };
+                let channel_emitter = ChannelStateEmitter {
+                    channel_id,
+                    emitter,
+                };
+                target_fixture.control_from_channel(&msg, &channel_emitter)
             }
         }
-        Ok(())
+    }
+}
+
+/// Provide methods to emit channel control state changes for a specific channel.
+pub struct ChannelStateEmitter<'a> {
+    channel_id: ChannelId,
+    emitter: &'a dyn EmitControlMessage,
+}
+
+impl<'a> ChannelStateEmitter<'a> {
+    /// Return the underlying control message emitter.
+    pub fn raw_emitter(&self) -> &dyn EmitControlMessage {
+        self.emitter
     }
 }
 
 #[derive(Clone, Debug)]
 pub enum ControlMessage {
     SelectChannel(usize),
-    Control(usize, ChannelControlMessage),
+    Control {
+        channel_id: Option<usize>,
+        msg: ChannelControlMessage,
+    },
 }
 
 #[derive(Clone, Debug)]
 pub enum StateChange {
     SelectChannel(ChannelId),
     ChannelLabels(Vec<String>),
-    State(ChannelId, ChannelStateChange),
+    State {
+        channel_id: ChannelId,
+        msg: ChannelStateChange,
+    },
 }
 
 #[derive(Clone, Debug)]

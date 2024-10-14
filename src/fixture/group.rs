@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use super::animation_target::ControllableTargetedAnimation;
 use super::fixture::{Fixture, FixtureControlMessage, FixtureType};
 use super::ControlMessagePayload;
+use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
 use crate::dmx::DmxBuffer;
 use crate::master::{FixtureGroupControls, MasterControls};
 use crate::osc::{MapControls, OscMessageWithGroupSender};
@@ -22,8 +23,6 @@ use crate::show::ChannelId;
 pub struct FixtureGroup {
     /// The unique identifier of this group.
     key: FixtureGroupKey,
-    /// The channel this group is assigned to, if any.
-    channel_id: Option<ChannelId>,
     /// The configurations for the fixtures in the group.
     fixture_configs: Vec<GroupFixtureConfig>,
     /// The number of DMX channels used by this fixture.
@@ -36,14 +35,12 @@ impl FixtureGroup {
     /// Create a fixture group, containing a single fixture config.
     pub fn new(
         key: FixtureGroupKey,
-        channel_id: Option<ChannelId>,
         fixture_config: GroupFixtureConfig,
         channel_count: usize,
         fixture: Box<dyn Fixture>,
     ) -> Self {
         Self {
             key,
-            channel_id,
             fixture_configs: vec![fixture_config],
             channel_count,
             fixture,
@@ -84,25 +81,39 @@ impl FixtureGroup {
     /// Emit the current state of all controls.
     pub fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         let mut emitter = OscMessageWithGroupSender {
-            group: self.name().cloned(),
+            group: self.name(),
             emitter,
         };
         self.fixture.emit_state(&mut emitter);
     }
 
     /// Process the provided control message.
-    /// Return an error if fixture couldn't handle it.
     pub fn control(
         &mut self,
         msg: FixtureControlMessage,
         emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
-        let mut emitter = OscMessageWithGroupSender {
-            group: self.name().cloned(),
+        let emitter = OscMessageWithGroupSender {
+            group: self.key.group.as_ref(),
             emitter,
         };
         self.fixture
-            .control(msg, &mut emitter)
+            .control(msg, &emitter)
+            .with_context(|| self.key.clone())
+    }
+
+    /// Process the provided channel control message.
+    pub fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        channel_emitter: &ChannelStateEmitter,
+    ) -> anyhow::Result<()> {
+        let group_emitter = OscMessageWithGroupSender {
+            group: self.key.group.as_ref(),
+            emitter: channel_emitter.raw_emitter(),
+        };
+        self.fixture
+            .control_from_channel(msg, channel_emitter, &group_emitter)
             .with_context(|| self.key.clone())
     }
 

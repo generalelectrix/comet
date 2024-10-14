@@ -32,7 +32,7 @@ impl SolarSystem {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) {
         use StateChange::*;
         match sc {
@@ -60,7 +60,7 @@ impl SolarSystem {
 }
 
 impl ControllableFixture for SolarSystem {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
         Self::emit(AutoShutter(self.auto_shutter), emitter);
@@ -73,7 +73,7 @@ impl ControllableFixture for SolarSystem {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

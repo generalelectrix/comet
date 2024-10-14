@@ -181,7 +181,7 @@ impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
 
 /// Decorate a control message emitter to inject a group into the address.
 pub struct OscMessageWithGroupSender<'a> {
-    pub group: Option<GroupName>,
+    pub group: Option<&'a GroupName>,
     pub emitter: &'a dyn EmitControlMessage,
 }
 
