@@ -65,6 +65,7 @@ pub mod prelude {
     };
     pub use super::patch::{PatchAnimatedFixture, PatchFixture};
     pub use super::FixtureGroupControls;
+    pub use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
     pub use crate::fixture::animation_target::TargetedAnimationValues;
     pub use crate::osc::HandleStateChange;
 }

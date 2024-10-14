@@ -3,27 +3,23 @@ use anyhow::{anyhow, bail, Context};
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
+use crate::osc::fader_array::FaderArray;
 use crate::osc::{get_unipolar, ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Faderboard";
 
+const CONTROLS: FaderArray = FaderArray {
+    group: GROUP,
+    control: "Fader",
+};
+
 impl MapControls for Faderboard {
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
-        map.add(GROUP, "Fader", |msg| {
-            let index = msg
-                .addr_payload()
-                .split('/')
-                .skip(1)
-                .take(1)
-                .next()
-                .ok_or_else(|| anyhow!("faderboard index missing"))?
-                .parse::<usize>()
-                .with_context(|| format!("handling message {msg:?}"))?;
+        CONTROLS.map(map, |index, val| {
             if index == 0 {
                 bail!("Faderboard index is 0.");
             }
-            let val = get_unipolar(msg)?;
-            Ok(Some(ControlMessagePayload::fixture((index - 1, val))))
+            Ok(ControlMessagePayload::fixture((index - 1, val)))
         })
     }
 

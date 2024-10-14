@@ -1,4 +1,4 @@
-use anyhow::{ensure, Result};
+use anyhow::{anyhow, ensure, Result};
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 
@@ -169,13 +169,17 @@ impl Patch {
     }
 
     /// Get the fixture/channel patched with this key.
-    pub fn get(&self, key: &FixtureGroupKey) -> Option<&FixtureGroup> {
-        self.fixtures.get(key)
+    pub fn get(&self, key: &FixtureGroupKey) -> Result<&FixtureGroup> {
+        self.fixtures
+            .get(key)
+            .ok_or_else(|| anyhow!("fixture {key:?} not found in patch"))
     }
 
     /// Get the fixture/channel patched with this key, mutably.
-    pub fn get_mut(&mut self, key: &FixtureGroupKey) -> Option<&mut FixtureGroup> {
-        self.fixtures.get_mut(key)
+    pub fn get_mut(&mut self, key: &FixtureGroupKey) -> Result<&mut FixtureGroup> {
+        self.fixtures
+            .get_mut(key)
+            .ok_or_else(|| anyhow!("fixture {key:?} not found in patch"))
     }
 
     /// Iterate over all patched fixtures.

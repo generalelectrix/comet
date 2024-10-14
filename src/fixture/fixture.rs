@@ -56,6 +56,10 @@ pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage);
 
+    /// Emit the current state of all controls that are bound to channel-level controls.
+    #[allow(unused)]
+    fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {}
+
     /// Process the provided control message.
     fn control(
         &mut self,
@@ -68,11 +72,9 @@ pub trait ControllableFixture: MapControls {
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,
-        channel_emitter: &ChannelStateEmitter,
         emitter: &dyn crate::osc::EmitControlMessage,
-    ) -> anyhow::Result<()> {
+    ) {
         // Ignore channel control messages by default.
-        Ok(())
     }
 
     fn update(&mut self, _: Duration) {}

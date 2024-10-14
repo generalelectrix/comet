@@ -63,6 +63,7 @@ impl Show {
 
         osc_controller.map_controls(&channels);
         channels.emit_state(
+            false,
             &mut patch,
             &osc_controller.sender_with_metadata(None, TalkbackMode::All),
         );
@@ -165,7 +166,7 @@ impl Show {
             }
             ControlMessagePayload::RefreshUI => {
                 self.master_controls.emit_state(&sender);
-                self.channels.emit_state(&mut self.patch, &sender);
+                self.channels.emit_state(false, &mut self.patch, &sender);
                 for group in self.patch.iter() {
                     group.emit_state(&sender);
                 }
@@ -183,12 +184,9 @@ impl Show {
                 let Some(group_key) = msg.key.as_ref() else {
                     bail!("no fixture group key was provided with a fixture control message");
                 };
-                // Identify the correct fixture to handle this message.
-                let Some(fixture) = self.patch.get_mut(group_key) else {
-                    bail!("no fixture found for key: {:?}", msg.key);
-                };
-
-                fixture.control(fixture_control_msg.borrowed(), &sender)
+                self.patch
+                    .get_mut(group_key)?
+                    .control(fixture_control_msg.borrowed(), &sender)
             }
         }
     }

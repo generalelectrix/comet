@@ -12,12 +12,12 @@ use serde::{Deserialize, Serialize};
 
 use super::animation_target::ControllableTargetedAnimation;
 use super::fixture::{Fixture, FixtureControlMessage, FixtureType};
+use super::prelude::ChannelStateEmitter;
 use super::ControlMessagePayload;
-use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
+use crate::channel::ChannelControlMessage;
 use crate::dmx::DmxBuffer;
 use crate::master::{FixtureGroupControls, MasterControls};
 use crate::osc::{MapControls, OscMessageWithGroupSender};
-use crate::show::ChannelId;
 
 #[derive(Debug)]
 pub struct FixtureGroup {
@@ -84,7 +84,12 @@ impl FixtureGroup {
             group: self.name(),
             emitter,
         };
-        self.fixture.emit_state(&mut emitter);
+        self.fixture.emit_state(&emitter);
+    }
+
+    /// Emit the current state of all controls bound to channel-level controls.
+    pub fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {
+        self.fixture.emit_state_for_channel(emitter);
     }
 
     /// Process the provided control message.
@@ -106,15 +111,13 @@ impl FixtureGroup {
     pub fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,
-        channel_emitter: &ChannelStateEmitter,
-    ) -> anyhow::Result<()> {
-        let group_emitter = OscMessageWithGroupSender {
+        emitter: &dyn crate::osc::EmitControlMessage,
+    ) {
+        let emitter = OscMessageWithGroupSender {
             group: self.key.group.as_ref(),
-            emitter: channel_emitter.raw_emitter(),
+            emitter,
         };
-        self.fixture
-            .control_from_channel(msg, channel_emitter, &group_emitter)
-            .with_context(|| self.key.clone())
+        self.fixture.control_from_channel(msg, &emitter);
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {

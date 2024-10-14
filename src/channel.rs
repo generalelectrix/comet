@@ -1,6 +1,9 @@
 //! State and control definitions for fixture group channels.
 
-use anyhow::{anyhow, bail, Result};
+use std::fmt::Display;
+
+use anyhow::{anyhow, bail, Context, Result};
+use log::error;
 use number::UnipolarFloat;
 use serde::Deserialize;
 
@@ -12,7 +15,19 @@ use crate::{
 
 /// The index of a channel.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
-pub struct ChannelId(pub usize);
+pub struct ChannelId(usize);
+
+impl From<ChannelId> for usize {
+    fn from(value: ChannelId) -> Self {
+        value.0
+    }
+}
+
+impl Display for ChannelId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[derive(Default)]
 pub struct Channels {
@@ -28,6 +43,14 @@ impl Channels {
         let id = ChannelId(self.channel_index.len());
         self.channel_index.push(group);
         id
+    }
+
+    /// Iterate over valid channel IDs.
+    pub fn channel_ids(&self) -> impl Iterator<Item = ChannelId> + '_ {
+        self.channel_index
+            .iter()
+            .enumerate()
+            .map(|(i, _)| ChannelId(i))
     }
 
     /// Validate that a channel index refers to a channel that actually exists.
@@ -46,7 +69,13 @@ impl Channels {
     pub fn channel_labels<'a>(&'a self, patch: &'a Patch) -> impl Iterator<Item = String> + 'a {
         self.channel_index
             .iter()
-            .filter_map(|i| patch.get(i))
+            .filter_map(|i| match patch.get(i) {
+                Ok(f) => Some(f),
+                Err(err) => {
+                    error!("Patch inconsistency generating channel labels: {err}");
+                    None
+                }
+            })
             .map(move |g| match g.name() {
                 None => g.fixture_type().to_string(),
                 Some(name) => format!("{name}({})", g.fixture_type()),
@@ -54,22 +83,31 @@ impl Channels {
     }
 
     /// Get a fixture group by channel ID.
+    pub fn group_by_channel<'a>(
+        &self,
+        patch: &'a Patch,
+        channel: ChannelId,
+    ) -> Result<&'a FixtureGroup> {
+        let Some(fixture_key) = self.channel_index.get(channel.0) else {
+            bail!("tried to get out-of-range channel {channel}");
+        };
+        patch
+            .get(fixture_key)
+            .with_context(|| format!("channel {channel}"))
+    }
+
+    /// Get a fixture group by channel ID, mutably.
     pub fn group_by_channel_mut<'a>(
         &self,
         patch: &'a mut Patch,
         channel: ChannelId,
     ) -> Result<&'a mut FixtureGroup> {
         let Some(fixture_key) = self.channel_index.get(channel.0) else {
-            bail!("tried to get out-of-range channel {}.", channel.0);
+            bail!("tried to get out-of-range channel {channel}");
         };
-        if let Some(fixture) = patch.get_mut(fixture_key) {
-            Ok(fixture)
-        } else {
-            bail!(
-                "channel ID {} mapped to non-existent fixture key {fixture_key}",
-                channel.0
-            );
-        }
+        patch
+            .get_mut(fixture_key)
+            .with_context(|| format!("channel {channel}"))
     }
 
     pub fn current_channel(&self) -> Option<ChannelId> {
@@ -77,7 +115,12 @@ impl Channels {
     }
 
     /// Emit all current channel state.
-    pub fn emit_state(&self, patch: &mut Patch, emitter: &dyn EmitControlMessage) {
+    pub fn emit_state(
+        &self,
+        selected_fixture_only: bool,
+        patch: &mut Patch,
+        emitter: &dyn EmitControlMessage,
+    ) {
         if let Some(channel) = self.current_channel {
             Self::emit(StateChange::SelectChannel(channel), emitter);
         }
@@ -85,7 +128,27 @@ impl Channels {
             StateChange::ChannelLabels(self.channel_labels(patch).collect()),
             emitter,
         );
-        todo!("emit fixture channel control state");
+        if selected_fixture_only {
+            if let Some(channel_id) = self.current_channel {
+                match self.group_by_channel(patch, channel_id) {
+                    Ok(f) => f.emit_state_for_channel(&ChannelStateEmitter {
+                        channel_id,
+                        emitter,
+                    }),
+                    Err(err) => error!("Failed to emit channel {channel_id} state: {err}."),
+                }
+            }
+        } else {
+            for channel_id in self.channel_ids() {
+                match self.group_by_channel(patch, channel_id) {
+                    Ok(f) => f.emit_state_for_channel(&ChannelStateEmitter {
+                        channel_id,
+                        emitter,
+                    }),
+                    Err(err) => error!("Failed to emit channel {channel_id} state: {err}."),
+                }
+            }
+        }
     }
 
     /// Handle a control message.
@@ -104,8 +167,7 @@ impl Channels {
                     return Ok(());
                 }
                 self.current_channel = Some(channel);
-                self.emit_state(patch, emitter);
-                Ok(())
+                self.emit_state(true, patch, emitter);
             }
             ControlMessage::Control { channel_id, msg } => {
                 let channel_id = if let Some(id) = channel_id {
@@ -115,17 +177,12 @@ impl Channels {
                         anyhow!("no channel ID provided or selected for channel control message {msg:?}")
                     )?
                 };
-                let target_fixture = &self.channel_index[channel_id.0];
-                let Some(target_fixture) = patch.get_mut(target_fixture) else {
-                    bail!("fixture key {target_fixture:?} assigned to channel {} unexpectedly missing from patch", channel_id.0);
-                };
-                let channel_emitter = ChannelStateEmitter {
-                    channel_id,
-                    emitter,
-                };
-                target_fixture.control_from_channel(&msg, &channel_emitter)
+                self.group_by_channel_mut(patch, channel_id)?
+                    .control_from_channel(&msg, emitter);
+                Self::emit(StateChange::State { channel_id, msg }, emitter);
             }
         }
+        Ok(())
     }
 }
 
@@ -136,9 +193,15 @@ pub struct ChannelStateEmitter<'a> {
 }
 
 impl<'a> ChannelStateEmitter<'a> {
-    /// Return the underlying control message emitter.
-    pub fn raw_emitter(&self) -> &dyn EmitControlMessage {
-        self.emitter
+    /// Emit the provided state change.
+    pub fn emit(&self, msg: ChannelStateChange) {
+        Channels::emit(
+            StateChange::State {
+                channel_id: self.channel_id,
+                msg,
+            },
+            self.emitter,
+        );
     }
 }
 

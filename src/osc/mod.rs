@@ -23,6 +23,7 @@ mod animation;
 mod basic_controls;
 mod channels;
 mod control_message;
+mod fader_array;
 mod label_array;
 mod master;
 mod profile;

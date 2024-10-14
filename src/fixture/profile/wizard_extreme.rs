@@ -6,6 +6,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
+use crate::channel::ChannelControlMessage;
 use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -99,6 +100,10 @@ impl ControllableFixture for WizardExtreme {
         Self::emit(Active(self.active.0), emitter);
     }
 
+    fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {
+        emitter.emit(crate::channel::ChannelStateChange::Level(self.dimmer));
+    }
+
     fn control(
         &mut self,
         msg: FixtureControlMessage,
@@ -109,6 +114,18 @@ impl ControllableFixture for WizardExtreme {
             emitter,
         );
         Ok(())
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
+    ) {
+        match msg {
+            ChannelControlMessage::Level(l) => {
+                self.handle_state_change(StateChange::Dimmer(*l), emitter);
+            }
+        }
     }
 }
 
