@@ -1,20 +1,14 @@
 //! TouchOSC array of unipolar fader.
-use log::error;
 use number::UnipolarFloat;
 use rosc::{OscMessage, OscType};
 
-use std::{fmt::Display, str::FromStr};
-use strum::IntoEnumIterator;
-
-use super::{control_message::OscControlMessage, ControlMap, OscError};
+use super::ControlMap;
 use crate::fixture::ControlMessagePayload;
 use anyhow::Result;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, Context};
 
-use crate::fixture::faderboard::{Faderboard, StateChange};
-
-use crate::osc::{get_unipolar, HandleOscStateChange, MapControls};
+use crate::osc::get_unipolar;
 
 /// Model a fader array.
 #[derive(Clone)]

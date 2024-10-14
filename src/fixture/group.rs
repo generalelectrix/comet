@@ -80,7 +80,7 @@ impl FixtureGroup {
 
     /// Emit the current state of all controls.
     pub fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
-        let mut emitter = OscMessageWithGroupSender {
+        let emitter = OscMessageWithGroupSender {
             group: self.name(),
             emitter,
         };

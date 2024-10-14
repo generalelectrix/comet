@@ -1,10 +1,10 @@
-use anyhow::{anyhow, bail, Context};
+use anyhow::bail;
 
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::fader_array::FaderArray;
-use crate::osc::{get_unipolar, ControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Faderboard";
 
