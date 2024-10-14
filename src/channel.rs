@@ -3,7 +3,7 @@
 use std::fmt::Display;
 
 use anyhow::{anyhow, bail, Context, Result};
-use log::error;
+use log::{debug, error};
 use number::UnipolarFloat;
 use serde::Deserialize;
 

@@ -1,5 +1,3 @@
-use anyhow::bail;
-
 use crate::fixture::faderboard::{Faderboard, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
@@ -16,10 +14,7 @@ const CONTROLS: FaderArray = FaderArray {
 impl MapControls for Faderboard {
     fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
         CONTROLS.map(map, |index, val| {
-            if index == 0 {
-                bail!("Faderboard index is 0.");
-            }
-            Ok(ControlMessagePayload::fixture((index - 1, val)))
+            Ok(ControlMessagePayload::fixture((index, val)))
         })
     }
 

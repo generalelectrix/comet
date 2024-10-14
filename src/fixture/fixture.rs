@@ -1,5 +1,6 @@
 //! Types related to specifying and controlling individual fixture models.
 use anyhow::Result;
+use log::debug;
 use std::any::{type_name, Any};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
@@ -166,8 +167,20 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
         self.fixture.control(msg, emitter)
     }
 
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &dyn crate::osc::EmitControlMessage,
+    ) {
+        self.fixture.control_from_channel(msg, emitter);
+    }
+
     fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
         self.fixture.emit_state(emitter);
+    }
+
+    fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {
+        self.fixture.emit_state_for_channel(emitter);
     }
 
     fn update(&mut self, dt: Duration) {

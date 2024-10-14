@@ -4,7 +4,7 @@ use rosc::{OscMessage, OscType};
 
 use super::ControlMap;
 use crate::fixture::ControlMessagePayload;
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use anyhow::{anyhow, Context};
 
@@ -33,8 +33,11 @@ impl FaderArray {
                 .ok_or_else(|| anyhow!("fader array index missing for {msg:?}"))?
                 .parse::<usize>()
                 .with_context(|| format!("handling message {msg:?}"))?;
+            if index == 0 {
+                bail!("fader array index is 0: {msg:?}");
+            }
             let val = get_unipolar(msg)?;
-            process(index, val).map(Some)
+            process(index - 1, val).map(Some)
         })
     }
 
@@ -44,7 +47,7 @@ impl FaderArray {
         S: crate::osc::EmitOscMessage + ?Sized,
     {
         emitter.emit_osc(OscMessage {
-            addr: format!("/{}/{}/{}", self.group, self.control, n),
+            addr: format!("/{}/{}/{}", self.group, self.control, n + 1),
             args: vec![OscType::Float(val.val() as f32)],
         });
     }
