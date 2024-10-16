@@ -5,7 +5,7 @@ use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{ignore_payload, HandleOscStateChange};
+use crate::osc::{ignore_payload, send_float, HandleOscStateChange};
 use crate::osc::{ControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
@@ -78,6 +78,9 @@ impl HandleOscStateChange<StateChange> for WizardExtreme {
         S: crate::osc::EmitOscMessage + ?Sized,
     {
         match sc {
+            StateChange::Dimmer(v) => {
+                send_float(GROUP, "Dimmer", v, send);
+            }
             StateChange::Color(c) => {
                 c.set(GROUP, COLOR, send);
             }
