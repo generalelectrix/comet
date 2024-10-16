@@ -6,7 +6,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::channel::ChannelControlMessage;
+use crate::channel::{ChannelControlMessage, ChannelStateChange};
 use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -48,7 +48,10 @@ impl WizardExtreme {
     fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
-            Dimmer(v) => self.dimmer = v,
+            Dimmer(v) => {
+                self.dimmer = v;
+                emitter.emit_channel(ChannelStateChange::Level(v));
+            }
             Strobe(sc) => self.strobe.handle_state_change(sc),
             Color(c) => self.color = c,
             Twinkle(v) => self.twinkle = v,
