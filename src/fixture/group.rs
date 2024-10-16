@@ -17,7 +17,7 @@ use super::ControlMessagePayload;
 use crate::channel::ChannelControlMessage;
 use crate::dmx::DmxBuffer;
 use crate::master::{FixtureGroupControls, MasterControls};
-use crate::osc::{MapControls, OscMessageWithGroupSender};
+use crate::osc::{FixtureStateEmitter, MapControls};
 
 #[derive(Debug)]
 pub struct FixtureGroup {
@@ -79,31 +79,22 @@ impl FixtureGroup {
     }
 
     /// Emit the current state of all controls.
-    pub fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
-        let emitter = OscMessageWithGroupSender {
-            group: self.name(),
-            emitter,
-        };
-        self.fixture.emit_state(&emitter);
-    }
-
-    /// Emit the current state of all controls bound to channel-level controls.
-    pub fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {
-        self.fixture.emit_state_for_channel(emitter);
+    pub fn emit_state(&self, emitter: ChannelStateEmitter) {
+        self.fixture
+            .emit_state(&FixtureStateEmitter::new(self.key.group.as_ref(), emitter));
     }
 
     /// Process the provided control message.
     pub fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: ChannelStateEmitter,
     ) -> anyhow::Result<()> {
-        let emitter = OscMessageWithGroupSender {
-            group: self.key.group.as_ref(),
-            emitter,
-        };
         self.fixture
-            .control(msg, &emitter)
+            .control(
+                msg,
+                &FixtureStateEmitter::new(self.key.group.as_ref(), emitter),
+            )
             .with_context(|| self.key.clone())
     }
 
@@ -111,13 +102,12 @@ impl FixtureGroup {
     pub fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        channel_emitter: ChannelStateEmitter,
     ) {
-        let emitter = OscMessageWithGroupSender {
-            group: self.key.group.as_ref(),
-            emitter,
-        };
-        self.fixture.control_from_channel(msg, &emitter);
+        self.fixture.control_from_channel(
+            msg,
+            &FixtureStateEmitter::new(self.key.group.as_ref(), channel_emitter),
+        );
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {

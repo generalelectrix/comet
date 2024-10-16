@@ -45,11 +45,7 @@ impl PatchAnimatedFixture for WizardExtreme {
 impl WizardExtreme {
     pub const GOBO_COUNT: usize = 14; // includes the open position
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -77,9 +73,11 @@ impl WizardExtreme {
 }
 
 impl ControllableFixture for WizardExtreme {
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
+        emitter.emit_channel(crate::channel::ChannelStateChange::Level(self.dimmer));
+
         let mut emit_strobe = |ssc| {
             Self::emit(Strobe(ssc), emitter);
         };
@@ -100,14 +98,10 @@ impl ControllableFixture for WizardExtreme {
         Self::emit(Active(self.active.0), emitter);
     }
 
-    fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {
-        emitter.emit(crate::channel::ChannelStateChange::Level(self.dimmer));
-    }
-
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
@@ -116,11 +110,7 @@ impl ControllableFixture for WizardExtreme {
         Ok(())
     }
 
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
-    ) {
+    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
         match msg {
             ChannelControlMessage::Level(l) => {
                 self.handle_state_change(StateChange::Dimmer(*l), emitter);

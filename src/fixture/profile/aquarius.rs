@@ -22,11 +22,7 @@ impl PatchAnimatedFixture for Aquarius {
 }
 
 impl Aquarius {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             LampOn(v) => self.lamp_on = v,
@@ -57,7 +53,7 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(LampOn(self.lamp_on), emitter);
         Self::emit(Rotation(self.rotation), emitter);
@@ -66,7 +62,7 @@ impl ControllableFixture for Aquarius {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

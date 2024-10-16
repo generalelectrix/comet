@@ -49,7 +49,7 @@ impl Astroscan {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -81,7 +81,7 @@ impl Astroscan {
 }
 
 impl ControllableFixture for Astroscan {
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(LampOn(self.lamp_on), emitter);
         Self::emit(Dimmer(self.dimmer), emitter);
@@ -106,7 +106,7 @@ impl ControllableFixture for Astroscan {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

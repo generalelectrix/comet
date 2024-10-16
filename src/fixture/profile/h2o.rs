@@ -29,7 +29,7 @@ impl H2O {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -79,7 +79,7 @@ impl ControllableFixture for H2O {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
@@ -88,7 +88,7 @@ impl ControllableFixture for H2O {
         Ok(())
     }
 
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
         Self::emit(Rotation(self.rotation), emitter);

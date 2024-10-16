@@ -16,7 +16,7 @@ use super::animation_target::{
 use super::{ControlMessagePayload, FixtureGroupControls};
 use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
 use crate::fixture::animation_target::AnimationTarget;
-use crate::osc::MapControls;
+use crate::osc::{FixtureStateEmitter, MapControls};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FixtureType(pub &'static str);
@@ -55,26 +55,18 @@ impl<'a> FixtureControlMessage<'a> {
 
 pub trait ControllableFixture: MapControls {
     /// Emit the current state of all controls.
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage);
-
-    /// Emit the current state of all controls that are bound to channel-level controls.
-    #[allow(unused)]
-    fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {}
+    fn emit_state(&self, emitter: &FixtureStateEmitter);
 
     /// Process the provided control message.
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()>;
 
     /// Process a channel control message, if the fixture uses it.
     #[allow(unused)]
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
-    ) {
+    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
         // Ignore channel control messages by default.
     }
 
@@ -162,25 +154,17 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.fixture.control(msg, emitter)
     }
 
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
-    ) {
+    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
         self.fixture.control_from_channel(msg, emitter);
     }
 
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.fixture.emit_state(emitter);
-    }
-
-    fn emit_state_for_channel(&self, emitter: &ChannelStateEmitter) {
-        self.fixture.emit_state_for_channel(emitter);
     }
 
     fn update(&mut self, dt: Duration) {

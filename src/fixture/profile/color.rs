@@ -47,7 +47,7 @@ impl Color {
     pub fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         self.update_state(sc);
         Self::emit(sc, emitter);
@@ -111,14 +111,14 @@ impl AnimatedFixture for Color {
 }
 
 impl ControllableFixture for Color {
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.state(&mut |sc| Self::emit(sc, emitter));
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

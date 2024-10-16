@@ -1,6 +1,6 @@
 //! State and control definitions for fixture group channels.
 
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
 use log::{debug, error};
@@ -9,8 +9,7 @@ use serde::Deserialize;
 
 use crate::{
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
-    osc::EmitControlMessage,
-    osc::HandleStateChange,
+    osc::{EmitControlMessage, EmitOscMessage, HandleStateChange},
 };
 
 /// The index of a channel.
@@ -33,6 +32,8 @@ impl Display for ChannelId {
 pub struct Channels {
     /// Lookup from channel index to the fixture group assigned to that channel.
     channel_index: Vec<FixtureGroupKey>,
+    /// Reverse-lookup from fixture group key to channel index.
+    fixture_channel_index: HashMap<FixtureGroupKey, ChannelId>,
     /// The channel ID that is currently selected.
     current_channel: Option<ChannelId>,
 }
@@ -41,7 +42,8 @@ impl Channels {
     /// Add new channel controls, wired to the specified fixture.
     pub fn add(&mut self, group: FixtureGroupKey) -> ChannelId {
         let id = ChannelId(self.channel_index.len());
-        self.channel_index.push(group);
+        self.channel_index.push(group.clone());
+        self.fixture_channel_index.insert(group, id);
         id
     }
 
@@ -63,6 +65,11 @@ impl Channels {
                 self.channel_index.len()
             );
         }
+    }
+
+    /// Look up a channel ID by fixture group key.
+    pub fn channel_for_fixture(&self, group: &FixtureGroupKey) -> Option<ChannelId> {
+        self.fixture_channel_index.get(group).cloned()
     }
 
     /// Iterate over all of the labels for each channels.
@@ -131,8 +138,8 @@ impl Channels {
         if selected_fixture_only {
             if let Some(channel_id) = self.current_channel {
                 match self.group_by_channel(patch, channel_id) {
-                    Ok(f) => f.emit_state_for_channel(&ChannelStateEmitter {
-                        channel_id,
+                    Ok(f) => f.emit_state(ChannelStateEmitter {
+                        channel_id: Some(channel_id),
                         emitter,
                     }),
                     Err(err) => error!("Failed to emit channel {channel_id} state: {err}."),
@@ -141,8 +148,8 @@ impl Channels {
         } else {
             for channel_id in self.channel_ids() {
                 match self.group_by_channel(patch, channel_id) {
-                    Ok(f) => f.emit_state_for_channel(&ChannelStateEmitter {
-                        channel_id,
+                    Ok(f) => f.emit_state(ChannelStateEmitter {
+                        channel_id: Some(channel_id),
                         emitter,
                     }),
                     Err(err) => error!("Failed to emit channel {channel_id} state: {err}."),
@@ -178,8 +185,13 @@ impl Channels {
                     )?
                 };
                 self.group_by_channel_mut(patch, channel_id)?
-                    .control_from_channel(&msg, emitter);
-                Self::emit(StateChange::State { channel_id, msg }, emitter);
+                    .control_from_channel(
+                        &msg,
+                        ChannelStateEmitter {
+                            channel_id: Some(channel_id),
+                            emitter,
+                        },
+                    );
             }
         }
         Ok(())
@@ -187,21 +199,34 @@ impl Channels {
 }
 
 /// Provide methods to emit channel control state changes for a specific channel.
+/// If no channel is set, no state change events will be emitted.
+#[derive(Clone, Copy)]
 pub struct ChannelStateEmitter<'a> {
-    channel_id: ChannelId,
+    channel_id: Option<ChannelId>,
     emitter: &'a dyn EmitControlMessage,
 }
 
 impl<'a> ChannelStateEmitter<'a> {
+    /// An emitter that ignores channel state changes.
+    pub fn new(channel_id: Option<ChannelId>, emitter: &'a dyn EmitControlMessage) -> Self {
+        Self {
+            channel_id,
+            emitter,
+        }
+    }
+
     /// Emit the provided state change.
     pub fn emit(&self, msg: ChannelStateChange) {
-        Channels::emit(
-            StateChange::State {
-                channel_id: self.channel_id,
-                msg,
-            },
-            self.emitter,
-        );
+        let Some(channel_id) = self.channel_id else {
+            return;
+        };
+        Channels::emit(StateChange::State { channel_id, msg }, self.emitter);
+    }
+}
+
+impl<'a> EmitOscMessage for ChannelStateEmitter<'a> {
+    fn emit_osc(&self, msg: rosc::OscMessage) {
+        self.emitter.emit_osc(msg);
     }
 }
 

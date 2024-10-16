@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     animation::AnimationUIState,
-    channel::Channels,
+    channel::{ChannelStateEmitter, Channels},
     clock_service::ClockService,
     config::Config,
     dmx::DmxBuffer,
@@ -51,8 +51,10 @@ impl Show {
                 osc_controller.map_controls(group);
                 patched_controls.insert(group.fixture_type());
             }
-
-            group.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
+            group.emit_state(ChannelStateEmitter::new(
+                channels.channel_for_fixture(group.key()),
+                &osc_controller.sender_with_metadata(None, TalkbackMode::All),
+            ));
         }
 
         let master_controls = MasterControls::default();
@@ -168,7 +170,10 @@ impl Show {
                 self.master_controls.emit_state(&sender);
                 self.channels.emit_state(false, &mut self.patch, &sender);
                 for group in self.patch.iter() {
-                    group.emit_state(&sender);
+                    group.emit_state(ChannelStateEmitter::new(
+                        self.channels.channel_for_fixture(group.key()),
+                        &sender,
+                    ));
                 }
                 if let Some(channel) = self.channels.current_channel() {
                     self.animation_ui_state.emit_state(
@@ -184,9 +189,10 @@ impl Show {
                 let Some(group_key) = msg.key.as_ref() else {
                     bail!("no fixture group key was provided with a fixture control message");
                 };
-                self.patch
-                    .get_mut(group_key)?
-                    .control(fixture_control_msg.borrowed(), &sender)
+                self.patch.get_mut(group_key)?.control(
+                    fixture_control_msg.borrowed(),
+                    ChannelStateEmitter::new(self.channels.channel_for_fixture(group_key), &sender),
+                )
             }
         }
     }

@@ -95,7 +95,7 @@ impl Lumasphere {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -129,7 +129,7 @@ impl ControllableFixture for Lumasphere {
         self.ball_rotation.update(delta_t);
     }
 
-    fn emit_state(&self, emitter: &dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Lamp1Intensity(self.lamp_1_intensity), emitter);
         Self::emit(Lamp2Intensity(self.lamp_2_intensity), emitter);
@@ -144,7 +144,7 @@ impl ControllableFixture for Lumasphere {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
@@ -174,7 +174,7 @@ impl Strobe {
         dmx_slice[1] = rate;
     }
 
-    fn emit_state<F>(&self, emitter: &dyn crate::osc::EmitControlMessage, wrap: F)
+    fn emit_state<F>(&self, emitter: &FixtureStateEmitter, wrap: F)
     where
         F: Fn(StrobeStateChange) -> StateChange + 'static,
     {

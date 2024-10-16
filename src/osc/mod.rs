@@ -1,3 +1,4 @@
+use crate::channel::{ChannelStateChange, ChannelStateEmitter};
 use crate::fixture::FixtureGroupKey;
 use crate::fixture::{ControlMessage, ControlMessagePayload, FixtureType, GroupName};
 use anyhow::bail;
@@ -181,12 +182,26 @@ impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
 }
 
 /// Decorate a control message emitter to inject a group into the address.
-pub struct OscMessageWithGroupSender<'a> {
-    pub group: Option<&'a GroupName>,
-    pub emitter: &'a dyn EmitControlMessage,
+#[derive(Clone, Copy)]
+pub struct FixtureStateEmitter<'a> {
+    group: Option<&'a GroupName>,
+    channel_emitter: ChannelStateEmitter<'a>,
 }
 
-impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
+impl<'a> FixtureStateEmitter<'a> {
+    pub fn new(group: Option<&'a GroupName>, channel_emitter: ChannelStateEmitter<'a>) -> Self {
+        Self {
+            group,
+            channel_emitter,
+        }
+    }
+
+    pub fn emit_channel(&self, msg: ChannelStateChange) {
+        self.channel_emitter.emit(msg);
+    }
+}
+
+impl<'a> EmitOscMessage for FixtureStateEmitter<'a> {
     fn emit_osc(&self, mut msg: OscMessage) {
         if let Some(g) = &self.group {
             // If a group is set, prepend the ID to the address.
@@ -196,7 +211,7 @@ impl<'a> EmitOscMessage for OscMessageWithGroupSender<'a> {
             // injection.
             msg.addr = format!("/:{}{}", g, msg.addr);
         }
-        self.emitter.emit_osc(msg);
+        self.channel_emitter.emit_osc(msg);
     }
 }
 
