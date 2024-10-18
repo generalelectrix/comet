@@ -1,4 +1,4 @@
-use crate::fixture::aquarius::{Aquarius, StateChange};
+use crate::fixture::aquarius::{Aquarius, ControlMessage, StateChange};
 use crate::fixture::prelude::*;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::{GroupControlMap, HandleOscStateChange};
@@ -13,12 +13,10 @@ impl Aquarius {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
-        map.add_bipolar("Rotation", |v| {
-            ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
-        });
+        LAMP_ON.map_state(map, |v| LampOn(v));
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
     }
 }
 

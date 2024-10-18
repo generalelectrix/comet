@@ -14,22 +14,22 @@ impl Venus {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 
         map.add_bipolar("BaseRotation", |v| {
-            ControlMessagePayload::fixture(BaseRotation(bipolar_fader_with_detent(v)))
+            BaseRotation(bipolar_fader_with_detent(v))
         });
         map.add_unipolar("CradleMotion", |v| {
-            ControlMessagePayload::fixture(CradleMotion(unipolar_fader_with_detent(v)))
+            CradleMotion(unipolar_fader_with_detent(v))
         });
         map.add_bipolar("HeadRotation", |v| {
-            ControlMessagePayload::fixture(HeadRotation(bipolar_fader_with_detent(v)))
+            HeadRotation(bipolar_fader_with_detent(v))
         });
         map.add_bipolar("ColorRotation", |v| {
-            ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
+            ColorRotation(bipolar_fader_with_detent(v))
         });
-        LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
+        LAMP_ON.map_state(map, |v| LampOn(v));
     }
 }
 

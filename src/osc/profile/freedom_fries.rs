@@ -27,14 +27,14 @@ impl FreedomFriesFixture {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 
-        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map.add_unipolar("Dimmer", |v| Dimmer(v));
         map_color(map, &wrap_color);
         map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_unipolar("Speed", |v| ControlMessagePayload::fixture(Speed(v)));
-        RUN_PROGRAM.map_state(map, |v| ControlMessagePayload::fixture(RunProgram(v)));
+        map.add_unipolar("Speed", |v| Speed(v));
+        RUN_PROGRAM.map_state(map, |v| RunProgram(v));
         map.add_unipolar("Program", |v| {
             ControlMessagePayload::fixture(Program(unipolar_to_range(
                 0,
@@ -42,16 +42,16 @@ impl FreedomFriesFixture {
                 v,
             ) as usize))
         });
-        PROGRAM_CYCLE_ALL.map_state(map, |v| ControlMessagePayload::fixture(ProgramCycleAll(v)));
+        PROGRAM_CYCLE_ALL.map_state(map, |v| ProgramCycleAll(v));
     }
 }
 
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Strobe(sc))
+    StateChange::Strobe(sc)
 }
 
 fn wrap_color(sc: ColorStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Color(sc))
+    StateChange::Color(sc)
 }
 
 impl HandleOscStateChange<StateChange> for FreedomFriesFixture {

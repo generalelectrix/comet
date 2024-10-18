@@ -17,34 +17,34 @@ impl Lumasphere {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("lamp_1_intensity", |v| {
-            ControlMessagePayload::fixture(Lamp1Intensity(unipolar_fader_with_detent(v)))
+            Lamp1Intensity(unipolar_fader_with_detent(v))
         });
         map.add_unipolar("lamp_2_intensity", |v| {
-            ControlMessagePayload::fixture(Lamp2Intensity(unipolar_fader_with_detent(v)))
+            Lamp2Intensity(unipolar_fader_with_detent(v))
         });
 
         map.add_bipolar("ball_rotation", |v| {
-            ControlMessagePayload::fixture(BallRotation(bipolar_fader_with_detent(v)))
+            BallRotation(bipolar_fader_with_detent(v))
         });
-        BALL_START.map_state(map, |v| ControlMessagePayload::fixture(BallStart(v)));
+        BALL_START.map_state(map, |v| BallStart(v));
 
         map.add_unipolar("color_rotation", |v| {
-            ControlMessagePayload::fixture(ColorRotation(unipolar_fader_with_detent(v)))
+            ColorRotation(unipolar_fader_with_detent(v))
         });
-        COLOR_START.map_state(map, |v| ControlMessagePayload::fixture(ColorStart(v)));
+        COLOR_START.map_state(map, |v| ColorStart(v));
         map_strobe(map, 1, |inner| {
-            ControlMessagePayload::fixture(Strobe1(inner))
+            Strobe1(inner)
         });
         map_strobe(map, 2, |inner| {
-            ControlMessagePayload::fixture(Strobe2(inner))
+            Strobe2(inner)
         });
     }
 }
 
-fn map_strobe<W>(map: &mut GroupControlMap<ControlMessagePayload>, index: u8, wrap: W)
+fn map_strobe<W>(map: &mut GroupControlMap<ControlMessage>, index: u8, wrap: W)
 where
     W: Fn(StrobeStateChange) -> ControlMessagePayload + 'static + Copy,
 {

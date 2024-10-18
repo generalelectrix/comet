@@ -16,9 +16,9 @@ impl Faderboard {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         CONTROLS.map(map, |index, val| {
-            Ok(ControlMessagePayload::fixture((index, val)))
+            Ok((index, val))
         })
     }
 }

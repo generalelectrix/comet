@@ -15,14 +15,14 @@ impl Hypnotic {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        RED_LASER_ON.map_state(map, |v| ControlMessagePayload::fixture(RedLaserOn(v)));
-        GREEN_LASER_ON.map_state(map, |v| ControlMessagePayload::fixture(GreenLaserOn(v)));
-        BLUE_LASER_ON.map_state(map, |v| ControlMessagePayload::fixture(BlueLaserOn(v)));
+        RED_LASER_ON.map_state(map, |v| RedLaserOn(v));
+        GREEN_LASER_ON.map_state(map, |v| GreenLaserOn(v));
+        BLUE_LASER_ON.map_state(map, |v| BlueLaserOn(v));
 
         map.add_bipolar("Rotation", |v| {
-            ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
+            Rotation(bipolar_fader_with_detent(v))
         });
     }
 }

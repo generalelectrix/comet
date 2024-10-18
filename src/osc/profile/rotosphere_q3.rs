@@ -14,23 +14,23 @@ impl RotosphereQ3 {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 
         map_color(map, &wrap_color);
         map_strobe(map, "Strobe", &wrap_strobe);
         map.add_bipolar("Rotation", |v| {
-            ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
+            Rotation(bipolar_fader_with_detent(v))
         });
     }
 }
 
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Strobe(sc))
+    StateChange::Strobe(sc)
 }
 
 fn wrap_color(sc: ColorStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Color(sc))
+    StateChange::Color(sc)
 }
 
 impl HandleOscStateChange<StateChange> for RotosphereQ3 {}

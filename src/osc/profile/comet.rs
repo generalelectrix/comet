@@ -33,12 +33,12 @@ impl Comet {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use ControlMessage::*;
         use StateChange::*;
-        SHUTTER.map_state(map, |v| ControlMessagePayload::fixture(Set(Shutter(v))));
+        SHUTTER.map_state(map, |v| Set(Shutter(v)));
         STROBE_ON.map_state(map, |v| {
-            ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::On(v))))
+            Set(Strobe(GenericStrobeStateChange::On(v)))
         });
         map.add_unipolar("StrobeRate", |v| {
             ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(
@@ -46,30 +46,30 @@ impl Comet {
             )))))
         });
         map.add_unipolar("Mspeed", |v| {
-            ControlMessagePayload::fixture(Set(MirrorSpeed(v)))
+            Set(MirrorSpeed(v))
         });
-        AUTO_STEP.map_state(map, |v| ControlMessagePayload::fixture(Set(AutoStep(v))));
+        AUTO_STEP.map_state(map, |v| Set(AutoStep(v)));
         map.add_unipolar("AutoStepRate", |v| {
-            ControlMessagePayload::fixture(Set(AutoStepRate(v)))
+            Set(AutoStepRate(v))
         });
 
         STEP_BACKWARDS.map_trigger(map, || {
-            ControlMessagePayload::fixture(Step(Direction::Backward))
+            Step(Direction::Backward)
         });
         STEP_FORWARDS.map_trigger(map, || {
-            ControlMessagePayload::fixture(Step(Direction::Forward))
+            Step(Direction::Forward)
         });
 
-        MACRO_SELECT_RADIO_BUTTON.map(map, |v| ControlMessagePayload::fixture(Set(SelectMacro(v))));
+        MACRO_SELECT_RADIO_BUTTON.map(map, |v| Set(SelectMacro(v)));
 
         SHUTTER_SOUND_ACTIVE.map_state(map, |v| {
-            ControlMessagePayload::fixture(Set(ShutterSoundActive(v)))
+            Set(ShutterSoundActive(v))
         });
         TRIG_SOUND_ACTIVE.map_state(map, |v| {
-            ControlMessagePayload::fixture(Set(TrigSoundActive(v)))
+            Set(TrigSoundActive(v))
         });
 
-        RESET.map_state(map, |v| ControlMessagePayload::fixture(Set(Reset(v))));
+        RESET.map_state(map, |v| Set(Reset(v)));
     }
 }
 

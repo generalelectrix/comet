@@ -6,7 +6,7 @@ use crate::osc::HandleOscStateChange;
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::button;
 use crate::osc::basic_controls::Button;
-use crate::osc::{GroupControlMap,  RadioButton};
+use crate::osc::{GroupControlMap, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = SolarSystem::NAME.0;
@@ -32,17 +32,17 @@ impl SolarSystem {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        SHUTTER_OPEN.map_state(map, |v| ControlMessagePayload::fixture(ShutterOpen(v)));
-        AUTO_SHUTTER.map_state(map, |v| ControlMessagePayload::fixture(AutoShutter(v)));
-        FRONT_GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(FrontGobo(v)));
+        SHUTTER_OPEN.map_state(map, |v| ShutterOpen(v));
+        AUTO_SHUTTER.map_state(map, |v| AutoShutter(v));
+        FRONT_GOBO_SELECT.map(map, |v| FrontGobo(v));
         map.add_bipolar("FrontRotation", |v| {
-            ControlMessagePayload::fixture(FrontRotation(bipolar_fader_with_detent(v)))
+            FrontRotation(bipolar_fader_with_detent(v))
         });
-        REAR_GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(RearGobo(v)));
+        REAR_GOBO_SELECT.map(map, |v| RearGobo(v));
         map.add_bipolar("RearRotation", |v| {
-            ControlMessagePayload::fixture(RearRotation(bipolar_fader_with_detent(v)))
+            RearRotation(bipolar_fader_with_detent(v))
         });
     }
 }

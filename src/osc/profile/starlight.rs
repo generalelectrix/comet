@@ -13,18 +13,18 @@ impl Starlight {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map.add_unipolar("Dimmer", |v| Dimmer(v));
         map.add_bipolar("Rotation", |v| {
-            ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
+            Rotation(bipolar_fader_with_detent(v))
         });
         map_strobe(map, "Strobe", &wrap_strobe);
     }
 }
 
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Strobe(sc))
+    StateChange::Strobe(sc)
 }
 
 impl HandleOscStateChange<StateChange> for Starlight {

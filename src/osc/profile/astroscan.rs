@@ -35,42 +35,42 @@ impl Astroscan {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
-        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        LAMP_ON.map_state(map, |v| LampOn(v));
+        map.add_unipolar("Dimmer", |v| Dimmer(v));
         map_strobe(map, "Strobe", &wrap_strobe);
         map.add_enum_handler(COLOR, ignore_payload, |c, _| {
-            ControlMessagePayload::fixture(Color(c))
+            Color(c)
         });
-        map.add_unipolar("Iris", |v| ControlMessagePayload::fixture(Iris(v)));
-        GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(Gobo(v)));
+        map.add_unipolar("Iris", |v| Iris(v));
+        GOBO_SELECT.map(map, |v| Gobo(v));
         map.add_bipolar("GoboRotation", |v| {
-            ControlMessagePayload::fixture(GoboRotation(bipolar_fader_with_detent(v)))
+            GoboRotation(bipolar_fader_with_detent(v))
         });
         MIRROR_GOBO_ROTATION.map_state(map, |v| {
-            ControlMessagePayload::fixture(MirrorGoboRotation(v))
+            MirrorGoboRotation(v)
         });
         map.add_bipolar("MirrorRotation", |v| {
-            ControlMessagePayload::fixture(MirrorRotation(bipolar_fader_with_detent(v)))
+            MirrorRotation(bipolar_fader_with_detent(v))
         });
         MIRROR_MIRROR_ROTATION.map_state(map, |v| {
-            ControlMessagePayload::fixture(MirrorMirrorRotation(v))
+            MirrorMirrorRotation(v)
         });
         map.add_bipolar("Pan", |v| {
-            ControlMessagePayload::fixture(Pan(bipolar_fader_with_detent(v)))
+            Pan(bipolar_fader_with_detent(v))
         });
-        MIRROR_PAN.map_state(map, |v| ControlMessagePayload::fixture(MirrorPan(v)));
+        MIRROR_PAN.map_state(map, |v| MirrorPan(v));
         map.add_bipolar("Tilt", |v| {
-            ControlMessagePayload::fixture(Tilt(bipolar_fader_with_detent(v)))
+            Tilt(bipolar_fader_with_detent(v))
         });
-        MIRROR_TILT.map_state(map, |v| ControlMessagePayload::fixture(MirrorTilt(v)));
-        ACTIVE.map_state(map, |v| ControlMessagePayload::fixture(Active(v)));
+        MIRROR_TILT.map_state(map, |v| MirrorTilt(v));
+        ACTIVE.map_state(map, |v| Active(v));
     }
 }
 
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Strobe(sc))
+    StateChange::Strobe(sc)
 }
 
 impl HandleOscStateChange<StateChange> for Astroscan {

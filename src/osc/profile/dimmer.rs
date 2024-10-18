@@ -10,7 +10,7 @@ impl Dimmer {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         map.add_unipolar("Level", ControlMessagePayload::fixture);
     }
 }

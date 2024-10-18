@@ -28,42 +28,42 @@ impl Swarmolon {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use ControlMessage::*;
         use StateChange::*;
 
         map.add_enum_handler("DerbyColor", get_bool, |c, v| {
-            ControlMessagePayload::fixture(Set(DerbyColor(c, v)))
+            Set(DerbyColor(c, v))
         });
         map_strobe(map, "DerbyStrobe", &wrap_derby_strobe);
         map.add_bipolar("DerbyRotation", |v| {
-            ControlMessagePayload::fixture(Set(DerbyRotation(bipolar_fader_with_detent(v))))
+            Set(DerbyRotation(bipolar_fader_with_detent(v)))
         });
         map_strobe(map, "WhiteStrobe", &wrap_white_strobe);
         STROBE_PROGRAM_SELECT.map(map, |v| {
-            ControlMessagePayload::fixture(Set(WhiteStrobe(WhiteStrobeStateChange::Program(v))))
+            Set(WhiteStrobe(WhiteStrobeStateChange::Program(v)))
         });
 
-        RED_LASER_ON.map_state(map, |v| ControlMessagePayload::fixture(Set(RedLaserOn(v))));
+        RED_LASER_ON.map_state(map, |v| Set(RedLaserOn(v)));
         GREEN_LASER_ON.map_state(map, |v| {
-            ControlMessagePayload::fixture(Set(GreenLaserOn(v)))
+            Set(GreenLaserOn(v))
         });
         map_strobe(map, "LaserStrobe", &wrap_laser_strobe);
         map.add_bipolar("LaserRotation", |v| {
-            ControlMessagePayload::fixture(Set(LaserRotation(bipolar_fader_with_detent(v))))
+            Set(LaserRotation(bipolar_fader_with_detent(v)))
         });
 
         // "Global" strobe rate control, for simpler one-fader control.
         // This is a bit of a hack, since it has no talkback channel.
         // This will need to be refactored if we want to use uniform talkback.
         map.add_unipolar("StrobeRate", |v| {
-            ControlMessagePayload::fixture(StrobeRate(v))
+            StrobeRate(v)
         });
     }
 }
 
 fn wrap_derby_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(ControlMessage::Set(StateChange::DerbyStrobe(sc)))
+    ControlMessage::Set(StateChange::DerbyStrobe(sc))
 }
 
 fn wrap_white_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
@@ -73,7 +73,7 @@ fn wrap_white_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
 }
 
 fn wrap_laser_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(ControlMessage::Set(StateChange::LaserStrobe(sc)))
+    ControlMessage::Set(StateChange::LaserStrobe(sc))
 }
 
 impl HandleOscStateChange<StateChange> for Swarmolon {

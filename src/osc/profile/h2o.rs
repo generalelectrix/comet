@@ -19,18 +19,18 @@ impl H2O {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map.add_unipolar("Dimmer", |v| Dimmer(v));
         map.add_bipolar("Rotation", |v| {
-            ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
+            Rotation(bipolar_fader_with_detent(v))
         });
         map.add_enum_handler(FIXED_COLOR, ignore_payload, |c, _| {
-            ControlMessagePayload::fixture(FixedColor(c))
+            FixedColor(c)
         });
-        COLOR_ROTATE.map_state(map, |v| ControlMessagePayload::fixture(ColorRotate(v)));
+        COLOR_ROTATE.map_state(map, |v| ColorRotate(v));
         map.add_bipolar("ColorRotation", |v| {
-            ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
+            ColorRotation(bipolar_fader_with_detent(v))
         });
     }
 }

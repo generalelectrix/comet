@@ -19,26 +19,26 @@ impl Colordynamic {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        SHUTTER_OPEN.map_state(map, |v| ControlMessagePayload::fixture(ShutterOpen(v)));
+        SHUTTER_OPEN.map_state(map, |v| ShutterOpen(v));
         map_strobe(map, "Strobe", &wrap_strobe);
 
-        COLOR_ROTATION_ON.map_state(map, |v| ControlMessagePayload::fixture(ColorRotationOn(v)));
+        COLOR_ROTATION_ON.map_state(map, |v| ColorRotationOn(v));
         map.add_unipolar("ColorRotationSpeed", |v| {
-            ControlMessagePayload::fixture(ColorRotationSpeed(v))
+            ColorRotationSpeed(v)
         });
         map.add_unipolar("ColorPosition", |v| {
-            ControlMessagePayload::fixture(ColorPosition(v))
+            ColorPosition(v)
         });
         map.add_bipolar("FiberRotation", |v| {
-            ControlMessagePayload::fixture(FiberRotation(bipolar_fader_with_detent(v)))
+            FiberRotation(bipolar_fader_with_detent(v))
         });
     }
 }
 
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(StateChange::Strobe(sc))
+    StateChange::Strobe(sc)
 }
 
 impl HandleOscStateChange<StateChange> for Colordynamic {

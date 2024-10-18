@@ -10,7 +10,7 @@ impl Color {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         map_color(map, &wrap_color);
     }
 }
@@ -18,10 +18,10 @@ impl Color {
 impl HandleOscStateChange<StateChange> for Color {}
 
 fn wrap_color(sc: StateChange) -> ControlMessagePayload {
-    ControlMessagePayload::fixture(sc)
+    sc
 }
 
-pub fn map_color<F>(map: &mut GroupControlMap<ControlMessagePayload>, wrap: &'static F)
+pub fn map_color<F>(map: &mut GroupControlMap<ControlMessage>, wrap: &'static F)
 where
     F: Fn(StateChange) -> ControlMessagePayload + 'static,
 {
