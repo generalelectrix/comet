@@ -148,7 +148,13 @@ impl Show {
 
         match ControlMessageType::parse(msg.entity_type()) {
             ControlMessageType::Master => {
-                self.master_controls.control(msg, &sender);
+                self.master_controls.control(
+                    msg,
+                    &self.channels,
+                    &self.patch,
+                    &self.animation_ui_state,
+                    &sender,
+                );
                 Ok(())
             }
             ControlMessageType::Channel => self.channels.control(msg, &mut self.patch, &sender),

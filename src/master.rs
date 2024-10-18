@@ -8,7 +8,7 @@ use tunnels::clock_server::StaticClockBank;
 use crate::animation::AnimationUIState;
 use crate::channel::{ChannelStateEmitter, Channels};
 use crate::fixture::Patch;
-use crate::osc::{GroupControlMap, HandleStateChange};
+use crate::osc::{GroupControlMap, HandleStateChange, OscControlMessage};
 use crate::{
     fixture::generic::{GenericStrobe, GenericStrobeStateChange},
     osc::EmitControlMessage,
@@ -61,13 +61,16 @@ impl MasterControls {
     // FIXME: we should lift UI refresh up and out of here
     pub fn control(
         &mut self,
-        msg: ControlMessage,
+        msg: &OscControlMessage,
         channels: &Channels,
         patch: &Patch,
         animation_ui_state: &AnimationUIState,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
-        match msg {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        match ctl {
             ControlMessage::State(sc) => {
                 self.handle_state_change(sc, emitter);
             }
