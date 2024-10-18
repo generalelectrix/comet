@@ -12,7 +12,7 @@ use crate::util::unipolar_to_range;
 pub struct Dimmer(UnipolarFloat);
 
 impl PatchAnimatedFixture for Dimmer {
-    const NAME: FixtureType = FixtureType("dimmer");
+    const NAME: FixtureType = FixtureType("Dimmer");
     fn channel_count(&self) -> usize {
         1
     }

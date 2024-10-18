@@ -9,7 +9,7 @@ use crate::osc::{ignore_payload, send_float, HandleOscStateChange};
 use crate::osc::{GroupControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "WizardExtreme";
+const GROUP: &str = WizardExtreme::NAME.0;
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {
@@ -62,10 +62,6 @@ impl MapControls for WizardExtreme {
             ControlMessagePayload::fixture(MirrorReflectorRotation(v))
         });
         ACTIVE.map_state(map, |v| ControlMessagePayload::fixture(Active(v)));
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

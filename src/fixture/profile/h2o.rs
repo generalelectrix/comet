@@ -19,7 +19,7 @@ pub struct H2O {
 }
 
 impl PatchAnimatedFixture for H2O {
-    const NAME: FixtureType = FixtureType("h2o");
+    const NAME: FixtureType = FixtureType("H2O");
     fn channel_count(&self) -> usize {
         3
     }

@@ -7,7 +7,7 @@ use crate::osc::HandleOscStateChange;
 use crate::osc::{GroupControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "Starlight";
+const GROUP: &str = Starlight::NAME.0;
 
 impl MapControls for Starlight {
     fn group(&self) -> &'static str {
@@ -20,10 +20,6 @@ impl MapControls for Starlight {
             ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
         });
         map_strobe(map, "Strobe", &wrap_strobe);
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

@@ -15,7 +15,7 @@ pub struct Aquarius {
 }
 
 impl PatchAnimatedFixture for Aquarius {
-    const NAME: FixtureType = FixtureType("aquarius");
+    const NAME: FixtureType = FixtureType("Aquarius");
     fn channel_count(&self) -> usize {
         2
     }

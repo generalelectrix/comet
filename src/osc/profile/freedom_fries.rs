@@ -10,7 +10,7 @@ use crate::osc::profile::generic::map_strobe;
 use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 use crate::util::unipolar_to_range;
 
-const GROUP: &str = "FreedomFries";
+const GROUP: &str = FreedomFriesFixture::NAME.0;
 
 const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
 const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
@@ -43,10 +43,6 @@ impl MapControls for FreedomFriesFixture {
             ) as usize))
         });
         PROGRAM_CYCLE_ALL.map_state(map, |v| ControlMessagePayload::fixture(ProgramCycleAll(v)));
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

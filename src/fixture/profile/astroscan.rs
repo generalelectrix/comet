@@ -37,7 +37,7 @@ pub struct Astroscan {
 }
 
 impl PatchAnimatedFixture for Astroscan {
-    const NAME: FixtureType = FixtureType("astroscan");
+    const NAME: FixtureType = FixtureType("Astroscan");
     fn channel_count(&self) -> usize {
         9
     }

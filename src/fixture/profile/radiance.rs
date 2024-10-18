@@ -17,7 +17,7 @@ pub struct Radiance {
 }
 
 impl PatchFixture for Radiance {
-    const NAME: FixtureType = FixtureType("radiance");
+    const NAME: FixtureType = FixtureType("Radiance");
     fn channel_count(&self) -> usize {
         2
     }

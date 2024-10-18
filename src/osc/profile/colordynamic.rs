@@ -9,7 +9,7 @@ use crate::osc::HandleOscStateChange;
 use crate::osc::{GroupControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "Colordynamic";
+const GROUP: &str = Colordynamic::NAME.0;
 
 const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
@@ -34,10 +34,6 @@ impl MapControls for Colordynamic {
         map.add_bipolar("FiberRotation", |v| {
             ControlMessagePayload::fixture(FiberRotation(bipolar_fader_with_detent(v)))
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

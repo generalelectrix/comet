@@ -23,7 +23,7 @@ pub struct RushWizard {
 }
 
 impl PatchFixture for RushWizard {
-    const NAME: FixtureType = FixtureType("rush_wizard");
+    const NAME: FixtureType = FixtureType("RushWizard");
     fn channel_count(&self) -> usize {
         10
     }

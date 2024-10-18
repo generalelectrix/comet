@@ -33,7 +33,7 @@ const QUAD_PHASE_CHANNEL_COUNT: usize = 4;
 const GALAXIAN_CHANNEL_COUNT: usize = 5;
 
 impl PatchFixture for Swarmolon {
-    const NAME: FixtureType = FixtureType("swarmolon");
+    const NAME: FixtureType = FixtureType("Swarmolon");
     fn channel_count(&self) -> usize {
         let mut count = CHANNEL_COUNT;
         if self.quad_phase_mindmeld {

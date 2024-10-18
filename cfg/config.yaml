@@ -4,5 +4,5 @@ controllers:
     port: 9000
 debug: False
 fixtures:
-  - name: comet
+  - name: Comet
     addr: 1

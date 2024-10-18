@@ -6,7 +6,7 @@ use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
-const GROUP: &str = "Venus";
+const GROUP: &str = Venus::NAME.0;
 
 const LAMP_ON: Button = button(GROUP, "LampControl");
 
@@ -30,13 +30,6 @@ impl MapControls for Venus {
             ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
         });
         LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![
-            (GROUP.to_string(), Self::NAME),
-            (GROUP.to_string(), Self::NAME),
-        ]
     }
 }
 

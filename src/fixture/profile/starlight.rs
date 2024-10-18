@@ -18,7 +18,7 @@ pub struct Starlight {
 }
 
 impl PatchAnimatedFixture for Starlight {
-    const NAME: FixtureType = FixtureType("starlight");
+    const NAME: FixtureType = FixtureType("Starlight");
     fn channel_count(&self) -> usize {
         4
     }

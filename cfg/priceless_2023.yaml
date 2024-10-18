@@ -4,6 +4,6 @@ controllers:
     port: 9000
 debug: False
 fixtures:
-  - name: colordynamic
+  - name: Colordynamic
     addr: 110
     channel: True

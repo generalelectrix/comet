@@ -4,7 +4,7 @@ use crate::osc::basic_controls::{button, Button};
 use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "Aquarius";
+const GROUP: &str = Aquarius::NAME.0;
 
 const LAMP_ON: Button = button(GROUP, "LampOn");
 
@@ -19,10 +19,6 @@ impl MapControls for Aquarius {
         map.add_bipolar("Rotation", |v| {
             ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

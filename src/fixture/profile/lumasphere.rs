@@ -47,7 +47,7 @@ pub struct Lumasphere {
 }
 
 impl PatchFixture for Lumasphere {
-    const NAME: FixtureType = FixtureType("lumasphere");
+    const NAME: FixtureType = FixtureType("Lumasphere");
     fn channel_count(&self) -> usize {
         9
     }

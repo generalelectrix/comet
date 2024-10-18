@@ -4,32 +4,32 @@ controllers:
     port: 9000
 debug: True
 fixtures:
-  - name: swarmolon
+  - name: Swarmolon
     addr: 1
     options:
       quad_phase: yes # address 10
       galaxian: yes # 14
-  - name: rotosphere_q3
+  - name: RotosphereQ3
     addr: 20
     channel: True
-  - name: freedom_fries
+  - name: FreedomFries
     addr: 30
     channel: True
-  - name: color
+  - name: Color
     addr: 60
     group: MirrorBall
     options:
       kind: sabre_spot
     channel: True
-  - name: dimmer
+  - name: Dimmer
     addr: 80
     group: UV
-  - name: starlight
+  - name: Starlight
     addr: 100
     channel: True
-  - name: aquarius
+  - name: Aquarius
     addr: 128
     channel: True
-  - name: wizard_extreme
+  - name: WizardExtreme
     addr: 256
     channel: True

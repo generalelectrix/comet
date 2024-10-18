@@ -4,6 +4,6 @@ controllers:
     port: 9000
 debug: True
 fixtures:
-  - name: wizard_extreme
+  - name: WizardExtreme
     addr: 1
     channel: True

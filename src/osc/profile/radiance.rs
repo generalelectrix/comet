@@ -3,7 +3,7 @@ use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 
-const GROUP: &str = "Radiance";
+const GROUP: &str = Radiance::NAME.0;
 
 impl MapControls for Radiance {
     fn group(&self) -> &'static str {
@@ -13,10 +13,6 @@ impl MapControls for Radiance {
         use StateChange::*;
         map.add_unipolar("Haze", |v| ControlMessagePayload::fixture(Haze(v)));
         map.add_unipolar("Fan", |v| ControlMessagePayload::fixture(Fan(v)));
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

@@ -37,7 +37,7 @@ pub struct Venus {
 }
 
 impl PatchFixture for Venus {
-    const NAME: FixtureType = FixtureType("venus");
+    const NAME: FixtureType = FixtureType("Venus");
     fn channel_count(&self) -> usize {
         8
     }

@@ -4,36 +4,36 @@ controllers:
     port: 9000
 debug: True
 fixtures:
-  - name: swarmolon
+  - name: Swarmolon
     addr: 1
     options:
       quad_phase: yes
       galaxian: yes
-  - name: rotosphere_q3
+  - name: RotosphereQ3
     addr: 20
-  - name: freedom_fries
+  - name: FreedomFries
     addr: 30
-  - name: color
+  - name: Color
     addr: 40
     group: Uplights1
     options:
       kind: rgbw
-  - name: color
+  - name: Color
     addr: 50
     group: Uplights2
     options:
       kind: rgbw
-  - name: color
+  - name: Color
     addr: 60
     group: MirrorBall
     options:
       kind: sabre_spot
-  - name: rush_wizard
+  - name: RushWizard
     addr: 70
-  - name: dimmer
+  - name: Dimmer
     addr: 80
     group: UV
-  - name: radiance
+  - name: Radiance
     addr: 500
     options:
       use_timer: yes

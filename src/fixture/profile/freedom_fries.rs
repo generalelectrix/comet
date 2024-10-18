@@ -28,7 +28,7 @@ pub struct FreedomFries {
 }
 
 impl PatchAnimatedFixture for FreedomFries {
-    const NAME: FixtureType = FixtureType("freedom_fries");
+    const NAME: FixtureType = FixtureType("FreedomFries");
     fn channel_count(&self) -> usize {
         8
     }

@@ -19,7 +19,7 @@ pub struct Comet {
 }
 
 impl PatchFixture for Comet {
-    const NAME: FixtureType = FixtureType("comet");
+    const NAME: FixtureType = FixtureType("Comet");
     fn channel_count(&self) -> usize {
         5
     }

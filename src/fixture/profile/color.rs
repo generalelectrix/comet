@@ -20,7 +20,7 @@ pub struct Color {
 }
 
 impl PatchAnimatedFixture for Color {
-    const NAME: FixtureType = FixtureType("color");
+    const NAME: FixtureType = FixtureType("Color");
     fn channel_count(&self) -> usize {
         self.model.channel_count()
     }

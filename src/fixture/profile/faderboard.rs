@@ -14,7 +14,7 @@ pub struct Faderboard {
 }
 
 impl PatchFixture for Faderboard {
-    const NAME: FixtureType = FixtureType("faderboard");
+    const NAME: FixtureType = FixtureType("Faderboard");
     fn channel_count(&self) -> usize {
         self.channel_count
     }

@@ -35,7 +35,7 @@ pub struct Colordynamic {
 // }
 
 impl PatchAnimatedFixture for Colordynamic {
-    const NAME: FixtureType = FixtureType("colordynamic");
+    const NAME: FixtureType = FixtureType("Colordynamic");
     fn channel_count(&self) -> usize {
         4
     }

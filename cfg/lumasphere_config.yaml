@@ -4,5 +4,5 @@ controllers:
     port: 9000
 debug: False
 fixtures:
-  - name: lumasphere
+  - name: Lumasphere
     addr: 1

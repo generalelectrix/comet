@@ -32,7 +32,7 @@ impl Default for RotosphereQ3 {
 }
 
 impl PatchAnimatedFixture for RotosphereQ3 {
-    const NAME: FixtureType = FixtureType("rotosphere_q3");
+    const NAME: FixtureType = FixtureType("RotosphereQ3");
     fn channel_count(&self) -> usize {
         9
     }

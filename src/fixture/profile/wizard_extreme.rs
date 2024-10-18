@@ -36,7 +36,7 @@ pub struct WizardExtreme {
 }
 
 impl PatchAnimatedFixture for WizardExtreme {
-    const NAME: FixtureType = FixtureType("wizard_extreme");
+    const NAME: FixtureType = FixtureType("WizardExtreme");
     fn channel_count(&self) -> usize {
         11
     }

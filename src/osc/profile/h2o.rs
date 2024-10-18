@@ -7,7 +7,7 @@ use crate::osc::{ignore_payload, HandleOscStateChange};
 use crate::osc::{GroupControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "H2O";
+const GROUP: &str = H2O::NAME.0;
 const FIXED_COLOR: &str = "FixedColor";
 
 const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
@@ -32,10 +32,6 @@ impl MapControls for H2O {
         map.add_bipolar("ColorRotation", |v| {
             ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

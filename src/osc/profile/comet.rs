@@ -9,7 +9,7 @@ use crate::{
 };
 
 // Control group names.
-const GROUP: &str = "Comet";
+const GROUP: &str = Comet::NAME.0;
 
 // Buttons.
 const SHUTTER: Button = button(GROUP, "Shutter");
@@ -70,14 +70,6 @@ impl MapControls for Comet {
         });
 
         RESET.map_state(map, |v| ControlMessagePayload::fixture(Set(Reset(v))));
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![
-            (GROUP.to_string(), Self::NAME),
-            (GROUP.to_string(), Self::NAME),
-            (GROUP.to_string(), Self::NAME),
-        ]
     }
 }
 

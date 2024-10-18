@@ -20,7 +20,7 @@ pub struct SolarSystem {
 }
 
 impl PatchAnimatedFixture for SolarSystem {
-    const NAME: FixtureType = FixtureType("solar_system");
+    const NAME: FixtureType = FixtureType("SolarSystem");
     fn channel_count(&self) -> usize {
         7
     }

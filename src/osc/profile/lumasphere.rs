@@ -8,7 +8,7 @@ use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
-const GROUP: &str = "Lumasphere";
+const GROUP: &str = Lumasphere::NAME.0;
 
 const BALL_START: Button = button(GROUP, "ball_start");
 const COLOR_START: Button = button(GROUP, "color_start");
@@ -41,10 +41,6 @@ impl MapControls for Lumasphere {
         map_strobe(map, 2, |inner| {
             ControlMessagePayload::fixture(Strobe2(inner))
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

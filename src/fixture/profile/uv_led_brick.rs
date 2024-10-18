@@ -12,7 +12,7 @@ use crate::util::unipolar_to_range;
 pub struct UvLedBrick(UnipolarFloat);
 
 impl PatchAnimatedFixture for UvLedBrick {
-    const NAME: FixtureType = FixtureType("uv_led_brick");
+    const NAME: FixtureType = FixtureType("UvLedBrick");
     fn channel_count(&self) -> usize {
         7
     }

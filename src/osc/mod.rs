@@ -40,10 +40,6 @@ pub trait MapControls {
 
     /// Add OSC control mappings to the provided control map.
     fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>);
-
-    /// Return aliases for fixture type, if this is a fixture.
-    /// Return None if we're not mapping fixture controls.
-    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)>;
 }
 
 /// Emit control messages.

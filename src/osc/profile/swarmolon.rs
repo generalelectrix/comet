@@ -10,7 +10,7 @@ use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{get_bool, GroupControlMap, HandleOscStateChange, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "Swarmolon";
+const GROUP: &str = Swarmolon::NAME.0;
 
 const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
     group: GROUP,
@@ -59,10 +59,6 @@ impl MapControls for Swarmolon {
         map.add_unipolar("StrobeRate", |v| {
             ControlMessagePayload::fixture(StrobeRate(v))
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

@@ -9,7 +9,7 @@ use crate::osc::basic_controls::Button;
 use crate::osc::{GroupControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "SolarSystem";
+const GROUP: &str = SolarSystem::NAME.0;
 
 const FRONT_GOBO_SELECT: RadioButton = RadioButton {
     group: GROUP,
@@ -44,10 +44,6 @@ impl MapControls for SolarSystem {
         map.add_bipolar("RearRotation", |v| {
             ControlMessagePayload::fixture(RearRotation(bipolar_fader_with_detent(v)))
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

@@ -4,7 +4,7 @@ use crate::fixture::PatchFixture;
 use crate::osc::fader_array::FaderArray;
 use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 
-const GROUP: &str = "Faderboard";
+const GROUP: &str = Faderboard::NAME.0;
 
 const CONTROLS: FaderArray = FaderArray {
     group: GROUP,
@@ -20,10 +20,6 @@ impl MapControls for Faderboard {
         CONTROLS.map(map, |index, val| {
             Ok(ControlMessagePayload::fixture((index, val)))
         })
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        vec![(GROUP.to_string(), Self::NAME)]
     }
 }
 

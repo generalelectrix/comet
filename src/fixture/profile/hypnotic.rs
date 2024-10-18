@@ -18,7 +18,7 @@ pub struct Hypnotic {
 }
 
 impl PatchAnimatedFixture for Hypnotic {
-    const NAME: FixtureType = FixtureType("hypnotic");
+    const NAME: FixtureType = FixtureType("Hypnotic");
     fn channel_count(&self) -> usize {
         2
     }
