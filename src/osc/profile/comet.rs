@@ -2,7 +2,7 @@ use crate::fixture::generic::GenericStrobeStateChange;
 
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{GroupControlMap, HandleOscStateChange,  RadioButton};
+use crate::osc::{GroupControlMap, HandleOscStateChange, RadioButton};
 use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
     osc::quadratic,
@@ -37,37 +37,21 @@ impl Comet {
         use ControlMessage::*;
         use StateChange::*;
         SHUTTER.map_state(map, |v| Set(Shutter(v)));
-        STROBE_ON.map_state(map, |v| {
-            Set(Strobe(GenericStrobeStateChange::On(v)))
-        });
+        STROBE_ON.map_state(map, |v| Set(Strobe(GenericStrobeStateChange::On(v))));
         map.add_unipolar("StrobeRate", |v| {
-            ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(
-                v,
-            )))))
+            Set(Strobe(GenericStrobeStateChange::Rate(quadratic(v))))
         });
-        map.add_unipolar("Mspeed", |v| {
-            Set(MirrorSpeed(v))
-        });
+        map.add_unipolar("Mspeed", |v| Set(MirrorSpeed(v)));
         AUTO_STEP.map_state(map, |v| Set(AutoStep(v)));
-        map.add_unipolar("AutoStepRate", |v| {
-            Set(AutoStepRate(v))
-        });
+        map.add_unipolar("AutoStepRate", |v| Set(AutoStepRate(v)));
 
-        STEP_BACKWARDS.map_trigger(map, || {
-            Step(Direction::Backward)
-        });
-        STEP_FORWARDS.map_trigger(map, || {
-            Step(Direction::Forward)
-        });
+        STEP_BACKWARDS.map_trigger(map, || Step(Direction::Backward));
+        STEP_FORWARDS.map_trigger(map, || Step(Direction::Forward));
 
         MACRO_SELECT_RADIO_BUTTON.map(map, |v| Set(SelectMacro(v)));
 
-        SHUTTER_SOUND_ACTIVE.map_state(map, |v| {
-            Set(ShutterSoundActive(v))
-        });
-        TRIG_SOUND_ACTIVE.map_state(map, |v| {
-            Set(TrigSoundActive(v))
-        });
+        SHUTTER_SOUND_ACTIVE.map_state(map, |v| Set(ShutterSoundActive(v)));
+        TRIG_SOUND_ACTIVE.map_state(map, |v| Set(TrigSoundActive(v)));
 
         RESET.map_state(map, |v| Set(Reset(v)));
     }

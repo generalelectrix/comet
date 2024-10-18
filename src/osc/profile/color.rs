@@ -1,4 +1,4 @@
-use crate::fixture::color::{Color, StateChange};
+use crate::fixture::color::{Color, ControlMessage, StateChange};
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange};
@@ -17,13 +17,13 @@ impl Color {
 
 impl HandleOscStateChange<StateChange> for Color {}
 
-fn wrap_color(sc: StateChange) -> ControlMessagePayload {
+fn wrap_color(sc: StateChange) -> ControlMessage {
     sc
 }
 
-pub fn map_color<F>(map: &mut GroupControlMap<ControlMessage>, wrap: &'static F)
+pub fn map_color<F, T>(map: &mut GroupControlMap<T>, wrap: &'static F)
 where
-    F: Fn(StateChange) -> ControlMessagePayload + 'static,
+    F: Fn(StateChange) -> T + 'static,
 {
     map.add_phase("Hue", move |v| wrap(StateChange::Hue(v)));
     map.add_unipolar("Sat", move |v| wrap(StateChange::Sat(v)));

@@ -1,4 +1,4 @@
-use crate::fixture::uv_led_brick::{StateChange, UvLedBrick};
+use crate::fixture::uv_led_brick::{ControlMessage, StateChange, UvLedBrick};
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange};
@@ -10,7 +10,7 @@ impl UvLedBrick {
         GROUP
     }
     fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
-        map.add_unipolar("Level", ControlMessagePayload::fixture);
+        map.add_unipolar("Level", |x| x);
     }
 }
 

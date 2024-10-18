@@ -1,5 +1,5 @@
 use crate::fixture::solar_system::SolarSystem;
-use crate::fixture::solar_system::StateChange;
+use crate::fixture::solar_system::{ControlMessage, StateChange};
 
 use crate::osc::HandleOscStateChange;
 

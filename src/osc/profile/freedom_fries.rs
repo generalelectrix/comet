@@ -1,5 +1,7 @@
 use crate::fixture::color::StateChange as ColorStateChange;
-use crate::fixture::freedom_fries::{FreedomFries as FreedomFriesFixture, StateChange};
+use crate::fixture::freedom_fries::{
+    ControlMessage, FreedomFries as FreedomFriesFixture, StateChange,
+};
 use crate::fixture::generic::GenericStrobeStateChange;
 
 use crate::fixture::PatchAnimatedFixture;
@@ -36,21 +38,17 @@ impl FreedomFriesFixture {
         map.add_unipolar("Speed", |v| Speed(v));
         RUN_PROGRAM.map_state(map, |v| RunProgram(v));
         map.add_unipolar("Program", |v| {
-            ControlMessagePayload::fixture(Program(unipolar_to_range(
-                0,
-                FreedomFriesFixture::PROGRAM_COUNT as u8 - 1,
-                v,
-            ) as usize))
+            Program(unipolar_to_range(0, FreedomFriesFixture::PROGRAM_COUNT as u8 - 1, v) as usize)
         });
         PROGRAM_CYCLE_ALL.map_state(map, |v| ProgramCycleAll(v));
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
     StateChange::Strobe(sc)
 }
 
-fn wrap_color(sc: ColorStateChange) -> ControlMessagePayload {
+fn wrap_color(sc: ColorStateChange) -> ControlMessage {
     StateChange::Color(sc)
 }
 

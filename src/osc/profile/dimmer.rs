@@ -1,4 +1,4 @@
-use crate::fixture::dimmer::{Dimmer, StateChange};
+use crate::fixture::dimmer::{ControlMessage, Dimmer, StateChange};
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange};
@@ -11,7 +11,7 @@ impl Dimmer {
     }
 
     fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
-        map.add_unipolar("Level", ControlMessagePayload::fixture);
+        map.add_unipolar("Level", |x| x);
     }
 }
 

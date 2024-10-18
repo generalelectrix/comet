@@ -1,4 +1,4 @@
-use crate::fixture::radiance::{Radiance, StateChange};
+use crate::fixture::radiance::{ControlMessage, Radiance, StateChange};
 
 use crate::fixture::PatchFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange};

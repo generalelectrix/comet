@@ -1,12 +1,12 @@
 use super::generic::map_strobe;
-use crate::fixture::astroscan::{Astroscan, Color, StateChange};
+use crate::fixture::astroscan::{Astroscan, Color, ControlMessage, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleOscStateChange};
-use crate::osc::{GroupControlMap,  RadioButton};
+use crate::osc::{GroupControlMap, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Astroscan::NAME.0;
@@ -40,36 +40,26 @@ impl Astroscan {
         LAMP_ON.map_state(map, |v| LampOn(v));
         map.add_unipolar("Dimmer", |v| Dimmer(v));
         map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_enum_handler(COLOR, ignore_payload, |c, _| {
-            Color(c)
-        });
+        map.add_enum_handler(COLOR, ignore_payload, |c, _| Color(c));
         map.add_unipolar("Iris", |v| Iris(v));
         GOBO_SELECT.map(map, |v| Gobo(v));
         map.add_bipolar("GoboRotation", |v| {
             GoboRotation(bipolar_fader_with_detent(v))
         });
-        MIRROR_GOBO_ROTATION.map_state(map, |v| {
-            MirrorGoboRotation(v)
-        });
+        MIRROR_GOBO_ROTATION.map_state(map, |v| MirrorGoboRotation(v));
         map.add_bipolar("MirrorRotation", |v| {
             MirrorRotation(bipolar_fader_with_detent(v))
         });
-        MIRROR_MIRROR_ROTATION.map_state(map, |v| {
-            MirrorMirrorRotation(v)
-        });
-        map.add_bipolar("Pan", |v| {
-            Pan(bipolar_fader_with_detent(v))
-        });
+        MIRROR_MIRROR_ROTATION.map_state(map, |v| MirrorMirrorRotation(v));
+        map.add_bipolar("Pan", |v| Pan(bipolar_fader_with_detent(v)));
         MIRROR_PAN.map_state(map, |v| MirrorPan(v));
-        map.add_bipolar("Tilt", |v| {
-            Tilt(bipolar_fader_with_detent(v))
-        });
+        map.add_bipolar("Tilt", |v| Tilt(bipolar_fader_with_detent(v)));
         MIRROR_TILT.map_state(map, |v| MirrorTilt(v));
         ACTIVE.map_state(map, |v| Active(v));
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
     StateChange::Strobe(sc)
 }
 

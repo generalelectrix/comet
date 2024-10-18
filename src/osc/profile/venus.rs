@@ -1,4 +1,4 @@
-use crate::fixture::venus::{StateChange, Venus};
+use crate::fixture::venus::{ControlMessage, StateChange, Venus};
 
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};

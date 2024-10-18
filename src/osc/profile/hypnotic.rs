@@ -1,4 +1,4 @@
-use crate::fixture::hypnotic::{Hypnotic, StateChange};
+use crate::fixture::hypnotic::{ControlMessage, Hypnotic, StateChange};
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
@@ -21,9 +21,7 @@ impl Hypnotic {
         GREEN_LASER_ON.map_state(map, |v| GreenLaserOn(v));
         BLUE_LASER_ON.map_state(map, |v| BlueLaserOn(v));
 
-        map.add_bipolar("Rotation", |v| {
-            Rotation(bipolar_fader_with_detent(v))
-        });
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::lumasphere::StrobeStateChange;
-use crate::fixture::lumasphere::{Lumasphere, StateChange};
+use crate::fixture::lumasphere::{ControlMessage, Lumasphere, StateChange};
 
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
@@ -35,18 +35,14 @@ impl Lumasphere {
             ColorRotation(unipolar_fader_with_detent(v))
         });
         COLOR_START.map_state(map, |v| ColorStart(v));
-        map_strobe(map, 1, |inner| {
-            Strobe1(inner)
-        });
-        map_strobe(map, 2, |inner| {
-            Strobe2(inner)
-        });
+        map_strobe(map, 1, |inner| Strobe1(inner));
+        map_strobe(map, 2, |inner| Strobe2(inner));
     }
 }
 
 fn map_strobe<W>(map: &mut GroupControlMap<ControlMessage>, index: u8, wrap: W)
 where
-    W: Fn(StrobeStateChange) -> ControlMessagePayload + 'static + Copy,
+    W: Fn(StrobeStateChange) -> ControlMessage + 'static + Copy,
 {
     use GenericStrobeStateChange::*;
     use StrobeStateChange::*;

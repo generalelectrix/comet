@@ -1,4 +1,4 @@
-use crate::fixture::faderboard::{Faderboard, StateChange};
+use crate::fixture::faderboard::{ControlMessage, Faderboard, StateChange};
 
 use crate::fixture::PatchFixture;
 use crate::osc::fader_array::FaderArray;
@@ -17,9 +17,7 @@ impl Faderboard {
     }
 
     fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
-        CONTROLS.map(map, |index, val| {
-            Ok((index, val))
-        })
+        CONTROLS.map(map, |index, val| Ok((index, val)))
     }
 }
 

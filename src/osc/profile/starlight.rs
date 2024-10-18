@@ -1,10 +1,10 @@
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::starlight::{Starlight, StateChange};
+use crate::fixture::starlight::{ControlMessage, Starlight, StateChange};
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::profile::generic::map_strobe;
+use crate::osc::GroupControlMap;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{GroupControlMap};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Starlight::NAME.0;
@@ -16,14 +16,12 @@ impl Starlight {
     fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("Dimmer", |v| Dimmer(v));
-        map.add_bipolar("Rotation", |v| {
-            Rotation(bipolar_fader_with_detent(v))
-        });
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
         map_strobe(map, "Strobe", &wrap_strobe);
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
     StateChange::Strobe(sc)
 }
 
