@@ -54,9 +54,12 @@ impl OscControlMessage {
         })
     }
 
-    /// Return the full control key portion of the address.
-    pub fn control_key(&self) -> &str {
-        &self.addr[self.key_start..self.key_end]
+    /// Return the group and control portions of the address.
+    pub fn control_key(&self) -> (&str, &str) {
+        (
+            self.entity_type(),
+            &self.addr[self.control_start + 1..self.key_end],
+        )
     }
 
     /// Return the first half of the control key, excluding the leading slash.
@@ -129,16 +132,25 @@ mod test {
     use rosc::OscType;
     #[test]
     fn test_get_control_key() {
-        assert_eq!("/foo/bar", get_control_key("/:hello/foo/bar/baz").unwrap());
-        assert_eq!("/foo/bar", get_control_key("/foo/bar/baz").unwrap());
-        assert_eq!("/foo/bar", get_control_key("/foo/bar").unwrap());
+        assert_eq!(
+            ("foo".to_string(), "bar".to_string()),
+            get_control_key("/:hello/foo/bar/baz").unwrap()
+        );
+        assert_eq!(
+            ("foo".to_string(), "bar".to_string()),
+            get_control_key("/foo/bar/baz").unwrap()
+        );
+        assert_eq!(
+            ("foo".to_string(), "bar".to_string()),
+            get_control_key("/foo/bar").unwrap()
+        );
         let bad = ["", "foo", "foo/bar", "/bar", "/", "/:foo/bar"];
         for b in bad.iter() {
             assert!(get_control_key(b).is_err());
         }
     }
 
-    fn get_control_key(addr: &str) -> Result<String, OscError> {
+    fn get_control_key(addr: &str) -> Result<(String, String), OscError> {
         let msg = OscControlMessage::new(
             OscMessage {
                 addr: addr.to_string(),
@@ -146,6 +158,7 @@ mod test {
             },
             OscClientId(SocketAddr::from_str("127.0.0.1:1234").unwrap()),
         )?;
-        Ok(msg.control_key().to_string())
+        let key = msg.control_key();
+        Ok((key.0.to_string(), key.1.to_string()))
     }
 }

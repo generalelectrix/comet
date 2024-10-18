@@ -227,7 +227,9 @@ impl OscClientId {
 type ControlMessageCreator<C> =
     Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
 
-pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
+pub type Group = String;
+pub type Control = String;
+pub struct ControlMap<C>(HashMap<Group, HashMap<Control, ControlMessageCreator<C>>>);
 
 pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
 
@@ -243,24 +245,24 @@ impl<C> ControlMap<C> {
     }
 
     pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
-        let key = msg.control_key();
-        match self.0.get(key) {
-            None => {
-                bail!("No control handler matched key \"{}\".", key);
-            }
-            Some(handler) => handler(msg),
-        }
+        let (group, control) = msg.control_key();
+        let Some(group_handler) = self.0.get(group) else {
+            bail!("No control handler group matched \"{group}\".");
+        };
+        let Some(handler) = group_handler.get(control) else {
+            bail!("No control handler in group \"{group}\" matched \"{control}\".");
+        };
+        handler(msg)
     }
 
     pub fn add<F>(&mut self, group: &str, control: &str, handler: F)
     where
         F: Fn(&OscControlMessage) -> Result<Option<C>> + 'static,
     {
-        let key = format!("/{}/{}", group, control);
-        match self.0.entry(key) {
-            Entry::Occupied(e) => {
-                let key = e.key();
-                panic!("Duplicate control definition for {}", key,)
+        let group_handler = self.0.entry(group.to_string()).or_default();
+        match group_handler.entry(control.to_string()) {
+            Entry::Occupied(_) => {
+                panic!("Duplicate control definition in group \"{group}\" for \"{control}\".");
             }
             Entry::Vacant(v) => v.insert(Box::new(move |m| {
                 Ok(handler(m)?.map(|msg| (msg, TalkbackMode::All)))
