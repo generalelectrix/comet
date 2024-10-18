@@ -14,6 +14,7 @@ use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
 
 use super::basic_controls::{button, Button};
 use super::label_array::LabelArray;
+use super::GroupControlMap;
 
 const GROUP: &str = "Animation";
 
@@ -54,7 +55,11 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
 };
 
 impl MapControls for AnimationUIState {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
         use ControlMessagePayload::Animation as FixtureAnimation;
         use StateChange::*;
@@ -71,16 +76,12 @@ impl MapControls for AnimationUIState {
             .ok_or_else(|| anyhow!("waveform select out of range: {v}"))
         });
 
-        map.add_bipolar(GROUP, SPEED, |v| {
-            FixtureAnimation(WrapAnimation(Set(Speed(v))))
-        });
-        map.add_unipolar(GROUP, SIZE, |v| {
-            FixtureAnimation(WrapAnimation(Set(Size(v))))
-        });
-        map.add_unipolar(GROUP, DUTY_CYCLE, |v| {
+        map.add_bipolar(SPEED, |v| FixtureAnimation(WrapAnimation(Set(Speed(v)))));
+        map.add_unipolar(SIZE, |v| FixtureAnimation(WrapAnimation(Set(Size(v)))));
+        map.add_unipolar(DUTY_CYCLE, |v| {
             FixtureAnimation(WrapAnimation(Set(DutyCycle(v))))
         });
-        map.add_unipolar(GROUP, SMOOTHING, |v| {
+        map.add_unipolar(SMOOTHING, |v| {
             FixtureAnimation(WrapAnimation(Set(Smoothing(v))))
         });
 

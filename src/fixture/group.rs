@@ -151,7 +151,11 @@ pub struct GroupFixtureConfig {
 }
 
 impl MapControls for FixtureGroup {
-    fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        self.fixture.group()
+    }
+
+    fn map_controls(&self, map: &mut crate::osc::GroupControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map);
     }
 

@@ -6,7 +6,7 @@ use crate::master::{MasterControls, StateChange};
 
 use super::basic_controls::{button, Button};
 use super::profile::generic::map_strobe;
-use super::{ControlMap, HandleOscStateChange, MapControls};
+use super::{GroupControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Master";
 
@@ -14,8 +14,12 @@ const USE_MASTER_STROBE_RATE: Button = button(GROUP, "UseMasterStrobeRate");
 const REFRESH_UI: Button = button(GROUP, "RefreshUI");
 
 impl MapControls for MasterControls {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
-        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+        map_strobe(map, "Strobe", &wrap_strobe);
         USE_MASTER_STROBE_RATE.map_state(map, |v| {
             ControlMessagePayload::Master(StateChange::UseMasterStrobeRate(v))
         });

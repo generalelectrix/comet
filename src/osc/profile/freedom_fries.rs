@@ -7,7 +7,7 @@ use crate::osc::basic_controls::{button, Button};
 use crate::osc::label_array::LabelArray;
 use crate::osc::profile::color::map_color;
 use crate::osc::profile::generic::map_strobe;
-use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 use crate::util::unipolar_to_range;
 
 const GROUP: &str = "FreedomFries";
@@ -23,17 +23,19 @@ const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
 };
 
 impl MapControls for FreedomFriesFixture {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use StateChange::*;
 
-        map.add_unipolar(GROUP, "Dimmer", |v| {
-            ControlMessagePayload::fixture(Dimmer(v))
-        });
-        map_color(map, GROUP, &wrap_color);
-        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
-        map.add_unipolar(GROUP, "Speed", |v| ControlMessagePayload::fixture(Speed(v)));
+        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map_color(map, &wrap_color);
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_unipolar("Speed", |v| ControlMessagePayload::fixture(Speed(v)));
         RUN_PROGRAM.map_state(map, |v| ControlMessagePayload::fixture(RunProgram(v)));
-        map.add_unipolar(GROUP, "Program", |v| {
+        map.add_unipolar("Program", |v| {
             ControlMessagePayload::fixture(Program(unipolar_to_range(
                 0,
                 FreedomFriesFixture::PROGRAM_COUNT as u8 - 1,

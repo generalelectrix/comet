@@ -17,9 +17,7 @@ impl Button {
     where
         F: Fn(bool) -> ControlMessagePayload + 'static + Copy,
     {
-        map.add_fetch_process(self.group, self.control, get_bool, move |v| {
-            Some(process(v))
-        })
+        map.add_fetch_process(self.control, get_bool, move |v| Some(process(v)))
     }
 
     pub fn map_trigger(
@@ -27,7 +25,7 @@ impl Button {
         map: &mut super::FixtureControlMap,
         event_factory: impl Fn() -> ControlMessagePayload + 'static,
     ) {
-        map.add_fetch_process(self.group, self.control, get_bool, move |v| {
+        map.add_fetch_process(self.control, get_bool, move |v| {
             if v {
                 Some(event_factory())
             } else {

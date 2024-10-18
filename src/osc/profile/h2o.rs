@@ -4,7 +4,7 @@ use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleOscStateChange};
-use crate::osc::{ControlMap, MapControls};
+use crate::osc::{GroupControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "H2O";
@@ -15,19 +15,21 @@ const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
 impl EnumRadioButton for FixedColor {}
 
 impl MapControls for H2O {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use StateChange::*;
-        map.add_unipolar(GROUP, "Dimmer", |v| {
-            ControlMessagePayload::fixture(Dimmer(v))
-        });
-        map.add_bipolar(GROUP, "Rotation", |v| {
+        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map.add_bipolar("Rotation", |v| {
             ControlMessagePayload::fixture(Rotation(bipolar_fader_with_detent(v)))
         });
-        map.add_enum_handler(GROUP, FIXED_COLOR, ignore_payload, |c, _| {
+        map.add_enum_handler(FIXED_COLOR, ignore_payload, |c, _| {
             ControlMessagePayload::fixture(FixedColor(c))
         });
         COLOR_ROTATE.map_state(map, |v| ControlMessagePayload::fixture(ColorRotate(v)));
-        map.add_bipolar(GROUP, "ColorRotation", |v| {
+        map.add_bipolar("ColorRotation", |v| {
             ControlMessagePayload::fixture(ColorRotation(bipolar_fader_with_detent(v)))
         });
     }

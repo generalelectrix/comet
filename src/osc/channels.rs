@@ -3,7 +3,7 @@ use crate::channel::{ControlMessage, StateChange};
 
 use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{ControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, MapControls, RadioButton};
 
 use super::fader_array::FaderArray;
 use super::label_array::LabelArray;
@@ -13,7 +13,11 @@ const N_CHANNELS: usize = 8;
 const GROUP: &str = "Show";
 
 impl MapControls for Channels {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         CHANNEL_SELECT.map(map, |msg| {
             ControlMessagePayload::Channel(ControlMessage::SelectChannel(msg))
         });

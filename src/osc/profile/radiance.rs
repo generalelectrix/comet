@@ -1,15 +1,18 @@
 use crate::fixture::radiance::{Radiance, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
-use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Radiance";
 
 impl MapControls for Radiance {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use StateChange::*;
-        map.add_unipolar(GROUP, "Haze", |v| ControlMessagePayload::fixture(Haze(v)));
-        map.add_unipolar(GROUP, "Fan", |v| ControlMessagePayload::fixture(Fan(v)));
+        map.add_unipolar("Haze", |v| ControlMessagePayload::fixture(Haze(v)));
+        map.add_unipolar("Fan", |v| ControlMessagePayload::fixture(Fan(v)));
     }
 
     fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {

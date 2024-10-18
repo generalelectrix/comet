@@ -6,7 +6,7 @@ use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, send_float, HandleOscStateChange};
-use crate::osc::{ControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "WizardExtreme";
@@ -30,31 +30,32 @@ const ACTIVE: Button = button(GROUP, "Active");
 impl EnumRadioButton for Color {}
 
 impl MapControls for WizardExtreme {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use StateChange::*;
-        map.add_unipolar(GROUP, "Dimmer", |v| {
-            ControlMessagePayload::fixture(Dimmer(v))
-        });
-        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
-        map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| {
+        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_enum_handler(COLOR, ignore_payload, |c, _| {
             ControlMessagePayload::fixture(Color(c))
         });
         TWINKLE.map_state(map, |v| ControlMessagePayload::fixture(Twinkle(v)));
-        map.add_unipolar(GROUP, "TwinkleSpeed", |v| {
+        map.add_unipolar("TwinkleSpeed", |v| {
             ControlMessagePayload::fixture(TwinkleSpeed(v))
         });
         GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(Gobo(v)));
-        map.add_bipolar(GROUP, "DrumRotation", |v| {
+        map.add_bipolar("DrumRotation", |v| {
             ControlMessagePayload::fixture(DrumRotation(bipolar_fader_with_detent(v)))
         });
         MIRROR_DRUM_ROTATION.map_state(map, |v| {
             ControlMessagePayload::fixture(MirrorDrumRotation(v))
         });
-        map.add_bipolar(GROUP, "DrumSwivel", |v| {
+        map.add_bipolar("DrumSwivel", |v| {
             ControlMessagePayload::fixture(DrumSwivel(v))
         });
         MIRROR_DRUM_SWIVEL.map_state(map, |v| ControlMessagePayload::fixture(MirrorDrumSwivel(v)));
-        map.add_bipolar(GROUP, "ReflectorRotation", |v| {
+        map.add_bipolar("ReflectorRotation", |v| {
             ControlMessagePayload::fixture(ReflectorRotation(bipolar_fader_with_detent(v)))
         });
         MIRROR_REFLECTOR_ROTATION.map_state(map, |v| {

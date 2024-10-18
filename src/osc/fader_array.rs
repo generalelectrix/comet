@@ -2,7 +2,7 @@
 use number::UnipolarFloat;
 use rosc::{OscMessage, OscType};
 
-use super::ControlMap;
+use super::GroupControlMap;
 use crate::fixture::ControlMessagePayload;
 use anyhow::{bail, Result};
 
@@ -19,11 +19,11 @@ pub struct FaderArray {
 
 impl FaderArray {
     /// Wire up this fader array to a control map.
-    pub fn map<F>(self, map: &mut ControlMap<ControlMessagePayload>, process: F)
+    pub fn map<F>(self, map: &mut GroupControlMap<ControlMessagePayload>, process: F)
     where
         F: Fn(usize, UnipolarFloat) -> Result<ControlMessagePayload> + 'static + Copy,
     {
-        map.add(self.group, self.control, move |msg| {
+        map.add(self.control, move |msg| {
             let index = msg
                 .addr_payload()
                 .split('/')

@@ -7,7 +7,7 @@ use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{get_bool, ControlMap, HandleOscStateChange, MapControls, RadioButton};
+use crate::osc::{get_bool, GroupControlMap, HandleOscStateChange, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Swarmolon";
@@ -25,18 +25,21 @@ const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
 impl EnumRadioButton for DerbyColor {}
 
 impl MapControls for Swarmolon {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
         use StateChange::*;
 
-        map.add_enum_handler(GROUP, "DerbyColor", get_bool, |c, v| {
+        map.add_enum_handler("DerbyColor", get_bool, |c, v| {
             ControlMessagePayload::fixture(Set(DerbyColor(c, v)))
         });
-        map_strobe(map, GROUP, "DerbyStrobe", &wrap_derby_strobe);
-        map.add_bipolar(GROUP, "DerbyRotation", |v| {
+        map_strobe(map, "DerbyStrobe", &wrap_derby_strobe);
+        map.add_bipolar("DerbyRotation", |v| {
             ControlMessagePayload::fixture(Set(DerbyRotation(bipolar_fader_with_detent(v))))
         });
-        map_strobe(map, GROUP, "WhiteStrobe", &wrap_white_strobe);
+        map_strobe(map, "WhiteStrobe", &wrap_white_strobe);
         STROBE_PROGRAM_SELECT.map(map, |v| {
             ControlMessagePayload::fixture(Set(WhiteStrobe(WhiteStrobeStateChange::Program(v))))
         });
@@ -45,15 +48,15 @@ impl MapControls for Swarmolon {
         GREEN_LASER_ON.map_state(map, |v| {
             ControlMessagePayload::fixture(Set(GreenLaserOn(v)))
         });
-        map_strobe(map, GROUP, "LaserStrobe", &wrap_laser_strobe);
-        map.add_bipolar(GROUP, "LaserRotation", |v| {
+        map_strobe(map, "LaserStrobe", &wrap_laser_strobe);
+        map.add_bipolar("LaserRotation", |v| {
             ControlMessagePayload::fixture(Set(LaserRotation(bipolar_fader_with_detent(v))))
         });
 
         // "Global" strobe rate control, for simpler one-fader control.
         // This is a bit of a hack, since it has no talkback channel.
         // This will need to be refactored if we want to use uniform talkback.
-        map.add_unipolar(GROUP, "StrobeRate", |v| {
+        map.add_unipolar("StrobeRate", |v| {
             ControlMessagePayload::fixture(StrobeRate(v))
         });
     }

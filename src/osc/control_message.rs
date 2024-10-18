@@ -67,6 +67,11 @@ impl OscControlMessage {
         &self.addr[self.key_start + 1..self.control_start]
     }
 
+    /// Return the control portion of the address.
+    pub fn control(&self) -> &str {
+        &self.addr[self.control_start + 1..self.key_end]
+    }
+
     /// Return the portion of the address following the control key.
     /// This will include a leading / if not empty.
     pub fn addr_payload(&self) -> &str {

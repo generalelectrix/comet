@@ -2,52 +2,54 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{ControlMap, HandleOscStateChange, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls, RadioButton};
 use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
     osc::quadratic,
 };
 
 // Control group names.
-const CONTROLS: &str = "Controls";
-const MUSIC: &str = "Music";
-const DEBUG: &str = "Debug";
+const GROUP: &str = "Comet";
 
 // Buttons.
-const SHUTTER: Button = button(CONTROLS, "Shutter");
-const STROBE_ON: Button = button(CONTROLS, "StrobeOn");
-const AUTO_STEP: Button = button(CONTROLS, "AutoStep");
-const STEP_BACKWARDS: Button = button(CONTROLS, "StepBackwards");
-const STEP_FORWARDS: Button = button(CONTROLS, "StepForwards");
-const SHUTTER_SOUND_ACTIVE: Button = button(MUSIC, "ShutterSoundActive");
-const TRIG_SOUND_ACTIVE: Button = button(MUSIC, "TrigSoundActive");
-const RESET: Button = button(DEBUG, "Reset");
+const SHUTTER: Button = button(GROUP, "Shutter");
+const STROBE_ON: Button = button(GROUP, "StrobeOn");
+const AUTO_STEP: Button = button(GROUP, "AutoStep");
+const STEP_BACKWARDS: Button = button(GROUP, "StepBackwards");
+const STEP_FORWARDS: Button = button(GROUP, "StepForwards");
+const SHUTTER_SOUND_ACTIVE: Button = button(GROUP, "ShutterSoundActive");
+const TRIG_SOUND_ACTIVE: Button = button(GROUP, "TrigSoundActive");
+const RESET: Button = button(GROUP, "Reset");
 
 const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
-    group: CONTROLS,
+    group: GROUP,
     control: "SelectMacro",
     n: 10,
     x_primary_coordinate: true,
 };
 
 impl MapControls for Comet {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use ControlMessage::*;
         use StateChange::*;
         SHUTTER.map_state(map, |v| ControlMessagePayload::fixture(Set(Shutter(v))));
         STROBE_ON.map_state(map, |v| {
             ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::On(v))))
         });
-        map.add_unipolar(CONTROLS, "StrobeRate", |v| {
+        map.add_unipolar("StrobeRate", |v| {
             ControlMessagePayload::fixture(Set(Strobe(GenericStrobeStateChange::Rate(quadratic(
                 v,
             )))))
         });
-        map.add_unipolar(CONTROLS, "Mspeed", |v| {
+        map.add_unipolar("Mspeed", |v| {
             ControlMessagePayload::fixture(Set(MirrorSpeed(v)))
         });
         AUTO_STEP.map_state(map, |v| ControlMessagePayload::fixture(Set(AutoStep(v))));
-        map.add_unipolar(CONTROLS, "AutoStepRate", |v| {
+        map.add_unipolar("AutoStepRate", |v| {
             ControlMessagePayload::fixture(Set(AutoStepRate(v)))
         });
 
@@ -72,9 +74,9 @@ impl MapControls for Comet {
 
     fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
         vec![
-            (CONTROLS.to_string(), Self::NAME),
-            (MUSIC.to_string(), Self::NAME),
-            (DEBUG.to_string(), Self::NAME),
+            (GROUP.to_string(), Self::NAME),
+            (GROUP.to_string(), Self::NAME),
+            (GROUP.to_string(), Self::NAME),
         ]
     }
 }

@@ -6,7 +6,7 @@ use crate::fixture::PatchAnimatedFixture;
 
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::HandleOscStateChange;
-use crate::osc::{ControlMap, MapControls};
+use crate::osc::{GroupControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Colordynamic";
@@ -15,19 +15,23 @@ const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
 
 impl MapControls for Colordynamic {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use StateChange::*;
         SHUTTER_OPEN.map_state(map, |v| ControlMessagePayload::fixture(ShutterOpen(v)));
-        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
+        map_strobe(map, "Strobe", &wrap_strobe);
 
         COLOR_ROTATION_ON.map_state(map, |v| ControlMessagePayload::fixture(ColorRotationOn(v)));
-        map.add_unipolar(GROUP, "ColorRotationSpeed", |v| {
+        map.add_unipolar("ColorRotationSpeed", |v| {
             ControlMessagePayload::fixture(ColorRotationSpeed(v))
         });
-        map.add_unipolar(GROUP, "ColorPosition", |v| {
+        map.add_unipolar("ColorPosition", |v| {
             ControlMessagePayload::fixture(ColorPosition(v))
         });
-        map.add_bipolar(GROUP, "FiberRotation", |v| {
+        map.add_bipolar("FiberRotation", |v| {
             ControlMessagePayload::fixture(FiberRotation(bipolar_fader_with_detent(v)))
         });
     }

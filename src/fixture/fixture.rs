@@ -141,7 +141,11 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
 }
 
 impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
-    fn map_controls(&self, map: &mut crate::osc::ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        self.fixture.group()
+    }
+
+    fn map_controls(&self, map: &mut crate::osc::GroupControlMap<ControlMessagePayload>) {
         self.fixture.map_controls(map)
     }
 

@@ -1,8 +1,8 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
 use crate::fixture::FixtureGroupKey;
 use crate::fixture::{ControlMessage, ControlMessagePayload, FixtureType, GroupName};
-use anyhow::bail;
 use anyhow::Result;
+use anyhow::{bail, Context};
 use control_message::OscControlMessage;
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
@@ -35,8 +35,11 @@ pub use register::prompt_osc_config;
 
 /// Map OSC control inputs for a fixture type.
 pub trait MapControls {
+    /// The group prefix to use for these OSC controls.
+    fn group(&self) -> &'static str;
+
     /// Add OSC control mappings to the provided control map.
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>);
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>);
 
     /// Return aliases for fixture type, if this is a fixture.
     /// Return None if we're not mapping fixture controls.
@@ -123,7 +126,8 @@ impl OscController {
     }
 
     pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
-        fixture.map_controls(&mut self.control_map);
+        let group_map = self.control_map.add_map_for_group(fixture.group());
+        fixture.map_controls(group_map);
         for (control_key, fixture_type) in fixture.fixture_type_aliases() {
             match self.key_map.entry(control_key) {
                 Entry::Vacant(e) => {
@@ -224,45 +228,66 @@ impl OscClientId {
     }
 }
 
-type ControlMessageCreator<C> =
-    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
-
-pub type Group = String;
-pub type Control = String;
-pub struct ControlMap<C>(HashMap<Group, HashMap<Control, ControlMessageCreator<C>>>);
-
-pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
-
 impl Display for OscClientId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "OSC client at {}", self.0)
     }
 }
 
+type ControlMessageCreator<C> =
+    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
+
+pub type Group = String;
+pub type Control = String;
+
+#[derive(Default)]
+pub struct ControlMap<C>(HashMap<Group, GroupControlMap<C>>);
+
 impl<C> ControlMap<C> {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(Default::default())
     }
 
     pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
-        let (group, control) = msg.control_key();
+        let group = msg.entity_type();
         let Some(group_handler) = self.0.get(group) else {
-            bail!("No control handler group matched \"{group}\".");
+            bail!("no control handler group matched \"{group}\"");
         };
-        let Some(handler) = group_handler.get(control) else {
-            bail!("No control handler in group \"{group}\" matched \"{control}\".");
+        group_handler.handle(msg).with_context(|| group.to_string())
+    }
+
+    /// Add a map for the specified group, and return a mutable refernce to it.
+    pub fn add_map_for_group(&mut self, group: &str) -> &mut GroupControlMap<C> {
+        if self
+            .0
+            .insert(group.to_string(), GroupControlMap(Default::default()))
+            .is_some()
+        {
+            panic!("Tried to create more than one control group for {group}");
+        }
+        self.0.get_mut(group).unwrap()
+    }
+}
+
+pub struct GroupControlMap<C>(HashMap<Control, ControlMessageCreator<C>>);
+pub type FixtureControlMap = GroupControlMap<ControlMessagePayload>;
+
+impl<C> GroupControlMap<C> {
+    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
+        let control = msg.control();
+        let Some(handler) = self.0.get(control) else {
+            bail!("no control handler matched \"{control}\"");
         };
         handler(msg)
     }
 
-    pub fn add<F>(&mut self, group: &str, control: &str, handler: F)
+    pub fn add<F>(&mut self, control: &str, handler: F)
     where
         F: Fn(&OscControlMessage) -> Result<Option<C>> + 'static,
     {
-        let group_handler = self.0.entry(group.to_string()).or_default();
-        match group_handler.entry(control.to_string()) {
+        match self.0.entry(control.to_string()) {
             Entry::Occupied(_) => {
-                panic!("Duplicate control definition in group \"{group}\" for \"{control}\".");
+                panic!("duplicate control definition \"{control}\"");
             }
             Entry::Vacant(v) => v.insert(Box::new(move |m| {
                 Ok(handler(m)?.map(|msg| (msg, TalkbackMode::All)))
@@ -270,46 +295,45 @@ impl<C> ControlMap<C> {
         };
     }
 
-    pub fn add_fetch_process<F, T, P>(&mut self, group: &str, control: &str, fetch: F, process: P)
+    pub fn add_fetch_process<F, T, P>(&mut self, control: &str, fetch: F, process: P)
     where
         F: Fn(&OscControlMessage) -> Result<T, OscError> + 'static,
         P: Fn(T) -> Option<C> + 'static,
     {
-        self.add(group, control, move |v| Ok(process(fetch(v)?)))
+        self.add(control, move |v| Ok(process(fetch(v)?)))
     }
 
-    pub fn add_unipolar<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_unipolar<F>(&mut self, control: &str, process: F)
     where
         F: Fn(UnipolarFloat) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_unipolar, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_unipolar, move |v| Some(process(v)))
     }
 
-    pub fn add_bipolar<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_bipolar<F>(&mut self, control: &str, process: F)
     where
         F: Fn(BipolarFloat) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_bipolar, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_bipolar, move |v| Some(process(v)))
     }
 
-    pub fn add_phase<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_phase<F>(&mut self, control: &str, process: F)
     where
         F: Fn(Phase) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_phase, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_phase, move |v| Some(process(v)))
     }
 
-    pub fn add_bool<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_bool<F>(&mut self, control: &str, process: F)
     where
         F: Fn(bool) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_bool, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_bool, move |v| Some(process(v)))
     }
 
     /// Add a collection of control actions for each variant of the specified enum type.
     pub fn add_enum_handler<EnumType, Parse, Process, ParseResult>(
         &mut self,
-        group: &str,
         control: &str,
         parse: Parse,
         process: Process,
@@ -319,7 +343,7 @@ impl<C> ControlMap<C> {
         Parse: Fn(&OscControlMessage) -> Result<ParseResult, OscError> + 'static,
         Process: Fn(EnumType, ParseResult) -> C + 'static,
     {
-        self.add(group, control, move |m| {
+        self.add(control, move |m| {
             let variant: EnumType = EnumType::parse(m)?;
             let val = parse(m)?;
             Ok(Some(process(variant, val)))

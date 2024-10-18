@@ -6,7 +6,7 @@ use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleOscStateChange};
-use crate::osc::{ControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, MapControls, RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = "Astroscan";
@@ -31,35 +31,37 @@ const ACTIVE: Button = button(GROUP, "Active");
 impl EnumRadioButton for Color {}
 
 impl MapControls for Astroscan {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+    fn group(&self) -> &'static str {
+        GROUP
+    }
+
+    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
         use StateChange::*;
         LAMP_ON.map_state(map, |v| ControlMessagePayload::fixture(LampOn(v)));
-        map.add_unipolar(GROUP, "Dimmer", |v| {
-            ControlMessagePayload::fixture(Dimmer(v))
-        });
-        map_strobe(map, GROUP, "Strobe", &wrap_strobe);
-        map.add_enum_handler(GROUP, COLOR, ignore_payload, |c, _| {
+        map.add_unipolar("Dimmer", |v| ControlMessagePayload::fixture(Dimmer(v)));
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_enum_handler(COLOR, ignore_payload, |c, _| {
             ControlMessagePayload::fixture(Color(c))
         });
-        map.add_unipolar(GROUP, "Iris", |v| ControlMessagePayload::fixture(Iris(v)));
+        map.add_unipolar("Iris", |v| ControlMessagePayload::fixture(Iris(v)));
         GOBO_SELECT.map(map, |v| ControlMessagePayload::fixture(Gobo(v)));
-        map.add_bipolar(GROUP, "GoboRotation", |v| {
+        map.add_bipolar("GoboRotation", |v| {
             ControlMessagePayload::fixture(GoboRotation(bipolar_fader_with_detent(v)))
         });
         MIRROR_GOBO_ROTATION.map_state(map, |v| {
             ControlMessagePayload::fixture(MirrorGoboRotation(v))
         });
-        map.add_bipolar(GROUP, "MirrorRotation", |v| {
+        map.add_bipolar("MirrorRotation", |v| {
             ControlMessagePayload::fixture(MirrorRotation(bipolar_fader_with_detent(v)))
         });
         MIRROR_MIRROR_ROTATION.map_state(map, |v| {
             ControlMessagePayload::fixture(MirrorMirrorRotation(v))
         });
-        map.add_bipolar(GROUP, "Pan", |v| {
+        map.add_bipolar("Pan", |v| {
             ControlMessagePayload::fixture(Pan(bipolar_fader_with_detent(v)))
         });
         MIRROR_PAN.map_state(map, |v| ControlMessagePayload::fixture(MirrorPan(v)));
-        map.add_bipolar(GROUP, "Tilt", |v| {
+        map.add_bipolar("Tilt", |v| {
             ControlMessagePayload::fixture(Tilt(bipolar_fader_with_detent(v)))
         });
         MIRROR_TILT.map_state(map, |v| ControlMessagePayload::fixture(MirrorTilt(v)));
