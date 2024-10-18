@@ -22,6 +22,7 @@ impl Default for Active {
 
 #[derive(Default, Debug)]
 pub struct WizardExtreme {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     strobe: GenericStrobe,
     color: Color,
@@ -76,6 +77,10 @@ impl WizardExtreme {
 }
 
 impl ControllableFixture for WizardExtreme {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
@@ -106,10 +111,10 @@ impl ControllableFixture for WizardExtreme {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 

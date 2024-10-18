@@ -35,7 +35,7 @@ impl Astroscan {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         LAMP_ON.map_state(map, |v| LampOn(v));
         map.add_unipolar("Dimmer", |v| Dimmer(v));

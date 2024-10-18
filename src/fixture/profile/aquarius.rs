@@ -10,6 +10,7 @@ use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
 pub struct Aquarius {
+    controls: GroupControlMap<ControlMessage>,
     lamp_on: bool,
     rotation: BipolarFloat,
 }
@@ -53,6 +54,10 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(LampOn(self.lamp_on), emitter);
@@ -64,10 +69,10 @@ impl ControllableFixture for Aquarius {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

@@ -36,6 +36,7 @@ const MAX_ROTATION_SPEED: u8 = 100;
 /// 9: lamp 2 dimmer
 #[derive(Debug)]
 pub struct Lumasphere {
+    controls: GroupControlMap<ControlMessage>,
     lamp_1_intensity: UnipolarFloat,
     lamp_2_intensity: UnipolarFloat,
     ball_rotation: RampingParameter<BipolarFloat>,
@@ -56,6 +57,7 @@ impl PatchFixture for Lumasphere {
 impl Default for Lumasphere {
     fn default() -> Self {
         Self {
+            controls: Default::default(),
             lamp_1_intensity: UnipolarFloat::ZERO,
             lamp_2_intensity: UnipolarFloat::ZERO,
             // Ramp ball rotation no faster than unit range in one second.
@@ -121,6 +123,10 @@ impl NonAnimatedFixture for Lumasphere {
 }
 
 impl ControllableFixture for Lumasphere {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         self.ball_rotation.update(delta_t);
     }
@@ -142,10 +148,10 @@ impl ControllableFixture for Lumasphere {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

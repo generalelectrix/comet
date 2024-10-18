@@ -33,7 +33,7 @@ impl Comet {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use ControlMessage::*;
         use StateChange::*;
         SHUTTER.map_state(map, |v| Set(Shutter(v)));

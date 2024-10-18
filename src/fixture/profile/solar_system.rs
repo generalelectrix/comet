@@ -11,6 +11,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct SolarSystem {
+    controls: GroupControlMap<ControlMessage>,
     shutter_open: bool,
     auto_shutter: bool,
     front_gobo: usize,
@@ -56,6 +57,10 @@ impl SolarSystem {
 }
 
 impl ControllableFixture for SolarSystem {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
@@ -71,10 +76,10 @@ impl ControllableFixture for SolarSystem {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

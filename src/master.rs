@@ -25,7 +25,7 @@ pub struct MasterControls {
 
 impl MasterControls {
     pub fn new() -> Self {
-        let mut controls = GroupControlMap::new();
+        let mut controls = GroupControlMap::default();
         Self::map_controls(&mut controls);
         Self {
             strobe: Default::default(),

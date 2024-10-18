@@ -29,6 +29,7 @@ use crate::util::{unipolar_to_range, RampingParameter};
 /// 8 - Lamp Control
 #[derive(Debug)]
 pub struct Venus {
+    controls: GroupControlMap<ControlMessage>,
     base_rotation: RampingParameter<BipolarFloat>,
     cradle_motion: RampingParameter<UnipolarFloat>,
     head_rotation: RampingParameter<BipolarFloat>,
@@ -46,6 +47,7 @@ impl PatchFixture for Venus {
 impl Default for Venus {
     fn default() -> Self {
         Self {
+            controls: Default::default(),
             base_rotation: RampingParameter::new(BipolarFloat::ZERO, BipolarFloat::ONE),
             cradle_motion: RampingParameter::new(UnipolarFloat::ZERO, UnipolarFloat::ONE),
             head_rotation: RampingParameter::new(BipolarFloat::ZERO, BipolarFloat::ONE),
@@ -85,6 +87,10 @@ impl NonAnimatedFixture for Venus {
 }
 
 impl ControllableFixture for Venus {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         self.base_rotation.update(delta_t);
         self.cradle_motion.update(delta_t);
@@ -106,10 +112,10 @@ impl ControllableFixture for Venus {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

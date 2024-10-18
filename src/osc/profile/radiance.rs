@@ -9,7 +9,7 @@ impl Radiance {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("Haze", |v| Haze(v));
         map.add_unipolar("Fan", |v| Fan(v));

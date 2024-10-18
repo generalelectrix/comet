@@ -11,6 +11,7 @@ use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
 pub struct Radiance {
+    controls: GroupControlMap<ControlMessage>,
     haze: UnipolarFloat,
     fan: UnipolarFloat,
     timer: Option<Timer>,
@@ -57,6 +58,10 @@ impl NonAnimatedFixture for Radiance {
 }
 
 impl ControllableFixture for Radiance {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         if let Some(timer) = self.timer.as_mut() {
             timer.update(delta_t);
@@ -74,10 +79,10 @@ impl ControllableFixture for Radiance {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

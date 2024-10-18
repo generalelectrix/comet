@@ -11,6 +11,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Hypnotic {
+    controls: GroupControlMap<ControlMessage>,
     red_laser_on: bool,
     green_laser_on: bool,
     blue_laser_on: bool,
@@ -67,6 +68,10 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(RedLaserOn(self.red_laser_on), emitter);
@@ -80,10 +85,10 @@ impl ControllableFixture for Hypnotic {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

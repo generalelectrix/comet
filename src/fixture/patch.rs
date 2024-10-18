@@ -75,7 +75,7 @@ impl Patch {
             .iter()
             .flat_map(|p| p(&cfg))
             .collect::<Result<Vec<_>>>()?;
-        let candidate = match candidates.len() {
+        let mut candidate = match candidates.len() {
             0 => bail!("unable to patch {cfg:?}"),
             1 => candidates.pop().unwrap(),
             _ => bail!(
@@ -113,6 +113,10 @@ impl Patch {
         }
         // No existing group; create a new one.
         cfg.channel.then(|| channels.add(key.clone()));
+
+        // Populate fixture controls.
+        candidate.fixture.populate_controls();
+
         let group = FixtureGroup::new(
             key.clone(),
             GroupFixtureConfig {
@@ -123,6 +127,7 @@ impl Patch {
             candidate.channel_count,
             candidate.fixture,
         );
+
         self.fixture_type_lookup.insert(key.fixture.0, key.fixture);
         self.fixtures.insert(key, group);
 

@@ -9,7 +9,7 @@ use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
-pub struct Dimmer(UnipolarFloat);
+pub struct Dimmer(UnipolarFloat, GroupControlMap<ControlMessage>);
 
 impl PatchAnimatedFixture for Dimmer {
     const NAME: FixtureType = FixtureType("Dimmer");
@@ -44,6 +44,10 @@ impl AnimatedFixture for Dimmer {
 }
 
 impl ControllableFixture for Dimmer {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.1);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         Self::emit(self.0, emitter);
     }
@@ -53,10 +57,10 @@ impl ControllableFixture for Dimmer {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.1.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

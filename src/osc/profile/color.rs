@@ -10,7 +10,7 @@ impl Color {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         map_color(map, &wrap_color);
     }
 }

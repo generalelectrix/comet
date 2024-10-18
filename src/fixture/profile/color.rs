@@ -13,6 +13,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Color {
+    controls: GroupControlMap<ControlMessage>,
     hue: Phase,
     sat: UnipolarFloat,
     val: UnipolarFloat,
@@ -107,6 +108,10 @@ impl AnimatedFixture for Color {
 }
 
 impl ControllableFixture for Color {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.state(&mut |sc| Self::emit(sc, emitter));
     }
@@ -116,10 +121,10 @@ impl ControllableFixture for Color {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

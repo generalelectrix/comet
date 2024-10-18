@@ -42,7 +42,7 @@ pub struct Channels {
 
 impl Channels {
     pub fn new() -> Self {
-        let mut controls = GroupControlMap::new();
+        let mut controls = GroupControlMap::default();
         Self::map_controls(&mut controls);
         Self {
             channel_index: Default::default(),

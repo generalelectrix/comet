@@ -9,6 +9,7 @@ use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
 pub struct Comet {
+    controls: GroupControlMap<ControlMessage>,
     shutter_open: bool,
     strobe: GenericStrobe,
     shutter_sound_active: bool,
@@ -85,6 +86,10 @@ impl NonAnimatedFixture for Comet {
     }
 }
 impl ControllableFixture for Comet {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         self.trigger_state.update(delta_t);
     }
@@ -110,10 +115,10 @@ impl ControllableFixture for Comet {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.control(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.control(ctl, emitter);
         Ok(())
     }
 }

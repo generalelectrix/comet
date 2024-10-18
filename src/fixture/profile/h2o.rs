@@ -11,6 +11,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct H2O {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     rotation: BipolarFloat,
     fixed_color: FixedColor,
@@ -72,15 +73,19 @@ impl AnimatedFixture for H2O {
 }
 
 impl ControllableFixture for H2O {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 

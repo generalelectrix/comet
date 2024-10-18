@@ -9,6 +9,7 @@ use crate::util::unipolar_to_range;
 
 #[derive(Debug)]
 pub struct Faderboard {
+    controls: GroupControlMap<ControlMessage>,
     channel_count: usize,
     vals: Vec<UnipolarFloat>,
 }
@@ -25,6 +26,7 @@ const DEFAULT_CHANNEL_COUNT: usize = 16;
 impl Default for Faderboard {
     fn default() -> Self {
         Self {
+            controls: Default::default(),
             vals: vec![UnipolarFloat::ZERO; DEFAULT_CHANNEL_COUNT],
             channel_count: DEFAULT_CHANNEL_COUNT,
         }
@@ -52,6 +54,10 @@ impl NonAnimatedFixture for Faderboard {
 }
 
 impl ControllableFixture for Faderboard {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         for (i, v) in self.vals.iter().enumerate() {
             Self::emit((i, *v), emitter);
@@ -63,10 +69,10 @@ impl ControllableFixture for Faderboard {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

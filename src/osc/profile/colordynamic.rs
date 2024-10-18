@@ -19,7 +19,7 @@ impl Colordynamic {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         SHUTTER_OPEN.map_state(map, |v| ShutterOpen(v));
         map_strobe(map, "Strobe", &wrap_strobe);

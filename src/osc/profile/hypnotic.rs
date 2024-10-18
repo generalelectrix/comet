@@ -15,7 +15,7 @@ impl Hypnotic {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         RED_LASER_ON.map_state(map, |v| RedLaserOn(v));
         GREEN_LASER_ON.map_state(map, |v| GreenLaserOn(v));

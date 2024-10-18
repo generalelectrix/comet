@@ -16,6 +16,7 @@ use crate::util::bipolar_to_split_range;
 
 #[derive(Debug)]
 pub struct RotosphereQ3 {
+    controls: GroupControlMap<ControlMessage>,
     color: Color,
     strobe: GenericStrobe,
     rotation: BipolarFloat,
@@ -24,6 +25,7 @@ pub struct RotosphereQ3 {
 impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
+            controls: Default::default(),
             color: Color::from_model(ColorModel::Rgbw),
             strobe: GenericStrobe::default(),
             rotation: BipolarFloat::default(),
@@ -84,6 +86,10 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         let mut emit_color = |sc| {
@@ -102,10 +108,10 @@ impl ControllableFixture for RotosphereQ3 {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

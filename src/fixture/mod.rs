@@ -42,5 +42,5 @@ pub mod prelude {
     pub use crate::channel::ChannelStateEmitter;
     pub use crate::fixture::animation_target::TargetedAnimationValues;
     pub use crate::osc::FixtureStateEmitter;
-    pub use crate::osc::{HandleStateChange, OscControlMessage};
+    pub use crate::osc::{GroupControlMap, HandleStateChange, OscControlMessage};
 }

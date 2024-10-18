@@ -18,6 +18,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct FreedomFries {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     color: Color,
     speed: UnipolarFloat,
@@ -96,6 +97,10 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
@@ -109,10 +114,10 @@ impl ControllableFixture for FreedomFries {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

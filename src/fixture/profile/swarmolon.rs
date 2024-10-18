@@ -12,6 +12,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Swarmolon {
+    controls: GroupControlMap<ControlMessage>,
     derby_color: DerbyColorState,
     derby_strobe: GenericStrobe,
     derby_rotation: BipolarFloat,
@@ -150,6 +151,10 @@ impl NonAnimatedFixture for Swarmolon {
 }
 
 impl ControllableFixture for Swarmolon {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);
@@ -176,7 +181,10 @@ impl ControllableFixture for Swarmolon {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        match *msg.unpack_as::<ControlMessage>().context(Self::NAME)? {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        match ctl {
             ControlMessage::Set(sc) => {
                 self.handle_state_change(sc, emitter);
             }

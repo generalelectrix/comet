@@ -19,7 +19,7 @@ impl H2O {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("Dimmer", |v| Dimmer(v));
         map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));

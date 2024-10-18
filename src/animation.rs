@@ -20,7 +20,7 @@ pub struct AnimationUIState {
 
 impl AnimationUIState {
     pub fn new(initial_channel: Option<ChannelId>) -> Self {
-        let mut controls = GroupControlMap::new();
+        let mut controls = GroupControlMap::default();
         Self::map_controls(&mut controls);
         let mut state = Self {
             selected_animator_by_channel: Default::default(),

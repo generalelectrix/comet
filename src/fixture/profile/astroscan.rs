@@ -22,6 +22,7 @@ impl Default for Active {
 
 #[derive(Default, Debug)]
 pub struct Astroscan {
+    controls: GroupControlMap<ControlMessage>,
     lamp_on: bool,
     dimmer: UnipolarFloat,
     strobe: GenericStrobe,
@@ -77,6 +78,10 @@ impl Astroscan {
 }
 
 impl ControllableFixture for Astroscan {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(LampOn(self.lamp_on), emitter);
@@ -104,10 +109,10 @@ impl ControllableFixture for Astroscan {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }

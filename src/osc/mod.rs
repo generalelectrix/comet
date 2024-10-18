@@ -204,11 +204,19 @@ pub type Control = String;
 
 pub struct GroupControlMap<C>(HashMap<Control, ControlMessageCreator<C>>);
 
-impl<C> GroupControlMap<C> {
-    pub fn new() -> Self {
+impl<C> Default for GroupControlMap<C> {
+    fn default() -> Self {
         Self(Default::default())
     }
+}
 
+impl<C> core::fmt::Debug for GroupControlMap<C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<{} control mappings>", self.0.len())
+    }
+}
+
+impl<C> GroupControlMap<C> {
     pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
         let control = msg.control();
         let Some(handler) = self.0.get(control) else {

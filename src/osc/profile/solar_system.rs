@@ -32,7 +32,7 @@ impl SolarSystem {
     fn group(&self) -> &'static str {
         GROUP
     }
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessage>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         SHUTTER_OPEN.map_state(map, |v| ShutterOpen(v));
         AUTO_SHUTTER.map_state(map, |v| AutoShutter(v));
