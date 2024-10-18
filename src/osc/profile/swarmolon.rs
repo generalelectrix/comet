@@ -25,9 +25,6 @@ const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
 impl EnumRadioButton for DerbyColor {}
 
 impl Swarmolon {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use ControlMessage::*;
         use StateChange::*;

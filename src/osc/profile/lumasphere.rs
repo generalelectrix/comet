@@ -14,9 +14,6 @@ const BALL_START: Button = button(GROUP, "ball_start");
 const COLOR_START: Button = button(GROUP, "color_start");
 
 impl Lumasphere {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("lamp_1_intensity", |v| {

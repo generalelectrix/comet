@@ -12,10 +12,6 @@ const CONTROLS: FaderArray = FaderArray {
 };
 
 impl Faderboard {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         CONTROLS.map(map, |index, val| Ok((index, val)))
     }

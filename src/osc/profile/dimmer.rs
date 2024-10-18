@@ -1,15 +1,8 @@
 use crate::fixture::dimmer::{ControlMessage, Dimmer, StateChange};
 
-use crate::fixture::PatchAnimatedFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange};
 
-const GROUP: &str = Dimmer::NAME.0;
-
 impl Dimmer {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         map.add_unipolar("Level", |x| x);
     }

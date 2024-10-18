@@ -31,10 +31,6 @@ const ACTIVE: Button = button(GROUP, "Active");
 impl EnumRadioButton for Color {}
 
 impl Astroscan {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         LAMP_ON.map_state(map, LampOn);

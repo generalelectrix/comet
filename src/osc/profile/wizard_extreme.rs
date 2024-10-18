@@ -30,9 +30,6 @@ const ACTIVE: Button = button(GROUP, "Active");
 impl EnumRadioButton for Color {}
 
 impl WizardExtreme {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("Dimmer", Dimmer);

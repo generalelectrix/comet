@@ -24,9 +24,6 @@ const TWINKLE: Button = button(GROUP, "Twinkle");
 impl EnumRadioButton for Color {}
 
 impl RushWizard {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("Dimmer", Dimmer);

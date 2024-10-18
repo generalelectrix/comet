@@ -29,9 +29,6 @@ const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
 
 impl SolarSystem {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         SHUTTER_OPEN.map_state(map, ShutterOpen);

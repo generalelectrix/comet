@@ -12,9 +12,6 @@ const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
 const BLUE_LASER_ON: Button = button(GROUP, "BlueLaserOn");
 
 impl Hypnotic {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         RED_LASER_ON.map_state(map, RedLaserOn);

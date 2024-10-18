@@ -15,10 +15,6 @@ const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
 
 impl Colordynamic {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         SHUTTER_OPEN.map_state(map, ShutterOpen);

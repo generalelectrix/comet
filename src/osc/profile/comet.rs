@@ -29,10 +29,6 @@ const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
 };
 
 impl Comet {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use ControlMessage::*;
         use StateChange::*;

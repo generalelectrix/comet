@@ -11,9 +11,6 @@ const GROUP: &str = Venus::NAME.0;
 const LAMP_ON: Button = button(GROUP, "LampControl");
 
 impl Venus {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 

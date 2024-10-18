@@ -1,15 +1,8 @@
 use crate::fixture::color::{Color, ControlMessage, StateChange};
 
-use crate::fixture::PatchAnimatedFixture;
 use crate::osc::{GroupControlMap, HandleOscStateChange};
 
-const GROUP: &str = Color::NAME.0;
-
 impl Color {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         map_color(map, &wrap_color);
     }

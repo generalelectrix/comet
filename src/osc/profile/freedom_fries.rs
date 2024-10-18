@@ -25,10 +25,6 @@ const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
 };
 
 impl FreedomFriesFixture {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 

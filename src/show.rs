@@ -52,11 +52,7 @@ impl Show {
 
         let initial_channel = channels.validate_channel(0).ok();
 
-        channels.emit_state(
-            false,
-            &mut patch,
-            &osc_controller.sender_with_metadata(None),
-        );
+        channels.emit_state(false, &patch, &osc_controller.sender_with_metadata(None));
 
         let animation_ui_state = AnimationUIState::new(initial_channel);
 
@@ -65,7 +61,7 @@ impl Show {
             animation_ui_state.emit_state(
                 initial_channel.unwrap(),
                 &channels,
-                &mut patch,
+                &patch,
                 &osc_controller.sender_with_metadata(None),
             )?;
         };

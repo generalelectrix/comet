@@ -17,6 +17,11 @@ pub struct OscControlMessage {
     addr: String,
     /// Single OSC payload extracted from the incoming message.
     pub arg: OscType,
+    addr_index: AddressIndex,
+}
+
+#[derive(Debug)]
+struct AddressIndex {
     /// The byte index in the addr string where the control key starts,
     /// including the leading slash.
     key_start: usize,
@@ -39,43 +44,39 @@ impl OscControlMessage {
             msg: m,
         };
 
-        let (key_start, control_start, key_end, group) =
-            parse_address(&msg.addr).map_err(wrap_err)?;
+        let addr_index = parse_address(&msg.addr).map_err(wrap_err)?;
         let arg = get_single_arg(msg.args).map_err(wrap_err)?;
 
         Ok(Self {
             client_id,
             addr: msg.addr,
             arg,
-            key_start,
-            control_start,
-            key_end,
-            group,
+            addr_index,
         })
     }
 
     /// Return the first half of the control key, excluding the leading slash.
     pub fn entity_type(&self) -> &str {
-        &self.addr[self.key_start + 1..self.control_start]
+        &self.addr[self.addr_index.key_start + 1..self.addr_index.control_start]
     }
 
     /// Return the control portion of the address.
     pub fn control(&self) -> &str {
-        &self.addr[self.control_start + 1..self.key_end]
+        &self.addr[self.addr_index.control_start + 1..self.addr_index.key_end]
     }
 
     /// Return the group, if present.
     pub fn group(&self) -> Option<&str> {
-        Some(&self.addr[self.group.as_ref()?.clone()])
+        Some(&self.addr[self.addr_index.group.as_ref()?.clone()])
     }
 
     /// Return the portion of the address following the control key.
     /// This will include a leading / if not empty.
     pub fn addr_payload(&self) -> &str {
-        if self.key_end == self.addr.len() {
+        if self.addr_index.key_end == self.addr.len() {
             return "";
         }
-        &self.addr[self.key_end..]
+        &self.addr[self.addr_index.key_end..]
     }
 
     /// Generate an OscError.
@@ -87,7 +88,7 @@ impl OscControlMessage {
     }
 }
 
-fn parse_address(addr: &str) -> Result<(usize, usize, usize, Option<Range<usize>>), String> {
+fn parse_address(addr: &str) -> Result<AddressIndex, String> {
     lazy_static! {
         static ref WITH_GROUP: Regex = Regex::new(r"^/:([^/]+)(/[^/]+)(/[^/]+)").unwrap();
         static ref WITHOUT_GROUP: Regex = Regex::new(r"^(/[^:/][^/]*)(/[^/]+)").unwrap();
@@ -97,22 +98,22 @@ fn parse_address(addr: &str) -> Result<(usize, usize, usize, Option<Range<usize>
         let group_match = caps.get(1).unwrap();
         let key_match = caps.get(2).unwrap();
         let control_match = caps.get(3).unwrap();
-        return Ok((
-            key_match.start(),
-            control_match.start(),
-            control_match.end(),
-            Some(group_match.start()..group_match.end()),
-        ));
+        return Ok(AddressIndex {
+            key_start: key_match.start(),
+            control_start: control_match.start(),
+            key_end: control_match.end(),
+            group: Some(group_match.start()..group_match.end()),
+        });
     }
     if let Some(caps) = WITHOUT_GROUP.captures(addr) {
         let key_match = caps.get(1).unwrap();
         let control_match = caps.get(2).unwrap();
-        return Ok((
-            key_match.start(),
-            control_match.start(),
-            control_match.end(),
-            None,
-        ));
+        return Ok(AddressIndex {
+            key_start: key_match.start(),
+            control_start: control_match.start(),
+            key_end: control_match.end(),
+            group: None,
+        });
     }
     Err("address did not match expected patterns".to_string())
 }

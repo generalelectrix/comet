@@ -7,12 +7,7 @@ use crate::osc::profile::color::map_color;
 use crate::osc::{GroupControlMap, HandleOscStateChange};
 use crate::util::bipolar_fader_with_detent;
 
-const GROUP: &str = "RotosphereQ3";
-
 impl RotosphereQ3 {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 

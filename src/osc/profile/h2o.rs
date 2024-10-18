@@ -15,10 +15,6 @@ const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
 impl EnumRadioButton for FixedColor {}
 
 impl H2O {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
         map.add_unipolar("Dimmer", Dimmer);
