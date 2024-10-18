@@ -54,14 +54,6 @@ impl OscControlMessage {
         })
     }
 
-    /// Return the group and control portions of the address.
-    pub fn control_key(&self) -> (&str, &str) {
-        (
-            self.entity_type(),
-            &self.addr[self.control_start + 1..self.key_end],
-        )
-    }
-
     /// Return the first half of the control key, excluding the leading slash.
     pub fn entity_type(&self) -> &str {
         &self.addr[self.key_start + 1..self.control_start]
@@ -163,7 +155,6 @@ mod test {
             },
             OscClientId(SocketAddr::from_str("127.0.0.1:1234").unwrap()),
         )?;
-        let key = msg.control_key();
-        Ok((key.0.to_string(), key.1.to_string()))
+        Ok((msg.entity_type().to_string(), msg.control().to_string()))
     }
 }

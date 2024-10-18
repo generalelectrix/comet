@@ -1,6 +1,5 @@
 //! Types related to specifying and controlling individual fixture models.
 use anyhow::Result;
-use log::debug;
 use std::any::{type_name, Any};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
@@ -14,7 +13,7 @@ use super::animation_target::{
     ControllableTargetedAnimation, TargetedAnimationValues, TargetedAnimations, N_ANIM,
 };
 use super::{ControlMessagePayload, FixtureGroupControls};
-use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
+use crate::channel::{ChannelControlMessage};
 use crate::fixture::animation_target::AnimationTarget;
 use crate::osc::{FixtureStateEmitter, MapControls};
 

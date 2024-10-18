@@ -8,7 +8,7 @@ use crate::animation::ControlMessage::Animation as WrapAnimation;
 use crate::fixture::animation_target::N_ANIM;
 use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
+use crate::osc::{send_float, MapControls, RadioButton};
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
 
