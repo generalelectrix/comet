@@ -9,7 +9,7 @@ use crate::{
     clock_service::ClockService,
     config::Config,
     dmx::DmxBuffer,
-    fixture::{FixtureGroup, FixtureGroupKey, Patch},
+    fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
     osc::{ControlMessageType, OscController, TalkbackMode},
 };
@@ -137,16 +137,13 @@ impl Show {
             .sender_with_metadata(Some(&msg.client_id));
 
         match ControlMessageType::parse(msg.entity_type()) {
-            ControlMessageType::Master => {
-                self.master_controls.control(
-                    &msg,
-                    &self.channels,
-                    &self.patch,
-                    &self.animation_ui_state,
-                    &sender,
-                );
-                Ok(())
-            }
+            ControlMessageType::Master => self.master_controls.control(
+                &msg,
+                &self.channels,
+                &self.patch,
+                &self.animation_ui_state,
+                &sender,
+            ),
             ControlMessageType::Channel => self.channels.control(&msg, &mut self.patch, &sender),
             ControlMessageType::Animation => {
                 let Some(channel) = self.channels.current_channel() else {
@@ -169,7 +166,7 @@ impl Show {
                 };
                 let group_key = FixtureGroupKey {
                     fixture: fixture_type,
-                    group: msg.group,
+                    group: msg.group().map(GroupName::new),
                 };
                 self.patch.get_mut(&group_key)?.control(
                     &msg,

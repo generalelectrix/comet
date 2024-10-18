@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 use rosc::{OscMessage, OscType};
@@ -28,8 +30,8 @@ pub struct OscControlMessage {
     /// this may be equal to the length of the address and thus we must be
     /// careful not to accidentally try to slice past the end of the address.
     key_end: usize,
-    /// The group ID, if present.
-    pub group: Option<GroupName>,
+    /// The byte range of the group ID, if present.
+    group: Option<Range<usize>>,
 }
 
 impl OscControlMessage {
@@ -64,6 +66,11 @@ impl OscControlMessage {
         &self.addr[self.control_start + 1..self.key_end]
     }
 
+    /// Return the group, if present.
+    pub fn group(&self) -> Option<&str> {
+        Some(&self.addr[self.group.as_ref()?.clone()])
+    }
+
     /// Return the portion of the address following the control key.
     /// This will include a leading / if not empty.
     pub fn addr_payload(&self) -> &str {
@@ -82,20 +89,21 @@ impl OscControlMessage {
     }
 }
 
-fn parse_address(addr: &str) -> Result<(usize, usize, usize, Option<GroupName>), String> {
+fn parse_address(addr: &str) -> Result<(usize, usize, usize, Option<Range<usize>>), String> {
     lazy_static! {
         static ref WITH_GROUP: Regex = Regex::new(r"^/:([^/]+)(/[^/]+)(/[^/]+)").unwrap();
         static ref WITHOUT_GROUP: Regex = Regex::new(r"^(/[^:/][^/]*)(/[^/]+)").unwrap();
     }
 
     if let Some(caps) = WITH_GROUP.captures(addr) {
+        let group_match = caps.get(1).unwrap();
         let key_match = caps.get(2).unwrap();
         let control_match = caps.get(3).unwrap();
         return Ok((
             key_match.start(),
             control_match.start(),
             control_match.end(),
-            Some(GroupName::new(&caps[1])),
+            Some(group_match.start()..group_match.end()),
         ));
     }
     if let Some(caps) = WITHOUT_GROUP.captures(addr) {
