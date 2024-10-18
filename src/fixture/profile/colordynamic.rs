@@ -5,9 +5,8 @@ use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -46,7 +45,7 @@ impl Colordynamic {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -62,7 +61,7 @@ impl Colordynamic {
 }
 
 impl ControllableFixture for Colordynamic {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
         let mut emit_strobe = |ssc| {
@@ -78,7 +77,7 @@ impl ControllableFixture for Colordynamic {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

@@ -1,5 +1,5 @@
 use crate::fixture::aquarius::{Aquarius, StateChange};
-use crate::fixture::{ControlMessagePayload, PatchAnimatedFixture};
+use crate::fixture::{prelude::*, ControlMessagePayload};
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;

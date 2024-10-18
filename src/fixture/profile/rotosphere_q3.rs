@@ -5,13 +5,12 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::animation_target::TargetedAnimationValues;
 use super::color::{
     AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
     StateChange as ColorStateChange,
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 
@@ -43,7 +42,7 @@ impl RotosphereQ3 {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -89,7 +88,7 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         let mut emit_color = |sc| {
             Self::emit(Color(sc), emitter);
@@ -105,7 +104,7 @@ impl ControllableFixture for RotosphereQ3 {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

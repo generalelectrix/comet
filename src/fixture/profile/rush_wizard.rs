@@ -5,7 +5,7 @@ use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -35,7 +35,7 @@ impl RushWizard {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -83,7 +83,7 @@ impl NonAnimatedFixture for RushWizard {
 }
 
 impl ControllableFixture for RushWizard {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
         let mut emit_strobe = |ssc| {
@@ -102,7 +102,7 @@ impl ControllableFixture for RushWizard {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

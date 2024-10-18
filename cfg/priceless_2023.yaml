@@ -6,4 +6,4 @@ debug: False
 fixtures:
   - name: colordynamic
     addr: 110
-    selector: True
+    channel: True

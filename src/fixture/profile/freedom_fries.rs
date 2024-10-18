@@ -8,12 +8,11 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 
-use super::prelude::*;
 use super::{
-    animation_target::TargetedAnimationValues,
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
 };
+use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -40,7 +39,7 @@ impl FreedomFries {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -101,7 +100,7 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
         Self::emit(Speed(self.speed), emitter);
@@ -112,7 +111,7 @@ impl ControllableFixture for FreedomFries {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

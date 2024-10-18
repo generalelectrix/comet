@@ -5,7 +5,7 @@ use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -61,7 +61,7 @@ impl Swarmolon {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         use StateChange::*;
         match sc {
@@ -154,7 +154,7 @@ impl NonAnimatedFixture for Swarmolon {
 }
 
 impl ControllableFixture for Swarmolon {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);
         let mut emit_derby_strobe = |ssc| {
@@ -178,7 +178,7 @@ impl ControllableFixture for Swarmolon {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         match *msg.unpack_as::<ControlMessage>().context(Self::NAME)? {
             ControlMessage::Set(sc) => {
@@ -263,7 +263,7 @@ impl DerbyColorState {
         self.0.sort();
     }
 
-    pub fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    pub fn emit_state(&self, emitter: &FixtureStateEmitter) {
         for color in DerbyColor::iter() {
             let state = self.0.contains(&color);
             Swarmolon::emit(StateChange::DerbyColor(color, state), emitter);

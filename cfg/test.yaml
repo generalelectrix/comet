@@ -6,4 +6,4 @@ debug: True
 fixtures:
   - name: wizard_extreme
     addr: 1
-    selector: True
+    channel: True

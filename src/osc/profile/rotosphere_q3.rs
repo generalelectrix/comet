@@ -4,7 +4,7 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::rotosphere_q3::{RotosphereQ3, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::fixture::color::map_color;
+use crate::osc::profile::color::map_color;
 use crate::osc::{ControlMap, HandleOscStateChange, MapControls};
 use crate::util::bipolar_fader_with_detent;
 

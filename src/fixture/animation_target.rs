@@ -7,6 +7,9 @@ use num_traits::ToPrimitive;
 use strum::IntoEnumIterator;
 use tunnels::animation::Animation;
 
+pub const N_ANIM: usize = 4;
+pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
+
 /// Numeric index for an animation target.
 /// This is used to represent an animation target as a generic selection.
 pub type AnimationTargetIndex = usize;

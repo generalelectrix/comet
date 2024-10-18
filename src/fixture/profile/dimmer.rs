@@ -1,41 +1,37 @@
-//! Control profile for a uv_led_brick.
+//! Control profile for a dimmer.
 
 use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
-pub struct UvLedBrick(UnipolarFloat);
+pub struct Dimmer(UnipolarFloat);
 
-impl PatchAnimatedFixture for UvLedBrick {
-    const NAME: FixtureType = FixtureType("uv_led_brick");
+impl PatchAnimatedFixture for Dimmer {
+    const NAME: FixtureType = FixtureType("dimmer");
     fn channel_count(&self) -> usize {
-        7
+        1
     }
 }
 
-impl UvLedBrick {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
-    ) {
+impl Dimmer {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         self.0 = sc;
         Self::emit(sc, emitter);
     }
 }
 
-impl AnimatedFixture for UvLedBrick {
+impl AnimatedFixture for Dimmer {
     type Target = AnimationTarget;
 
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut level = self.0.val();
@@ -44,21 +40,18 @@ impl AnimatedFixture for UvLedBrick {
             level += val;
         }
         dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(level));
-        dmx_buf[4] = 255;
-        dmx_buf[5] = 255;
-        dmx_buf[6] = 255;
     }
 }
 
-impl ControllableFixture for UvLedBrick {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+impl ControllableFixture for Dimmer {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         Self::emit(self.0, emitter);
     }
 
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

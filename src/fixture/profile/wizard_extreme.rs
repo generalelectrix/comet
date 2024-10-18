@@ -1,13 +1,13 @@
 //! Martin Wizard Extreme - the one that Goes Slow
 
 use anyhow::Context;
-use log::error;
+use log::{debug, error};
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use super::animation_target::TargetedAnimationValues;
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use super::prelude::*;
+use crate::channel::{ChannelControlMessage, ChannelStateChange};
+use crate::fixture::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -45,14 +45,13 @@ impl PatchAnimatedFixture for WizardExtreme {
 impl WizardExtreme {
     pub const GOBO_COUNT: usize = 14; // includes the open position
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
-            Dimmer(v) => self.dimmer = v,
+            Dimmer(v) => {
+                self.dimmer = v;
+                emitter.emit_channel(ChannelStateChange::Level(v));
+            }
             Strobe(sc) => self.strobe.handle_state_change(sc),
             Color(c) => self.color = c,
             Twinkle(v) => self.twinkle = v,
@@ -77,9 +76,11 @@ impl WizardExtreme {
 }
 
 impl ControllableFixture for WizardExtreme {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
+        emitter.emit_channel(crate::channel::ChannelStateChange::Level(self.dimmer));
+
         let mut emit_strobe = |ssc| {
             Self::emit(Strobe(ssc), emitter);
         };
@@ -103,13 +104,21 @@ impl ControllableFixture for WizardExtreme {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
             emitter,
         );
         Ok(())
+    }
+
+    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
+        match msg {
+            ChannelControlMessage::Level(l) => {
+                self.handle_state_change(StateChange::Dimmer(*l), emitter);
+            }
+        }
     }
 }
 

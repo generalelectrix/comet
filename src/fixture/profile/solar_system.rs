@@ -5,8 +5,7 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 
-use super::animation_target::TargetedAnimationValues;
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -30,11 +29,7 @@ impl PatchAnimatedFixture for SolarSystem {
 impl SolarSystem {
     pub const GOBO_COUNT: usize = 8;
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             ShutterOpen(v) => self.shutter_open = v,
@@ -61,7 +56,7 @@ impl SolarSystem {
 }
 
 impl ControllableFixture for SolarSystem {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
         Self::emit(AutoShutter(self.auto_shutter), emitter);
@@ -74,7 +69,7 @@ impl ControllableFixture for SolarSystem {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

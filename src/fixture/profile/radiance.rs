@@ -6,7 +6,7 @@ use std::{collections::HashMap, time::Duration};
 use number::UnipolarFloat;
 
 use super::generic::Timer;
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::{master::FixtureGroupControls, util::unipolar_to_range};
 
 #[derive(Default, Debug)]
@@ -32,11 +32,7 @@ impl PatchFixture for Radiance {
 }
 
 impl Radiance {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Haze(v) => self.haze = v,
@@ -67,7 +63,7 @@ impl ControllableFixture for Radiance {
         }
     }
 
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Haze(self.haze), emitter);
         Self::emit(Fan(self.fan), emitter);
@@ -76,7 +72,7 @@ impl ControllableFixture for Radiance {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

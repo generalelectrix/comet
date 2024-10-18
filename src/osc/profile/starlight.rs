@@ -2,7 +2,7 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::starlight::{Starlight, StateChange};
 use crate::fixture::ControlMessagePayload;
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::fixture::generic::map_strobe;
+use crate::osc::profile::generic::map_strobe;
 use crate::osc::HandleOscStateChange;
 use crate::osc::{ControlMap, MapControls};
 use crate::util::bipolar_fader_with_detent;

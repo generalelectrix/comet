@@ -6,27 +6,27 @@ debug: False
 fixtures:
   - name: wizard_extreme
     addr: 16
-    selector: True
+    channel: True
   - name: wizard_extreme
     addr: 32
-    selector: True
+    channel: True
   - name: starlight
     addr: 200
-    selector: True
+    channel: True
   - name: starlight
     addr: 205
-    selector: True
+    channel: True
   - name: h2o
-    selector: True
+    channel: True
     addr: 50
   - name: h2o
-    selector: True
+    channel: True
     addr: 53
   - name: h2o
-    selector: True
+    channel: True
     addr: 56
   - name: h2o
-    selector: True
+    channel: True
     addr: 59
   - name: hypnotic
     addr: 100

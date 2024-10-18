@@ -4,7 +4,7 @@ use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Debug)]
@@ -35,7 +35,7 @@ impl Faderboard {
     fn handle_state_change(
         &mut self,
         sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) {
         let (chan, val) = sc;
         if chan >= self.channel_count {
@@ -56,7 +56,7 @@ impl NonAnimatedFixture for Faderboard {
 }
 
 impl ControllableFixture for Faderboard {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         for (i, v) in self.vals.iter().enumerate() {
             Self::emit((i, *v), emitter);
         }
@@ -65,7 +65,7 @@ impl ControllableFixture for Faderboard {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

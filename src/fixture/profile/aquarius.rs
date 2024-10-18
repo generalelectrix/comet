@@ -5,7 +5,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -22,11 +22,7 @@ impl PatchAnimatedFixture for Aquarius {
 }
 
 impl Aquarius {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             LampOn(v) => self.lamp_on = v,
@@ -41,7 +37,7 @@ impl AnimatedFixture for Aquarius {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &super::animation_target::TargetedAnimationValues<Self::Target>,
+        animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut rotation = self.rotation.val();
@@ -57,7 +53,7 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(LampOn(self.lamp_on), emitter);
         Self::emit(Rotation(self.rotation), emitter);
@@ -66,7 +62,7 @@ impl ControllableFixture for Aquarius {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

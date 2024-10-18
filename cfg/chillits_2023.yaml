@@ -2,13 +2,13 @@ debug: True
 fixtures:
   - name: wizard_extreme
     addr: 16
-    selector: True
+    channel: True
   - name: wizard_extreme
     addr: 300
-    selector: True
+    channel: True
   - name: wizard_extreme
     addr: 32
-    selector: True
+    channel: True
     group: stage_wiz
   - name: starlight
     addr: 210

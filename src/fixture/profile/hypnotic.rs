@@ -3,8 +3,7 @@
 use anyhow::Context;
 use number::BipolarFloat;
 
-use super::animation_target::TargetedAnimationValues;
-use super::prelude::*;
+use crate::fixture::prelude::*;
 use crate::util::bipolar_to_split_range;
 use num_derive::{FromPrimitive, ToPrimitive};
 
@@ -26,11 +25,7 @@ impl PatchAnimatedFixture for Hypnotic {
 }
 
 impl Hypnotic {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             RedLaserOn(v) => self.red_laser_on = v,
@@ -72,7 +67,7 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {
-    fn emit_state(&self, emitter: &mut dyn crate::osc::EmitControlMessage) {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(RedLaserOn(self.red_laser_on), emitter);
         Self::emit(GreenLaserOn(self.green_laser_on), emitter);
@@ -83,7 +78,7 @@ impl ControllableFixture for Hypnotic {
     fn control(
         &mut self,
         msg: FixtureControlMessage,
-        emitter: &mut dyn crate::osc::EmitControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(
             *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,

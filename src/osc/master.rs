@@ -5,7 +5,7 @@ use crate::fixture::ControlMessagePayload;
 use crate::master::{MasterControls, StateChange};
 
 use super::basic_controls::{button, Button};
-use super::fixture::generic::map_strobe;
+use super::profile::generic::map_strobe;
 use super::{ControlMap, HandleOscStateChange, MapControls};
 
 const GROUP: &str = "Master";

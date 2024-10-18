@@ -65,6 +65,7 @@ impl OscControlMessage {
     }
 
     /// Return the portion of the address following the control key.
+    /// This will include a leading / if not empty.
     pub fn addr_payload(&self) -> &str {
         if self.key_end == self.addr.len() {
             return "";
