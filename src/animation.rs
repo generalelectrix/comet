@@ -9,18 +9,22 @@ use crate::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
         Patch,
     },
-    osc::{EmitControlMessage, HandleStateChange},
+    osc::{EmitControlMessage, GroupControlMap, HandleStateChange, OscControlMessage},
     show::ChannelId,
 };
 
 pub struct AnimationUIState {
     selected_animator_by_channel: HashMap<ChannelId, usize>,
+    controls: GroupControlMap<ControlMessage>,
 }
 
 impl AnimationUIState {
     pub fn new(initial_channel: Option<ChannelId>) -> Self {
+        let mut controls = GroupControlMap::new();
+        Self::map_controls(&mut controls);
         let mut state = Self {
             selected_animator_by_channel: Default::default(),
+            controls,
         };
         if let Some(channel) = initial_channel {
             state.selected_animator_by_channel.insert(channel, 0);
@@ -47,13 +51,16 @@ impl AnimationUIState {
     /// Handle a control message.
     pub fn control(
         &mut self,
-        msg: ControlMessage,
+        msg: &OscControlMessage,
         channel: ChannelId,
         channels: &Channels,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
-        match msg {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        match ctl {
             ControlMessage::Animation(msg) => {
                 self.current_animation(channel, channels, patch)?
                     .anim_mut()

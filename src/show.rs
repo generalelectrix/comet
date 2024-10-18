@@ -34,7 +34,7 @@ const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
     pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
-        let mut channels = Channels::default();
+        let mut channels = Channels::new();
         let mut patch = Patch::default();
 
         let mut osc_controller = OscController::new(cfg.receive_port, cfg.controllers)?;
@@ -53,33 +53,30 @@ impl Show {
             }
             group.emit_state(ChannelStateEmitter::new(
                 channels.channel_for_fixture(group.key()),
-                &osc_controller.sender_with_metadata(None, TalkbackMode::All),
+                &osc_controller.sender_with_metadata(None),
             ));
         }
 
-        let master_controls = MasterControls::default();
-        osc_controller.map_controls(&master_controls);
-        master_controls.emit_state(&osc_controller.sender_with_metadata(None, TalkbackMode::All));
+        let master_controls = MasterControls::new();
+        master_controls.emit_state(&osc_controller.sender_with_metadata(None));
 
         let initial_channel = channels.validate_channel(0).ok();
 
-        osc_controller.map_controls(&channels);
         channels.emit_state(
             false,
             &mut patch,
-            &osc_controller.sender_with_metadata(None, TalkbackMode::All),
+            &osc_controller.sender_with_metadata(None),
         );
 
         let animation_ui_state = AnimationUIState::new(initial_channel);
 
         // Configure animation controls if we have at least one animated fixture.
         if patch.iter().any(FixtureGroup::is_animated) {
-            osc_controller.map_controls(&animation_ui_state);
             animation_ui_state.emit_state(
                 initial_channel.unwrap(),
                 &channels,
                 &mut patch,
-                &osc_controller.sender_with_metadata(None, TalkbackMode::All),
+                &osc_controller.sender_with_metadata(None),
             )?;
         };
 
@@ -149,7 +146,7 @@ impl Show {
         match ControlMessageType::parse(msg.entity_type()) {
             ControlMessageType::Master => {
                 self.master_controls.control(
-                    msg,
+                    &msg,
                     &self.channels,
                     &self.patch,
                     &self.animation_ui_state,
@@ -157,13 +154,13 @@ impl Show {
                 );
                 Ok(())
             }
-            ControlMessageType::Channel => self.channels.control(msg, &mut self.patch, &sender),
+            ControlMessageType::Channel => self.channels.control(&msg, &mut self.patch, &sender),
             ControlMessageType::Animation => {
                 let Some(channel) = self.channels.current_channel() else {
                     bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                 };
                 self.animation_ui_state.control(
-                    msg,
+                    &msg,
                     channel,
                     &self.channels,
                     &mut self.patch,

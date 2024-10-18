@@ -14,20 +14,12 @@ const USE_MASTER_STROBE_RATE: Button = button(GROUP, "UseMasterStrobeRate");
 const REFRESH_UI: Button = button(GROUP, "RefreshUI");
 
 impl MasterControls {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         map_strobe(map, "Strobe", &wrap_strobe);
         USE_MASTER_STROBE_RATE.map_state(map, |v| {
             ControlMessage::State(StateChange::UseMasterStrobeRate(v))
         });
         REFRESH_UI.map_trigger(map, || ControlMessage::RefreshUI)
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        Default::default()
     }
 }
 

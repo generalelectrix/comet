@@ -12,25 +12,15 @@ const N_CHANNELS: usize = 8;
 
 pub(crate) const GROUP: &str = "Show";
 
-impl MapControls for Channels {
-    fn group(&self) -> &'static str {
-        GROUP
-    }
-
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
-        CHANNEL_SELECT.map(map, |msg| {
-            ControlMessagePayload::Channel(ControlMessage::SelectChannel(msg))
-        });
+impl Channels {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        CHANNEL_SELECT.map(map, |msg| ControlMessage::SelectChannel(msg));
         CHANNEL_FADERS.map(map, |channel_id, level| {
-            Ok(ControlMessagePayload::Channel(ControlMessage::Control {
+            Ok(ControlMessage::Control {
                 channel_id: Some(channel_id),
                 msg: ChannelControlMessage::Level(level),
-            }))
+            })
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        Default::default()
     }
 }
 

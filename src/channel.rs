@@ -9,7 +9,9 @@ use serde::Deserialize;
 
 use crate::{
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
-    osc::{EmitControlMessage, EmitOscMessage, HandleStateChange},
+    osc::{
+        EmitControlMessage, EmitOscMessage, GroupControlMap, HandleStateChange, OscControlMessage,
+    },
 };
 
 /// The index of a channel.
@@ -28,7 +30,6 @@ impl Display for ChannelId {
     }
 }
 
-#[derive(Default)]
 pub struct Channels {
     /// Lookup from channel index to the fixture group assigned to that channel.
     channel_index: Vec<FixtureGroupKey>,
@@ -36,9 +37,21 @@ pub struct Channels {
     fixture_channel_index: HashMap<FixtureGroupKey, ChannelId>,
     /// The channel ID that is currently selected.
     current_channel: Option<ChannelId>,
+    controls: GroupControlMap<ControlMessage>,
 }
 
 impl Channels {
+    pub fn new() -> Self {
+        let mut controls = GroupControlMap::new();
+        Self::map_controls(&mut controls);
+        Self {
+            channel_index: Default::default(),
+            fixture_channel_index: Default::default(),
+            current_channel: Default::default(),
+            controls,
+        }
+    }
+
     /// Add new channel controls, wired to the specified fixture.
     pub fn add(&mut self, group: FixtureGroupKey) -> ChannelId {
         let id = ChannelId(self.channel_index.len());
@@ -161,11 +174,14 @@ impl Channels {
     /// Handle a control message.
     pub fn control(
         &mut self,
-        msg: ControlMessage,
+        msg: &OscControlMessage,
         patch: &mut Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
-        match msg {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        match ctl {
             ControlMessage::SelectChannel(g) => {
                 // Validate the channel.
                 let channel = self.validate_channel(g)?;
