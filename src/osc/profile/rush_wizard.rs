@@ -1,12 +1,12 @@
 use super::generic::map_strobe;
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::rush_wizard::{Color, RushWizard, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleOscStateChange};
-use crate::osc::{GroupControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap,  RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = RushWizard::NAME.0;
@@ -23,7 +23,7 @@ const TWINKLE: Button = button(GROUP, "Twinkle");
 
 impl EnumRadioButton for Color {}
 
-impl MapControls for RushWizard {
+impl RushWizard {
     fn group(&self) -> &'static str {
         GROUP
     }

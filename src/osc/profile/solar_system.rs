@@ -1,12 +1,12 @@
 use crate::fixture::solar_system::SolarSystem;
 use crate::fixture::solar_system::StateChange;
-use crate::fixture::ControlMessagePayload;
+
 use crate::osc::HandleOscStateChange;
 
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::button;
 use crate::osc::basic_controls::Button;
-use crate::osc::{GroupControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap,  RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = SolarSystem::NAME.0;
@@ -28,7 +28,7 @@ const REAR_GOBO_SELECT: RadioButton = RadioButton {
 const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
 
-impl MapControls for SolarSystem {
+impl SolarSystem {
     fn group(&self) -> &'static str {
         GROUP
     }

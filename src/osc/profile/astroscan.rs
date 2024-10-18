@@ -1,12 +1,12 @@
 use super::generic::map_strobe;
 use crate::fixture::astroscan::{Astroscan, Color, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleOscStateChange};
-use crate::osc::{GroupControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap,  RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Astroscan::NAME.0;
@@ -30,7 +30,7 @@ const ACTIVE: Button = button(GROUP, "Active");
 
 impl EnumRadioButton for Color {}
 
-impl MapControls for Astroscan {
+impl Astroscan {
     fn group(&self) -> &'static str {
         GROUP
     }

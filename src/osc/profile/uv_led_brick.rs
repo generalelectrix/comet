@@ -1,11 +1,11 @@
 use crate::fixture::uv_led_brick::{StateChange, UvLedBrick};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 
 const GROUP: &str = UvLedBrick::NAME.0;
 
-impl MapControls for UvLedBrick {
+impl UvLedBrick {
     fn group(&self) -> &'static str {
         GROUP
     }

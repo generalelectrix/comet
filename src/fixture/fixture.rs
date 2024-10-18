@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize};
 use super::animation_target::{
     ControllableTargetedAnimation, TargetedAnimationValues, TargetedAnimations, N_ANIM,
 };
-use super::{ControlMessagePayload, FixtureGroupControls};
+use super::FixtureGroupControls;
 use crate::channel::ChannelControlMessage;
 use crate::fixture::animation_target::AnimationTarget;
-use crate::osc::{FixtureStateEmitter, MapControls};
+use crate::osc::{FixtureStateEmitter, OscControlMessage};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FixtureType(pub &'static str);
@@ -33,33 +33,14 @@ impl Display for FixtureType {
     }
 }
 
-#[derive(Debug)]
-pub struct OwnedFixtureControlMessage(pub Box<dyn Any>);
-
-impl OwnedFixtureControlMessage {
-    pub fn borrowed(&self) -> FixtureControlMessage<'_> {
-        FixtureControlMessage(self.0.as_ref())
-    }
-}
-
-pub struct FixtureControlMessage<'a>(&'a dyn Any);
-
-impl<'a> FixtureControlMessage<'a> {
-    pub fn unpack_as<T: 'static>(&self) -> Result<&'a T> {
-        self.0
-            .downcast_ref()
-            .ok_or_else(|| anyhow!("could not unpack message as {}", type_name::<T>()))
-    }
-}
-
-pub trait ControllableFixture: MapControls {
+pub trait ControllableFixture {
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &FixtureStateEmitter);
 
-    /// Process the provided control message.
+    /// Process the provided OSC control message.
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()>;
 
@@ -150,24 +131,10 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
     pub animations: TargetedAnimations<F::Target>,
 }
 
-impl<F: AnimatedFixture> MapControls for FixtureWithAnimations<F> {
-    fn group(&self) -> &'static str {
-        self.fixture.group()
-    }
-
-    fn map_controls(&self, map: &mut crate::osc::GroupControlMap<ControlMessagePayload>) {
-        self.fixture.map_controls(map)
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)> {
-        self.fixture.fixture_type_aliases()
-    }
-}
-
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.fixture.control(msg, emitter)

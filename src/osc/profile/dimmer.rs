@@ -1,11 +1,11 @@
 use crate::fixture::dimmer::{Dimmer, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 
 const GROUP: &str = Dimmer::NAME.0;
 
-impl MapControls for Dimmer {
+impl Dimmer {
     fn group(&self) -> &'static str {
         GROUP
     }

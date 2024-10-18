@@ -1,11 +1,11 @@
 use crate::fixture::radiance::{Radiance, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 
 const GROUP: &str = Radiance::NAME.0;
 
-impl MapControls for Radiance {
+impl Radiance {
     fn group(&self) -> &'static str {
         GROUP
     }

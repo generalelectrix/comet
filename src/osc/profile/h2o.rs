@@ -1,10 +1,10 @@
 use crate::fixture::h2o::{FixedColor, StateChange, H2O};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
 use crate::osc::{ignore_payload, HandleOscStateChange};
-use crate::osc::{GroupControlMap, MapControls};
+use crate::osc::{GroupControlMap};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = H2O::NAME.0;
@@ -14,7 +14,7 @@ const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
 
 impl EnumRadioButton for FixedColor {}
 
-impl MapControls for H2O {
+impl H2O {
     fn group(&self) -> &'static str {
         GROUP
     }

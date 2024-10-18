@@ -1,9 +1,8 @@
 use crate::channel::{ChannelControlMessage, ChannelStateChange, Channels};
 use crate::channel::{ControlMessage, StateChange};
 
-use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{GroupControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, RadioButton};
 
 use super::fader_array::FaderArray;
 use super::label_array::LabelArray;

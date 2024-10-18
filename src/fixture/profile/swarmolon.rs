@@ -173,7 +173,7 @@ impl ControllableFixture for Swarmolon {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         match *msg.unpack_as::<ControlMessage>().context(Self::NAME)? {

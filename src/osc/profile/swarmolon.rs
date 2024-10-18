@@ -3,11 +3,11 @@ use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::swarmolon::{
     ControlMessage, DerbyColor, StateChange, Swarmolon, WhiteStrobeStateChange,
 };
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::radio_button::EnumRadioButton;
-use crate::osc::{get_bool, GroupControlMap, HandleOscStateChange, MapControls, RadioButton};
+use crate::osc::{get_bool, GroupControlMap, HandleOscStateChange,  RadioButton};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Swarmolon::NAME.0;
@@ -24,7 +24,7 @@ const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
 
 impl EnumRadioButton for DerbyColor {}
 
-impl MapControls for Swarmolon {
+impl Swarmolon {
     fn group(&self) -> &'static str {
         GROUP
     }

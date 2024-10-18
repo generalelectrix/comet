@@ -77,7 +77,7 @@ impl ControllableFixture for Hypnotic {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(

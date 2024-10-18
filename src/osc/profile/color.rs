@@ -1,11 +1,11 @@
 use crate::fixture::color::{Color, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 
 const GROUP: &str = Color::NAME.0;
 
-impl MapControls for Color {
+impl Color {
     fn group(&self) -> &'static str {
         GROUP
     }

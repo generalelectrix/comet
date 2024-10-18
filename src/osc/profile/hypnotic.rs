@@ -1,8 +1,8 @@
 use crate::fixture::hypnotic::{Hypnotic, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Hypnotic::NAME.0;
@@ -11,7 +11,7 @@ const RED_LASER_ON: Button = button(GROUP, "RedLaserOn");
 const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
 const BLUE_LASER_ON: Button = button(GROUP, "BlueLaserOn");
 
-impl MapControls for Hypnotic {
+impl Hypnotic {
     fn group(&self) -> &'static str {
         GROUP
     }

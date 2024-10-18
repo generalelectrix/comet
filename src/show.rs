@@ -9,7 +9,7 @@ use crate::{
     clock_service::ClockService,
     config::Config,
     dmx::DmxBuffer,
-    fixture::{ControlMessagePayload, FixtureGroup, Patch},
+    fixture::{FixtureGroup, FixtureGroupKey, Patch},
     master::MasterControls,
     osc::{ControlMessageType, OscController, TalkbackMode},
 };
@@ -43,14 +43,7 @@ impl Show {
             patch.patch(&mut channels, fixture)?;
         }
 
-        // Only patch a fixture type's controls once.
-        let mut patched_controls = HashSet::new();
-
         for group in patch.iter() {
-            if !patched_controls.contains(group.fixture_type()) {
-                osc_controller.map_controls(group);
-                patched_controls.insert(group.fixture_type());
-            }
             group.emit_state(ChannelStateEmitter::new(
                 channels.channel_for_fixture(group.key()),
                 &osc_controller.sender_with_metadata(None),
@@ -168,12 +161,22 @@ impl Show {
                 )
             }
             ControlMessageType::Fixture => {
-                let Some(group_key) = msg.key.as_ref() else {
-                    bail!("no fixture group key was provided with a fixture control message");
+                let Some(fixture_type) = self.patch.lookup_fixture_type(msg.entity_type()) else {
+                    bail!(
+                        "entity type \"{}\" not registered with patch, from OSC message {msg:?}",
+                        msg.entity_type()
+                    );
                 };
-                self.patch.get_mut(group_key)?.control(
-                    fixture_control_msg.borrowed(),
-                    ChannelStateEmitter::new(self.channels.channel_for_fixture(group_key), &sender),
+                let group_key = FixtureGroupKey {
+                    fixture: fixture_type,
+                    group: msg.group,
+                };
+                self.patch.get_mut(&group_key)?.control(
+                    &msg,
+                    ChannelStateEmitter::new(
+                        self.channels.channel_for_fixture(&group_key),
+                        &sender,
+                    ),
                 )
             }
         }

@@ -1,10 +1,10 @@
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::lumasphere::StrobeStateChange;
 use crate::fixture::lumasphere::{Lumasphere, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
@@ -13,7 +13,7 @@ const GROUP: &str = Lumasphere::NAME.0;
 const BALL_START: Button = button(GROUP, "ball_start");
 const COLOR_START: Button = button(GROUP, "color_start");
 
-impl MapControls for Lumasphere {
+impl Lumasphere {
     fn group(&self) -> &'static str {
         GROUP
     }

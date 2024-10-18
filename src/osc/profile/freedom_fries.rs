@@ -1,13 +1,13 @@
 use crate::fixture::color::StateChange as ColorStateChange;
 use crate::fixture::freedom_fries::{FreedomFries as FreedomFriesFixture, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::label_array::LabelArray;
 use crate::osc::profile::color::map_color;
 use crate::osc::profile::generic::map_strobe;
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 use crate::util::unipolar_to_range;
 
 const GROUP: &str = FreedomFriesFixture::NAME.0;
@@ -22,7 +22,7 @@ const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
     empty_label: "",
 };
 
-impl MapControls for FreedomFriesFixture {
+impl FreedomFriesFixture {
     fn group(&self) -> &'static str {
         GROUP
     }

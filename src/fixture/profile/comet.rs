@@ -107,7 +107,7 @@ impl ControllableFixture for Comet {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.control(

@@ -1,6 +1,6 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
 use crate::fixture::FixtureGroupKey;
-use crate::fixture::{ControlMessage, ControlMessagePayload, FixtureType, GroupName};
+use crate::fixture::{FixtureType, GroupName};
 use anyhow::Result;
 use anyhow::{bail, Context};
 use log::{error, info};
@@ -32,15 +32,6 @@ mod register;
 
 pub use control_message::OscControlMessage;
 pub use register::prompt_osc_config;
-
-/// Map OSC control inputs for a fixture type.
-pub trait MapControls {
-    /// The group prefix to use for these OSC controls.
-    fn group(&self) -> &'static str;
-
-    /// Add OSC control mappings to the provided control map.
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>);
-}
 
 /// Emit control messages.
 /// Will be extended in the future to potentially cover more cases.

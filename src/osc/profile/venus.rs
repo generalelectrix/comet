@@ -1,8 +1,8 @@
 use crate::fixture::venus::{StateChange, Venus};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 use crate::util::bipolar_fader_with_detent;
 use crate::util::unipolar_fader_with_detent;
 
@@ -10,7 +10,7 @@ const GROUP: &str = Venus::NAME.0;
 
 const LAMP_ON: Button = button(GROUP, "LampControl");
 
-impl MapControls for Venus {
+impl Venus {
     fn group(&self) -> &'static str {
         GROUP
     }

@@ -40,6 +40,7 @@ type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 #[derive(Default)]
 pub struct Patch {
     fixtures: HashMap<FixtureGroupKey, FixtureGroup>,
+    fixture_type_lookup: HashMap<&'static str, FixtureType>,
     used_addrs: UsedAddrs,
 }
 
@@ -122,6 +123,7 @@ impl Patch {
             candidate.channel_count,
             candidate.fixture,
         );
+        self.fixture_type_lookup.insert(key.fixture.0, key.fixture);
         self.fixtures.insert(key, group);
 
         Ok(())
@@ -166,6 +168,11 @@ impl Patch {
             }
         }
         Ok(used_addrs)
+    }
+
+    /// Look up the static version of a fixture type registered with the patch.
+    pub fn lookup_fixture_type(&self, t: &str) -> Option<FixtureType> {
+        self.fixture_type_lookup.get(t).copied()
     }
 
     /// Get the fixture/channel patched with this key.

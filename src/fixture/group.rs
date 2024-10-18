@@ -11,13 +11,12 @@ use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
 use super::animation_target::ControllableTargetedAnimation;
-use super::fixture::{Fixture, FixtureControlMessage, FixtureType};
+use super::fixture::{Fixture, FixtureType};
 use super::prelude::ChannelStateEmitter;
-use super::ControlMessagePayload;
 use crate::channel::ChannelControlMessage;
 use crate::dmx::DmxBuffer;
 use crate::master::{FixtureGroupControls, MasterControls};
-use crate::osc::{FixtureStateEmitter, MapControls};
+use crate::osc::{FixtureStateEmitter, OscControlMessage};
 
 #[derive(Debug)]
 pub struct FixtureGroup {
@@ -91,7 +90,7 @@ impl FixtureGroup {
     /// Process the provided control message.
     pub fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: ChannelStateEmitter,
     ) -> anyhow::Result<()> {
         self.fixture
@@ -152,20 +151,6 @@ pub struct GroupFixtureConfig {
     pub universe: usize,
     /// True if the fixture should be mirrored in mirror mode.
     pub mirror: bool,
-}
-
-impl MapControls for FixtureGroup {
-    fn group(&self) -> &'static str {
-        self.fixture.group()
-    }
-
-    fn map_controls(&self, map: &mut crate::osc::GroupControlMap<ControlMessagePayload>) {
-        self.fixture.map_controls(map);
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)> {
-        self.fixture.fixture_type_aliases()
-    }
 }
 
 /// Uniquely identify a specific fixture group.

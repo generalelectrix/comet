@@ -1,12 +1,11 @@
 //! Control mappings for show-level controls.
 
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::ControlMessagePayload;
 use crate::master::{ControlMessage, MasterControls, StateChange};
 
 use super::basic_controls::{button, Button};
 use super::profile::generic::map_strobe;
-use super::{GroupControlMap, HandleOscStateChange, MapControls};
+use super::{GroupControlMap, HandleOscStateChange};
 
 pub(crate) const GROUP: &str = "Master";
 

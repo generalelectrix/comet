@@ -1,12 +1,12 @@
 use super::generic::map_strobe;
 use crate::fixture::colordynamic::{Colordynamic, StateChange};
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
 
 use crate::osc::basic_controls::{button, Button};
 use crate::osc::HandleOscStateChange;
-use crate::osc::{GroupControlMap, MapControls};
+use crate::osc::{GroupControlMap};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Colordynamic::NAME.0;
@@ -14,7 +14,7 @@ const GROUP: &str = Colordynamic::NAME.0;
 const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
 const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
 
-impl MapControls for Colordynamic {
+impl Colordynamic {
     fn group(&self) -> &'static str {
         GROUP
     }

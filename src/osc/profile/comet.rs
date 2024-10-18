@@ -1,8 +1,8 @@
 use crate::fixture::generic::GenericStrobeStateChange;
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, HandleOscStateChange,  RadioButton};
 use crate::{
     fixture::comet::{Comet, ControlMessage, StateChange, Step as Direction},
     osc::quadratic,
@@ -28,7 +28,7 @@ const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
     x_primary_coordinate: true,
 };
 
-impl MapControls for Comet {
+impl Comet {
     fn group(&self) -> &'static str {
         GROUP
     }

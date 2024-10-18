@@ -1,8 +1,8 @@
 use crate::fixture::faderboard::{Faderboard, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchFixture;
 use crate::osc::fader_array::FaderArray;
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 
 const GROUP: &str = Faderboard::NAME.0;
 
@@ -11,7 +11,7 @@ const CONTROLS: FaderArray = FaderArray {
     control: "Fader",
 };
 
-impl MapControls for Faderboard {
+impl Faderboard {
     fn group(&self) -> &'static str {
         GROUP
     }

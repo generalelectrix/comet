@@ -1,14 +1,14 @@
 use crate::fixture::aquarius::{Aquarius, StateChange};
-use crate::fixture::{prelude::*, ControlMessagePayload};
+use crate::fixture::prelude::*;
 use crate::osc::basic_controls::{button, Button};
-use crate::osc::{GroupControlMap, HandleOscStateChange, MapControls};
+use crate::osc::{GroupControlMap, HandleOscStateChange};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Aquarius::NAME.0;
 
 const LAMP_ON: Button = button(GROUP, "LampOn");
 
-impl MapControls for Aquarius {
+impl Aquarius {
     fn group(&self) -> &'static str {
         GROUP
     }

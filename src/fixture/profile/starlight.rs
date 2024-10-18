@@ -66,7 +66,7 @@ impl AnimatedFixture for Starlight {
 impl ControllableFixture for Starlight {
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.handle_state_change(

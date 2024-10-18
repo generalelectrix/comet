@@ -1,15 +1,15 @@
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::starlight::{Starlight, StateChange};
-use crate::fixture::ControlMessagePayload;
+
 use crate::fixture::PatchAnimatedFixture;
 use crate::osc::profile::generic::map_strobe;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{GroupControlMap, MapControls};
+use crate::osc::{GroupControlMap};
 use crate::util::bipolar_fader_with_detent;
 
 const GROUP: &str = Starlight::NAME.0;
 
-impl MapControls for Starlight {
+impl Starlight {
     fn group(&self) -> &'static str {
         GROUP
     }
