@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{Phase, UnipolarFloat};
 

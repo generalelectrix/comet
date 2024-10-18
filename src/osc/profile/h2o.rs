@@ -21,10 +21,10 @@ impl H2O {
 
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        map.add_unipolar("Dimmer", |v| Dimmer(v));
+        map.add_unipolar("Dimmer", Dimmer);
         map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
         map.add_enum_handler(FIXED_COLOR, ignore_payload, |c, _| FixedColor(c));
-        COLOR_ROTATE.map_state(map, |v| ColorRotate(v));
+        COLOR_ROTATE.map_state(map, ColorRotate);
         map.add_bipolar("ColorRotation", |v| {
             ColorRotation(bipolar_fader_with_detent(v))
         });

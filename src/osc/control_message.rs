@@ -4,8 +4,6 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use rosc::{OscMessage, OscType};
 
-use crate::fixture::GroupName;
-
 use super::{OscClientId, OscError};
 
 /// Wrapper type for OSC messages that provides a simplification for our domain.

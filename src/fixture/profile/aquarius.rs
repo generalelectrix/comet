@@ -1,6 +1,5 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};

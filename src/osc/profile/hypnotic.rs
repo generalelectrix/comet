@@ -17,9 +17,9 @@ impl Hypnotic {
     }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        RED_LASER_ON.map_state(map, |v| RedLaserOn(v));
-        GREEN_LASER_ON.map_state(map, |v| GreenLaserOn(v));
-        BLUE_LASER_ON.map_state(map, |v| BlueLaserOn(v));
+        RED_LASER_ON.map_state(map, RedLaserOn);
+        GREEN_LASER_ON.map_state(map, GreenLaserOn);
+        BLUE_LASER_ON.map_state(map, BlueLaserOn);
 
         map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
     }

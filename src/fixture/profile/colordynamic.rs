@@ -1,7 +1,6 @@
 //! SGM Colordynamic 575
 //! The granddaddy Aquarius.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 

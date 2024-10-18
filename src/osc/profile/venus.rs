@@ -29,7 +29,7 @@ impl Venus {
         map.add_bipolar("ColorRotation", |v| {
             ColorRotation(bipolar_fader_with_detent(v))
         });
-        LAMP_ON.map_state(map, |v| LampOn(v));
+        LAMP_ON.map_state(map, LampOn);
     }
 }
 

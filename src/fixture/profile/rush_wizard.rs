@@ -1,6 +1,5 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
-use anyhow::Context;
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 

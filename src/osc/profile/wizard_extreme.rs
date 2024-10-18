@@ -35,23 +35,23 @@ impl WizardExtreme {
     }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        map.add_unipolar("Dimmer", |v| Dimmer(v));
+        map.add_unipolar("Dimmer", Dimmer);
         map_strobe(map, "Strobe", &wrap_strobe);
         map.add_enum_handler(COLOR, ignore_payload, |c, _| Color(c));
-        TWINKLE.map_state(map, |v| Twinkle(v));
-        map.add_unipolar("TwinkleSpeed", |v| TwinkleSpeed(v));
-        GOBO_SELECT.map(map, |v| Gobo(v));
+        TWINKLE.map_state(map, Twinkle);
+        map.add_unipolar("TwinkleSpeed", TwinkleSpeed);
+        GOBO_SELECT.map(map, Gobo);
         map.add_bipolar("DrumRotation", |v| {
             DrumRotation(bipolar_fader_with_detent(v))
         });
-        MIRROR_DRUM_ROTATION.map_state(map, |v| MirrorDrumRotation(v));
-        map.add_bipolar("DrumSwivel", |v| DrumSwivel(v));
-        MIRROR_DRUM_SWIVEL.map_state(map, |v| MirrorDrumSwivel(v));
+        MIRROR_DRUM_ROTATION.map_state(map, MirrorDrumRotation);
+        map.add_bipolar("DrumSwivel", DrumSwivel);
+        MIRROR_DRUM_SWIVEL.map_state(map, MirrorDrumSwivel);
         map.add_bipolar("ReflectorRotation", |v| {
             ReflectorRotation(bipolar_fader_with_detent(v))
         });
-        MIRROR_REFLECTOR_ROTATION.map_state(map, |v| MirrorReflectorRotation(v));
-        ACTIVE.map_state(map, |v| Active(v));
+        MIRROR_REFLECTOR_ROTATION.map_state(map, MirrorReflectorRotation);
+        ACTIVE.map_state(map, Active);
     }
 }
 

@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};

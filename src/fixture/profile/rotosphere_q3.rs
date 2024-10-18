@@ -1,6 +1,5 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};

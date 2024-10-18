@@ -89,8 +89,8 @@ impl AnimationUIState {
         USE_AUDIO_SPEED.map_trigger(map, || WrapAnimation(ToggleUseAudioSpeed));
         USE_AUDIO_SIZE.map_trigger(map, || WrapAnimation(ToggleUseAudioSize));
 
-        ANIMATION_TARGET_SELECT.map(map, |msg| AnimationControlMessage::Target(msg));
-        ANIMATION_SELECT.map(map, |msg| AnimationControlMessage::SelectAnimation(msg));
+        ANIMATION_TARGET_SELECT.map(map, AnimationControlMessage::Target);
+        ANIMATION_SELECT.map(map, AnimationControlMessage::SelectAnimation);
     }
 }
 

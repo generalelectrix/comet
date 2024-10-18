@@ -52,7 +52,7 @@ impl Swarmolon {
         // "Global" strobe rate control, for simpler one-fader control.
         // This is a bit of a hack, since it has no talkback channel.
         // This will need to be refactored if we want to use uniform talkback.
-        map.add_unipolar("StrobeRate", |v| StrobeRate(v));
+        map.add_unipolar("StrobeRate", StrobeRate);
     }
 }
 

@@ -1,6 +1,5 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
 
-use anyhow::Context;
 use number::BipolarFloat;
 
 use crate::fixture::prelude::*;

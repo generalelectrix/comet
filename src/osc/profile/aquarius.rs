@@ -15,7 +15,7 @@ impl Aquarius {
 
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        LAMP_ON.map_state(map, |v| LampOn(v));
+        LAMP_ON.map_state(map, LampOn);
         map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
     }
 }

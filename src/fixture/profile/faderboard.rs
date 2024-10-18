@@ -1,6 +1,5 @@
 //! A DMX faderboard utility.
 
-use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 

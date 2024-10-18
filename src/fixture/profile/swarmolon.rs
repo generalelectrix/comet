@@ -1,6 +1,6 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 //! Also
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 

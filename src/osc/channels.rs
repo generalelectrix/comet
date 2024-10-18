@@ -13,7 +13,7 @@ pub(crate) const GROUP: &str = "Show";
 
 impl Channels {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        CHANNEL_SELECT.map(map, |msg| ControlMessage::SelectChannel(msg));
+        CHANNEL_SELECT.map(map, ControlMessage::SelectChannel);
         CHANNEL_FADERS.map(map, |channel_id, level| {
             Ok(ControlMessage::Control {
                 channel_id: Some(channel_id),

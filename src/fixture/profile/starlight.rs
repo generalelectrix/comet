@@ -1,6 +1,5 @@
 //! Control profile for the "house light" Starlight white laser moonflower.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 

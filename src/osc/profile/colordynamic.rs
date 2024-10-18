@@ -21,12 +21,12 @@ impl Colordynamic {
 
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        SHUTTER_OPEN.map_state(map, |v| ShutterOpen(v));
+        SHUTTER_OPEN.map_state(map, ShutterOpen);
         map_strobe(map, "Strobe", &wrap_strobe);
 
-        COLOR_ROTATION_ON.map_state(map, |v| ColorRotationOn(v));
-        map.add_unipolar("ColorRotationSpeed", |v| ColorRotationSpeed(v));
-        map.add_unipolar("ColorPosition", |v| ColorPosition(v));
+        COLOR_ROTATION_ON.map_state(map, ColorRotationOn);
+        map.add_unipolar("ColorRotationSpeed", ColorRotationSpeed);
+        map.add_unipolar("ColorPosition", ColorPosition);
         map.add_bipolar("FiberRotation", |v| {
             FiberRotation(bipolar_fader_with_detent(v))
         });

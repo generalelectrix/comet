@@ -1,6 +1,6 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::{collections::HashMap, time::Duration};
 
 use number::UnipolarFloat;

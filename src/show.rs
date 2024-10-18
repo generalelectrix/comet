@@ -1,7 +1,4 @@
-use std::{
-    collections::HashSet,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crate::{
     animation::AnimationUIState,
@@ -11,7 +8,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
-    osc::{ControlMessageType, OscController, TalkbackMode},
+    osc::{ControlMessageType, OscController},
 };
 
 pub use crate::channel::ChannelId;
@@ -37,7 +34,7 @@ impl Show {
         let mut channels = Channels::new();
         let mut patch = Patch::default();
 
-        let mut osc_controller = OscController::new(cfg.receive_port, cfg.controllers)?;
+        let osc_controller = OscController::new(cfg.receive_port, cfg.controllers)?;
 
         for fixture in cfg.fixtures.into_iter() {
             patch.patch(&mut channels, fixture)?;

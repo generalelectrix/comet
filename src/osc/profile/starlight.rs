@@ -15,7 +15,7 @@ impl Starlight {
     }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        map.add_unipolar("Dimmer", |v| Dimmer(v));
+        map.add_unipolar("Dimmer", Dimmer);
         map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
         map_strobe(map, "Strobe", &wrap_strobe);
     }

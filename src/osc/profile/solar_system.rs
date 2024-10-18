@@ -34,13 +34,13 @@ impl SolarSystem {
     }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        SHUTTER_OPEN.map_state(map, |v| ShutterOpen(v));
-        AUTO_SHUTTER.map_state(map, |v| AutoShutter(v));
-        FRONT_GOBO_SELECT.map(map, |v| FrontGobo(v));
+        SHUTTER_OPEN.map_state(map, ShutterOpen);
+        AUTO_SHUTTER.map_state(map, AutoShutter);
+        FRONT_GOBO_SELECT.map(map, FrontGobo);
         map.add_bipolar("FrontRotation", |v| {
             FrontRotation(bipolar_fader_with_detent(v))
         });
-        REAR_GOBO_SELECT.map(map, |v| RearGobo(v));
+        REAR_GOBO_SELECT.map(map, RearGobo);
         map.add_bipolar("RearRotation", |v| {
             RearRotation(bipolar_fader_with_detent(v))
         });

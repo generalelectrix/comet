@@ -2,7 +2,6 @@
 
 use std::time::Duration;
 
-use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use crate::fixture::prelude::*;

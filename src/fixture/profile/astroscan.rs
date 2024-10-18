@@ -1,6 +1,5 @@
 //! Clay Paky Astroscan - drunken sailor extraordinaire
 
-use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};

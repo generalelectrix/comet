@@ -1,10 +1,4 @@
-use std::any::Any;
-use std::fmt::Debug;
-
-use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::channel::ControlMessage as ChannelsControlMessage;
-use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
-use crate::osc::{OscClientId, TalkbackMode};
+use crate::master::{MasterControls, Strobe};
 
 pub mod animation_target;
 #[allow(clippy::module_inception)]
@@ -13,7 +7,6 @@ mod group;
 mod patch;
 mod profile;
 
-pub use fixture::FixtureType;
 pub use group::{FixtureGroup, FixtureGroupKey, GroupName};
 pub use patch::{Patch, PatchAnimatedFixture, PatchFixture};
 pub use profile::*;

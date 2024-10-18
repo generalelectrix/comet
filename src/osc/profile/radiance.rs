@@ -11,8 +11,8 @@ impl Radiance {
     }
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        map.add_unipolar("Haze", |v| Haze(v));
-        map.add_unipolar("Fan", |v| Fan(v));
+        map.add_unipolar("Haze", Haze);
+        map.add_unipolar("Fan", Fan);
     }
 }
 

@@ -1,8 +1,7 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
-use crate::fixture::FixtureGroupKey;
-use crate::fixture::{FixtureType, GroupName};
+use crate::fixture::GroupName;
+use anyhow::bail;
 use anyhow::Result;
-use anyhow::{bail, Context};
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};

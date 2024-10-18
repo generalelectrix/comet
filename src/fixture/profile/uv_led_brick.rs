@@ -1,6 +1,5 @@
 //! Control profile for a uv_led_brick.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};

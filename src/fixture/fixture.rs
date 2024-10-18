@@ -1,11 +1,8 @@
 //! Types related to specifying and controlling individual fixture models.
-use anyhow::Result;
-use std::any::{type_name, Any};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 use std::time::Duration;
 
-use anyhow::anyhow;
 use number::{Phase, UnipolarFloat};
 use serde::{Deserialize, Serialize};
 
@@ -200,6 +197,6 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
 
     fn get_animation(&self, index: usize) -> Option<&dyn ControllableTargetedAnimation> {
         let animation = self.animations.get(index)?;
-        Some(&*animation)
+        Some(animation)
     }
 }

@@ -29,14 +29,14 @@ impl Lumasphere {
         map.add_bipolar("ball_rotation", |v| {
             BallRotation(bipolar_fader_with_detent(v))
         });
-        BALL_START.map_state(map, |v| BallStart(v));
+        BALL_START.map_state(map, BallStart);
 
         map.add_unipolar("color_rotation", |v| {
             ColorRotation(unipolar_fader_with_detent(v))
         });
-        COLOR_START.map_state(map, |v| ColorStart(v));
-        map_strobe(map, 1, |inner| Strobe1(inner));
-        map_strobe(map, 2, |inner| Strobe2(inner));
+        COLOR_START.map_state(map, ColorStart);
+        map_strobe(map, 1, Strobe1);
+        map_strobe(map, 2, Strobe2);
     }
 }
 

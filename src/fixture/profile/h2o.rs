@@ -1,6 +1,5 @@
 //! Intuitive control profile for the American DJ H2O DMX Pro.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 

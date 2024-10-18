@@ -37,25 +37,25 @@ impl Astroscan {
 
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
-        LAMP_ON.map_state(map, |v| LampOn(v));
-        map.add_unipolar("Dimmer", |v| Dimmer(v));
+        LAMP_ON.map_state(map, LampOn);
+        map.add_unipolar("Dimmer", Dimmer);
         map_strobe(map, "Strobe", &wrap_strobe);
         map.add_enum_handler(COLOR, ignore_payload, |c, _| Color(c));
-        map.add_unipolar("Iris", |v| Iris(v));
-        GOBO_SELECT.map(map, |v| Gobo(v));
+        map.add_unipolar("Iris", Iris);
+        GOBO_SELECT.map(map, Gobo);
         map.add_bipolar("GoboRotation", |v| {
             GoboRotation(bipolar_fader_with_detent(v))
         });
-        MIRROR_GOBO_ROTATION.map_state(map, |v| MirrorGoboRotation(v));
+        MIRROR_GOBO_ROTATION.map_state(map, MirrorGoboRotation);
         map.add_bipolar("MirrorRotation", |v| {
             MirrorRotation(bipolar_fader_with_detent(v))
         });
-        MIRROR_MIRROR_ROTATION.map_state(map, |v| MirrorMirrorRotation(v));
+        MIRROR_MIRROR_ROTATION.map_state(map, MirrorMirrorRotation);
         map.add_bipolar("Pan", |v| Pan(bipolar_fader_with_detent(v)));
-        MIRROR_PAN.map_state(map, |v| MirrorPan(v));
+        MIRROR_PAN.map_state(map, MirrorPan);
         map.add_bipolar("Tilt", |v| Tilt(bipolar_fader_with_detent(v)));
-        MIRROR_TILT.map_state(map, |v| MirrorTilt(v));
-        ACTIVE.map_state(map, |v| Active(v));
+        MIRROR_TILT.map_state(map, MirrorTilt);
+        ACTIVE.map_state(map, Active);
     }
 }
 

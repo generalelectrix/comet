@@ -3,7 +3,6 @@
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
-use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;

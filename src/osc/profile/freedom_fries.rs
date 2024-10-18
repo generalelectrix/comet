@@ -32,15 +32,15 @@ impl FreedomFriesFixture {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         use StateChange::*;
 
-        map.add_unipolar("Dimmer", |v| Dimmer(v));
+        map.add_unipolar("Dimmer", Dimmer);
         map_color(map, &wrap_color);
         map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_unipolar("Speed", |v| Speed(v));
-        RUN_PROGRAM.map_state(map, |v| RunProgram(v));
+        map.add_unipolar("Speed", Speed);
+        RUN_PROGRAM.map_state(map, RunProgram);
         map.add_unipolar("Program", |v| {
             Program(unipolar_to_range(0, FreedomFriesFixture::PROGRAM_COUNT as u8 - 1, v) as usize)
         });
-        PROGRAM_CYCLE_ALL.map_state(map, |v| ProgramCycleAll(v));
+        PROGRAM_CYCLE_ALL.map_state(map, ProgramCycleAll);
     }
 }
 

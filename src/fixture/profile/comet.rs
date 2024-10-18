@@ -1,4 +1,3 @@
-use anyhow::Context;
 use log::error;
 use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
