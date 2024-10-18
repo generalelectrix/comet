@@ -8,7 +8,7 @@ use super::{OscClientId, OscError};
 
 /// Wrapper type for OSC messages that provides a simplification for our domain.
 /// This includes pre-processing of the address to identify the breaks, as well
-/// as parsing of the group ID (or filling in a placeholder).
+/// as parsing of the group ID.
 #[derive(Debug)]
 pub struct OscControlMessage {
     /// The ID of the client that originated this message.

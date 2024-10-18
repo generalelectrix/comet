@@ -125,7 +125,7 @@ impl Channels {
     pub fn emit_state(
         &self,
         selected_fixture_only: bool,
-        patch: &mut Patch,
+        patch: &Patch,
         emitter: &dyn EmitControlMessage,
     ) {
         if let Some(channel) = self.current_channel {

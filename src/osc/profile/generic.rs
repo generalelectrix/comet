@@ -1,11 +1,10 @@
 use crate::fixture::generic::GenericStrobeStateChange;
 
-use crate::fixture::ControlMessagePayload;
 use crate::osc::GroupControlMap;
 
-pub fn map_strobe<F>(map: &mut GroupControlMap<ControlMessagePayload>, name: &str, wrap: &'static F)
+pub fn map_strobe<F, T>(map: &mut GroupControlMap<T>, name: &str, wrap: &'static F)
 where
-    F: Fn(GenericStrobeStateChange) -> ControlMessagePayload + 'static,
+    F: Fn(GenericStrobeStateChange) -> T + 'static,
 {
     map.add_bool(&format!("{}On", name), move |v| {
         wrap(GenericStrobeStateChange::On(v))

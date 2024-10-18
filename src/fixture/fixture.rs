@@ -108,7 +108,11 @@ pub trait Fixture: ControllableFixture + Debug {
     fn is_animated(&self) -> bool;
 
     /// Get the animation with the provided index.
-    fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation>;
+    fn get_animation(&self, index: usize) -> Option<&dyn ControllableTargetedAnimation>;
+
+    /// Get the animation with the provided index, mutably.
+    fn get_animation_mut(&mut self, index: usize)
+        -> Option<&mut dyn ControllableTargetedAnimation>;
 }
 
 impl<T> Fixture for T
@@ -128,7 +132,14 @@ where
         false
     }
 
-    fn get_animation(&mut self, _index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
+    fn get_animation_mut(
+        &mut self,
+        _index: usize,
+    ) -> Option<&mut dyn ControllableTargetedAnimation> {
+        None
+    }
+
+    fn get_animation(&self, _index: usize) -> Option<&dyn ControllableTargetedAnimation> {
         None
     }
 }
@@ -205,8 +216,16 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
         true
     }
 
-    fn get_animation(&mut self, index: usize) -> Option<&mut dyn ControllableTargetedAnimation> {
+    fn get_animation_mut(
+        &mut self,
+        index: usize,
+    ) -> Option<&mut dyn ControllableTargetedAnimation> {
         let animation = self.animations.get_mut(index)?;
         Some(&mut *animation)
+    }
+
+    fn get_animation(&self, index: usize) -> Option<&dyn ControllableTargetedAnimation> {
+        let animation = self.animations.get(index)?;
+        Some(&*animation)
     }
 }

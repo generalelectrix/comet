@@ -2,28 +2,28 @@
 
 use crate::fixture::generic::GenericStrobeStateChange;
 use crate::fixture::ControlMessagePayload;
-use crate::master::{MasterControls, StateChange};
+use crate::master::{ControlMessage, MasterControls, StateChange};
 
 use super::basic_controls::{button, Button};
 use super::profile::generic::map_strobe;
 use super::{GroupControlMap, HandleOscStateChange, MapControls};
 
-const GROUP: &str = "Master";
+pub(crate) const GROUP: &str = "Master";
 
 const USE_MASTER_STROBE_RATE: Button = button(GROUP, "UseMasterStrobeRate");
 const REFRESH_UI: Button = button(GROUP, "RefreshUI");
 
-impl MapControls for MasterControls {
+impl MasterControls {
     fn group(&self) -> &'static str {
         GROUP
     }
 
-    fn map_controls(&self, map: &mut GroupControlMap<ControlMessagePayload>) {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
         map_strobe(map, "Strobe", &wrap_strobe);
         USE_MASTER_STROBE_RATE.map_state(map, |v| {
-            ControlMessagePayload::Master(StateChange::UseMasterStrobeRate(v))
+            ControlMessage::State(StateChange::UseMasterStrobeRate(v))
         });
-        REFRESH_UI.map_trigger(map, || ControlMessagePayload::RefreshUI)
+        REFRESH_UI.map_trigger(map, || ControlMessage::RefreshUI)
     }
 
     fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
@@ -31,8 +31,8 @@ impl MapControls for MasterControls {
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessagePayload {
-    ControlMessagePayload::Master(StateChange::Strobe(sc))
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    ControlMessage::State(StateChange::Strobe(sc))
 }
 
 impl HandleOscStateChange<StateChange> for MasterControls {}

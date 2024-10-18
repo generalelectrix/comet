@@ -10,7 +10,7 @@ use super::label_array::LabelArray;
 
 const N_CHANNELS: usize = 8;
 
-const GROUP: &str = "Show";
+pub(crate) const GROUP: &str = "Show";
 
 impl MapControls for Channels {
     fn group(&self) -> &'static str {

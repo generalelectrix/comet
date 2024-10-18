@@ -33,7 +33,7 @@ impl AnimationUIState {
         &self,
         channel: ChannelId,
         channels: &Channels,
-        patch: &mut Patch,
+        patch: &Patch,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         let (ta, index) = self.current_animation_with_index(channel, channels, patch)?;
@@ -78,7 +78,7 @@ impl AnimationUIState {
         Ok(())
     }
 
-    fn current_animation_with_index<'a>(
+    fn current_animation_with_index_mut<'a>(
         &self,
         channel: ChannelId,
         channels: &'a Channels,
@@ -86,6 +86,21 @@ impl AnimationUIState {
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
         let animation_index = self.animation_index_for_channel(channel);
         let group = channels.group_by_channel_mut(patch, channel)?;
+        let key = group.key().clone();
+        if let Some(anim) = group.get_animation_mut(animation_index) {
+            return Ok((anim, animation_index));
+        }
+        bail!("{key:?} does not have animations");
+    }
+
+    fn current_animation_with_index<'a>(
+        &self,
+        channel: ChannelId,
+        channels: &'a Channels,
+        patch: &'a Patch,
+    ) -> Result<(&'a dyn ControllableTargetedAnimation, usize)> {
+        let animation_index = self.animation_index_for_channel(channel);
+        let group = channels.group_by_channel(patch, channel)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation(animation_index) {
             return Ok((anim, animation_index));
@@ -99,7 +114,7 @@ impl AnimationUIState {
         channels: &'a Channels,
         patch: &'a mut Patch,
     ) -> Result<&'a mut dyn ControllableTargetedAnimation> {
-        let (ta, _) = self.current_animation_with_index(channel, channels, patch)?;
+        let (ta, _) = self.current_animation_with_index_mut(channel, channels, patch)?;
         Ok(ta)
     }
 

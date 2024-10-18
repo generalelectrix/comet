@@ -79,8 +79,6 @@ pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
 impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 
 pub struct OscController {
-    control_map: ControlMap<ControlMessagePayload>,
-    key_map: HashMap<String, FixtureType>,
     recv: Receiver<OscControlMessage>,
     send: Sender<OscControlResponse>,
 }
@@ -91,57 +89,17 @@ impl OscController {
         let control_recv = start_listener(recv_addr)?;
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
-            control_map: ControlMap::new(),
-            key_map: HashMap::new(),
             recv: control_recv,
             send: response_send,
         })
     }
 
-    pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>> {
-        let msg = match self.recv.recv_timeout(timeout) {
-            Ok(msg) => msg,
-            Err(RecvTimeoutError::Timeout) => {
-                return Ok(None);
-            }
+    pub fn recv(&self, timeout: Duration) -> Result<Option<OscControlMessage>> {
+        match self.recv.recv_timeout(timeout) {
+            Ok(msg) => Ok(Some(msg)),
+            Err(RecvTimeoutError::Timeout) => Ok(None),
             Err(RecvTimeoutError::Disconnected) => {
                 bail!("OSC receiver disconnected");
-            }
-        };
-        Ok(self
-            .control_map
-            .handle(&msg)?
-            .map(|(m, talkback)| ControlMessage {
-                sender_id: msg.client_id,
-                talkback,
-                msg: m,
-                key: self
-                    .key_map
-                    .get(msg.entity_type())
-                    .map(|fixture| FixtureGroupKey {
-                        fixture: *fixture,
-                        group: msg.group,
-                    }),
-            }))
-    }
-
-    pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
-        let group_map = self.control_map.add_map_for_group(fixture.group());
-        fixture.map_controls(group_map);
-        for (control_key, fixture_type) in fixture.fixture_type_aliases() {
-            match self.key_map.entry(control_key) {
-                Entry::Vacant(e) => {
-                    e.insert(fixture_type);
-                }
-                Entry::Occupied(existing) => {
-                    assert!(
-                        existing.get() == &fixture_type,
-                        "fixture type alias conflict for {}: {}, {}",
-                        existing.key(),
-                        existing.get(),
-                        fixture_type
-                    );
-                }
             }
         }
     }
@@ -151,11 +109,9 @@ impl OscController {
     pub fn sender_with_metadata<'a>(
         &'a self,
         sender_id: Option<&'a OscClientId>,
-        talkback: TalkbackMode,
     ) -> OscMessageWithMetadataSender<'_> {
         OscMessageWithMetadataSender {
             sender_id,
-            talkback,
             controller: self,
         }
     }
@@ -164,7 +120,6 @@ impl OscController {
 /// Decorate the OscController to add message metedata to control responses.
 pub struct OscMessageWithMetadataSender<'a> {
     pub sender_id: Option<&'a OscClientId>,
-    pub talkback: TalkbackMode,
     pub controller: &'a OscController,
 }
 
@@ -175,7 +130,7 @@ impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
             .send
             .send(OscControlResponse {
                 sender_id: self.sender_id.cloned(),
-                talkback: self.talkback,
+                talkback: TalkbackMode::All, // FIXME: hardcoded talkback
                 msg,
             })
             .is_err()
@@ -234,40 +189,31 @@ impl Display for OscClientId {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum ControlMessageType {
+    Master,
+    Channel,
+    Animation,
+    Fixture,
+}
+
+impl ControlMessageType {
+    /// Parse the provided type string as a control message type.
+    /// Any unknown type will be treated as a fixture control message.
+    pub fn parse(t: &str) -> Self {
+        match t {
+            master::GROUP => Self::Master,
+            channels::GROUP => Self::Channel,
+            animation::GROUP => Self::Animation,
+            _ => Self::Fixture,
+        }
+    }
+}
+
 type ControlMessageCreator<C> =
     Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
 
-pub type Group = String;
 pub type Control = String;
-
-#[derive(Default)]
-pub struct ControlMap<C>(HashMap<Group, GroupControlMap<C>>);
-
-impl<C> ControlMap<C> {
-    pub fn new() -> Self {
-        Self(Default::default())
-    }
-
-    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
-        let group = msg.entity_type();
-        let Some(group_handler) = self.0.get(group) else {
-            bail!("no control handler group matched \"{group}\"");
-        };
-        group_handler.handle(msg).with_context(|| group.to_string())
-    }
-
-    /// Add a map for the specified group, and return a mutable refernce to it.
-    pub fn add_map_for_group(&mut self, group: &str) -> &mut GroupControlMap<C> {
-        if self
-            .0
-            .insert(group.to_string(), GroupControlMap::new())
-            .is_some()
-        {
-            panic!("Tried to create more than one control group for {group}");
-        }
-        self.0.get_mut(group).unwrap()
-    }
-}
 
 pub struct GroupControlMap<C>(HashMap<Control, ControlMessageCreator<C>>);
 

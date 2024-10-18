@@ -63,10 +63,14 @@ impl FixtureGroup {
         self.key.group.as_ref()
     }
 
-    pub fn get_animation(
+    pub fn get_animation_mut(
         &mut self,
         index: usize,
     ) -> Option<&mut dyn ControllableTargetedAnimation> {
+        self.fixture.get_animation_mut(index)
+    }
+
+    pub fn get_animation(&self, index: usize) -> Option<&dyn ControllableTargetedAnimation> {
         self.fixture.get_animation(index)
     }
 

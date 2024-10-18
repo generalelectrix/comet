@@ -16,7 +16,7 @@ use super::basic_controls::{button, Button};
 use super::label_array::LabelArray;
 use super::GroupControlMap;
 
-const GROUP: &str = "Animation";
+pub(crate) const GROUP: &str = "Animation";
 
 // Base animation system
 

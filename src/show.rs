@@ -11,7 +11,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{ControlMessagePayload, FixtureGroup, Patch},
     master::MasterControls,
-    osc::{OscController, TalkbackMode},
+    osc::{ControlMessageType, OscController, TalkbackMode},
 };
 
 pub use crate::channel::ChannelId;
@@ -144,14 +144,15 @@ impl Show {
 
         let sender = self
             .osc_controller
-            .sender_with_metadata(Some(&msg.sender_id), msg.talkback);
+            .sender_with_metadata(Some(&msg.client_id));
 
-        match msg.msg {
-            ControlMessagePayload::Master(mc) => {
-                self.master_controls.control(mc, &sender);
+        match ControlMessageType::parse(msg.entity_type()) {
+            ControlMessageType::Master => {
+                self.master_controls.control(msg, &sender);
                 Ok(())
             }
-            ControlMessagePayload::Animation(msg) => {
+            ControlMessageType::Channel => self.channels.control(msg, &mut self.patch, &sender),
+            ControlMessageType::Animation => {
                 let Some(channel) = self.channels.current_channel() else {
                     bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                 };
@@ -163,29 +164,7 @@ impl Show {
                     &sender,
                 )
             }
-            ControlMessagePayload::Channel(msg) => {
-                self.channels.control(msg, &mut self.patch, &sender)
-            }
-            ControlMessagePayload::RefreshUI => {
-                self.master_controls.emit_state(&sender);
-                self.channels.emit_state(false, &mut self.patch, &sender);
-                for group in self.patch.iter() {
-                    group.emit_state(ChannelStateEmitter::new(
-                        self.channels.channel_for_fixture(group.key()),
-                        &sender,
-                    ));
-                }
-                if let Some(channel) = self.channels.current_channel() {
-                    self.animation_ui_state.emit_state(
-                        channel,
-                        &self.channels,
-                        &mut self.patch,
-                        &sender,
-                    )?;
-                }
-                Ok(())
-            }
-            ControlMessagePayload::Fixture(fixture_control_msg) => {
+            ControlMessageType::Fixture => {
                 let Some(group_key) = msg.key.as_ref() else {
                     bail!("no fixture group key was provided with a fixture control message");
                 };
