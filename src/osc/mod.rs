@@ -270,7 +270,6 @@ impl<C> ControlMap<C> {
 }
 
 pub struct GroupControlMap<C>(HashMap<Control, ControlMessageCreator<C>>);
-pub type FixtureControlMap = GroupControlMap<ControlMessagePayload>;
 
 impl<C> GroupControlMap<C> {
     pub fn new() -> Self {
