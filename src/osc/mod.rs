@@ -3,7 +3,6 @@ use crate::fixture::FixtureGroupKey;
 use crate::fixture::{ControlMessage, ControlMessagePayload, FixtureType, GroupName};
 use anyhow::Result;
 use anyhow::{bail, Context};
-use control_message::OscControlMessage;
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
@@ -31,6 +30,7 @@ mod profile;
 mod radio_button;
 mod register;
 
+pub use control_message::OscControlMessage;
 pub use register::prompt_osc_config;
 
 /// Map OSC control inputs for a fixture type.
@@ -260,7 +260,7 @@ impl<C> ControlMap<C> {
     pub fn add_map_for_group(&mut self, group: &str) -> &mut GroupControlMap<C> {
         if self
             .0
-            .insert(group.to_string(), GroupControlMap(Default::default()))
+            .insert(group.to_string(), GroupControlMap::new())
             .is_some()
         {
             panic!("Tried to create more than one control group for {group}");
@@ -273,6 +273,10 @@ pub struct GroupControlMap<C>(HashMap<Control, ControlMessageCreator<C>>);
 pub type FixtureControlMap = GroupControlMap<ControlMessagePayload>;
 
 impl<C> GroupControlMap<C> {
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+
     pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
         let control = msg.control();
         let Some(handler) = self.0.get(control) else {

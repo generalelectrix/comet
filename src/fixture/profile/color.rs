@@ -44,11 +44,7 @@ impl PatchAnimatedFixture for Color {
 }
 
 impl Color {
-    pub fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    pub fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         self.update_state(sc);
         Self::emit(sc, emitter);
     }

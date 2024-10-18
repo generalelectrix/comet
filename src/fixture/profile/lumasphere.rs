@@ -92,11 +92,7 @@ impl Lumasphere {
         unipolar_to_range(0, 255, speed)
     }
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Lamp1Intensity(v) => self.lamp_1_intensity = v,

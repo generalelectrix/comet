@@ -52,11 +52,7 @@ impl Comet {
         }
     }
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,

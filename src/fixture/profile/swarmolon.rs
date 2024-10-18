@@ -58,11 +58,7 @@ impl PatchFixture for Swarmolon {
 }
 
 impl Swarmolon {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             DerbyColor(color, state) => {

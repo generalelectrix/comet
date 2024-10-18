@@ -39,11 +39,7 @@ impl PatchAnimatedFixture for RotosphereQ3 {
 }
 
 impl RotosphereQ3 {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Color(c) => self.color.update_state(c),

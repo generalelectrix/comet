@@ -36,11 +36,7 @@ impl PatchAnimatedFixture for FreedomFries {
 
 impl FreedomFries {
     pub const PROGRAM_COUNT: usize = 27;
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,

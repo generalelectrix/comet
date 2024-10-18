@@ -32,11 +32,7 @@ impl PatchFixture for RushWizard {
 impl RushWizard {
     const GOBO_COUNT: usize = 16; // includes the open position
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,

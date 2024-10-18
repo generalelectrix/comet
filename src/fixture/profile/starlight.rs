@@ -25,11 +25,7 @@ impl PatchAnimatedFixture for Starlight {
 }
 
 impl Starlight {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,

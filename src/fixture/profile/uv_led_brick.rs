@@ -19,11 +19,7 @@ impl PatchAnimatedFixture for UvLedBrick {
 }
 
 impl UvLedBrick {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         self.0 = sc;
         Self::emit(sc, emitter);
     }

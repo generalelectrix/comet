@@ -13,7 +13,7 @@ use super::animation_target::{
     ControllableTargetedAnimation, TargetedAnimationValues, TargetedAnimations, N_ANIM,
 };
 use super::{ControlMessagePayload, FixtureGroupControls};
-use crate::channel::{ChannelControlMessage};
+use crate::channel::ChannelControlMessage;
 use crate::fixture::animation_target::AnimationTarget;
 use crate::osc::{FixtureStateEmitter, MapControls};
 

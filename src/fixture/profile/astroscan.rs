@@ -46,11 +46,7 @@ impl PatchAnimatedFixture for Astroscan {
 impl Astroscan {
     pub const GOBO_COUNT: usize = 5; // includes the open position
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             LampOn(v) => self.lamp_on = v,
