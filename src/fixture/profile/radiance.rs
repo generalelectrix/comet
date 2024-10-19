@@ -90,7 +90,6 @@ pub enum StateChange {
     Fan(UnipolarFloat),
 }
 
-// Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
 impl Radiance {

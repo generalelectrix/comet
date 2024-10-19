@@ -68,7 +68,6 @@ impl ControllableFixture for Dimmer {
 
 pub type StateChange = UnipolarFloat;
 
-// Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
 #[derive(

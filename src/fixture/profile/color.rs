@@ -134,7 +134,6 @@ pub enum StateChange {
     Val(UnipolarFloat),
 }
 
-// Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
 #[derive(Debug, Clone)]

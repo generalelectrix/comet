@@ -131,7 +131,6 @@ pub enum StateChange {
     LampOn(bool),
 }
 
-// Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
 const GROUP: &str = Venus::NAME.0;
