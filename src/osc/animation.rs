@@ -6,7 +6,7 @@ use crate::animation::ControlMessage as AnimationControlMessage;
 
 use crate::fixture::animation_target::N_ANIM;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{send_float, RadioButton};
+use crate::osc::RadioButton;
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
 
@@ -130,7 +130,7 @@ impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
 }
 
 impl HandleOscStateChange<StateChange> for AnimationUIState {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    fn emit_osc_state_change<S>(sc: StateChange, emitter: &S)
     where
         S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
@@ -144,23 +144,24 @@ impl HandleOscStateChange<StateChange> for AnimationUIState {
                     Sawtooth => 3,
                     Constant => 4,
                 },
-                send,
+                emitter,
             ),
-            Speed(v) => send_float(SPEED, v, send),
-            Size(v) => send_float(SIZE, v, send),
-            DutyCycle(v) => send_float(DUTY_CYCLE, v, send),
-            Smoothing(v) => send_float(SMOOTHING, v, send),
+            Speed(v) => emitter.emit_float(SPEED, v.into()),
+            Size(v) => emitter.emit_float(SIZE, v.into()),
+            DutyCycle(v) => emitter.emit_float(DUTY_CYCLE, v.into()),
+            Smoothing(v) => emitter.emit_float(SMOOTHING, v.into()),
 
-            NPeriods(v) => N_PERIODS_SELECT.set(v, send),
-            ClockSource(maybe_clock) => {
-                CLOCK_SOURCE.set(maybe_clock.map(|v| usize::from(v) + 1).unwrap_or(0), send)
-            }
+            NPeriods(v) => N_PERIODS_SELECT.set(v, emitter),
+            ClockSource(maybe_clock) => CLOCK_SOURCE.set(
+                maybe_clock.map(|v| usize::from(v) + 1).unwrap_or(0),
+                emitter,
+            ),
 
-            Pulse(v) => PULSE.send(v, send),
-            Standing(v) => STANDING.send(v, send),
-            Invert(v) => INVERT.send(v, send),
-            UseAudioSize(v) => USE_AUDIO_SIZE.send(v, send),
-            UseAudioSpeed(v) => USE_AUDIO_SPEED.send(v, send),
+            Pulse(v) => PULSE.send(v, emitter),
+            Standing(v) => STANDING.send(v, emitter),
+            Invert(v) => INVERT.send(v, emitter),
+            UseAudioSize(v) => USE_AUDIO_SIZE.send(v, emitter),
+            UseAudioSpeed(v) => USE_AUDIO_SPEED.send(v, emitter),
         }
     }
 }

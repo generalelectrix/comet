@@ -33,6 +33,14 @@ pub use register::prompt_osc_config;
 /// Emit an implicitly-scoped OSC message.
 pub trait EmitScopedOscMessage {
     fn emit_osc(&self, msg: ScopedOscMessage);
+
+    /// Send an OSC message setting the state of a float control.
+    fn emit_float(&self, control: &str, val: f64) {
+        self.emit_osc(ScopedOscMessage {
+            control,
+            arg: OscType::Float(val as f32),
+        });
+    }
 }
 
 /// Emit scoped control messages.
@@ -281,21 +289,27 @@ impl<C> GroupControlMap<C> {
     where
         F: Fn(UnipolarFloat) -> C + 'static,
     {
-        self.add_fetch_process(control, get_unipolar, move |v| Some(process(v)))
+        self.add_fetch_process(control, OscControlMessage::get_unipolar, move |v| {
+            Some(process(v))
+        })
     }
 
     pub fn add_bipolar<F>(&mut self, control: &str, process: F)
     where
         F: Fn(BipolarFloat) -> C + 'static,
     {
-        self.add_fetch_process(control, get_bipolar, move |v| Some(process(v)))
+        self.add_fetch_process(control, OscControlMessage::get_bipolar, move |v| {
+            Some(process(v))
+        })
     }
 
     pub fn add_phase<F>(&mut self, control: &str, process: F)
     where
         F: Fn(Phase) -> C + 'static,
     {
-        self.add_fetch_process(control, get_phase, move |v| Some(process(v)))
+        self.add_fetch_process(control, OscControlMessage::get_phase, move |v| {
+            Some(process(v))
+        })
     }
 
     pub fn add_bool<F>(&mut self, control: &str, process: F)
@@ -434,31 +448,33 @@ pub struct OscError {
     pub msg: String,
 }
 
-/// Get a single float argument from the provided OSC message.
-fn get_float(v: &OscControlMessage) -> Result<f64, OscError> {
-    match &v.arg {
-        OscType::Float(v) => Ok(*v as f64),
-        OscType::Double(v) => Ok(*v),
-        other => Err(v.err(format!(
-            "expected a single float argument but found {:?}",
-            other
-        ))),
+impl OscControlMessage {
+    /// Get a single float argument from the provided OSC message.
+    fn get_float(&self) -> Result<f64, OscError> {
+        match &self.arg {
+            OscType::Float(v) => Ok(*v as f64),
+            OscType::Double(v) => Ok(*v),
+            other => Err(self.err(format!(
+                "expected a single float argument but found {:?}",
+                other
+            ))),
+        }
     }
-}
 
-/// Get a single unipolar float argument from the provided OSC message.
-fn get_unipolar(v: &OscControlMessage) -> Result<UnipolarFloat, OscError> {
-    Ok(UnipolarFloat::new(get_float(v)?))
-}
+    /// Get a single unipolar float argument from the provided OSC message.
+    pub fn get_unipolar(&self) -> Result<UnipolarFloat, OscError> {
+        Ok(UnipolarFloat::new(self.get_float()?))
+    }
 
-/// Get a single bipolar float argument from the provided OSC message.
-fn get_bipolar(v: &OscControlMessage) -> Result<BipolarFloat, OscError> {
-    Ok(BipolarFloat::new(get_float(v)?))
-}
+    /// Get a single bipolar float argument from the provided OSC message.
+    pub fn get_bipolar(&self) -> Result<BipolarFloat, OscError> {
+        Ok(BipolarFloat::new(self.get_float()?))
+    }
 
-/// Get a single phase argument from the provided OSC message.
-fn get_phase(v: &OscControlMessage) -> Result<Phase, OscError> {
-    Ok(Phase::new(get_float(v)?))
+    /// Get a single phase argument from the provided OSC message.
+    pub fn get_phase(&self) -> Result<Phase, OscError> {
+        Ok(Phase::new(self.get_float()?))
+    }
 }
 
 pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
@@ -488,17 +504,6 @@ pub fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
     Ok(())
 }
 
-/// Send an OSC message setting the state of a float control.
-pub fn send_float<S, V: Into<f64>>(control: &str, val: V, emitter: &S)
-where
-    S: crate::osc::EmitScopedOscMessage + ?Sized,
-{
-    emitter.emit_osc(ScopedOscMessage {
-        control,
-        arg: OscType::Float(val.into() as f32),
-    });
-}
-
 pub mod prelude {
     pub use super::basic_controls::{button, Button};
     pub use super::fader_array::FaderArray;
@@ -506,7 +511,7 @@ pub mod prelude {
     pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;
     pub use super::{
-        get_bool, ignore_payload, quadratic, send_float, GroupControlMap, HandleOscStateChange,
+        get_bool, ignore_payload, quadratic, GroupControlMap, HandleOscStateChange,
         HandleStateChange, OscControlMessage,
     };
     pub use crate::util::*;

@@ -7,8 +7,6 @@ use anyhow::{bail, Result};
 
 use anyhow::{anyhow, Context};
 
-use crate::osc::get_unipolar;
-
 /// Model a fader array.
 #[derive(Clone)]
 pub struct FaderArray {
@@ -34,7 +32,7 @@ impl FaderArray {
             if index == 0 {
                 bail!("fader array index is 0: {msg:?}");
             }
-            let val = get_unipolar(msg)?;
+            let val = msg.get_unipolar()?;
             process(index - 1, val).map(Some)
         })
     }

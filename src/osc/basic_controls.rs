@@ -1,4 +1,4 @@
-use super::{get_bool, send_float};
+use super::get_bool;
 
 #[derive(Clone)]
 pub struct Button {
@@ -31,10 +31,10 @@ impl Button {
         })
     }
 
-    pub fn send<S>(&self, val: bool, send: &S)
+    pub fn send<E>(&self, val: bool, emitter: &E)
     where
-        S: crate::osc::EmitScopedOscMessage + ?Sized,
+        E: crate::osc::EmitScopedOscMessage + ?Sized,
     {
-        send_float(self.control, if val { 1.0 } else { 0.0 }, send);
+        emitter.emit_float(self.control, if val { 1.0 } else { 0.0 });
     }
 }

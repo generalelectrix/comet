@@ -297,7 +297,6 @@ impl AnimationTarget {
     }
 }
 
-
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {
@@ -344,22 +343,22 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 }
 
 impl HandleOscStateChange<StateChange> for WizardExtreme {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    fn emit_osc_state_change<E>(sc: StateChange, emitter: &E)
     where
-        S: crate::osc::EmitScopedOscMessage + ?Sized,
+        E: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             StateChange::Dimmer(v) => {
-                send_float("Dimmer", v, send);
+                emitter.emit_float("Dimmer", v.into());
             }
             StateChange::Color(c) => {
-                c.set(COLOR, send);
+                c.set(COLOR, emitter);
             }
-            StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
-            StateChange::MirrorDrumRotation(v) => MIRROR_DRUM_ROTATION.send(v, send),
-            StateChange::MirrorReflectorRotation(v) => MIRROR_REFLECTOR_ROTATION.send(v, send),
-            StateChange::MirrorDrumSwivel(v) => MIRROR_DRUM_SWIVEL.send(v, send),
-            StateChange::Active(v) => ACTIVE.send(v, send),
+            StateChange::Gobo(v) => GOBO_SELECT.set(v, emitter),
+            StateChange::MirrorDrumRotation(v) => MIRROR_DRUM_ROTATION.send(v, emitter),
+            StateChange::MirrorReflectorRotation(v) => MIRROR_REFLECTOR_ROTATION.send(v, emitter),
+            StateChange::MirrorDrumSwivel(v) => MIRROR_DRUM_SWIVEL.send(v, emitter),
+            StateChange::Active(v) => ACTIVE.send(v, emitter),
             _ => (),
         }
     }

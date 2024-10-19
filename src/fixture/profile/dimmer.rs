@@ -1,28 +1,36 @@
 //! Control profile for a dimmer.
 
+use anyhow::bail;
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Dimmer {
-    level: UnipolarFloat,
-    controls: GroupControlMap<ControlMessage>,
+    level: Unipolar<RenderUnipolarToRange>,
+}
+
+impl Default for Dimmer {
+    fn default() -> Self {
+        Self {
+            level: Unipolar::new(
+                "Level",
+                RenderUnipolarToRange {
+                    offset: 0,
+                    start: 0,
+                    end: 255,
+                },
+            ),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for Dimmer {
     const NAME: FixtureType = FixtureType("Dimmer");
     fn channel_count(&self) -> usize {
         1
-    }
-}
-
-impl Dimmer {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        self.level = sc;
-        Self::emit(sc, emitter);
     }
 }
 
@@ -35,22 +43,16 @@ impl AnimatedFixture for Dimmer {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut level = self.level.val();
-
-        for (val, _target) in animation_vals {
-            level += val;
-        }
-        dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(level));
+        self.level
+            .render(animation_vals.iter().map(|(v, _)| *v), dmx_buf);
     }
 }
 
 impl ControllableFixture for Dimmer {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
+    fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        Self::emit(self.level, emitter);
+        self.level.emit_state(emitter);
     }
 
     fn control(
@@ -58,17 +60,14 @@ impl ControllableFixture for Dimmer {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
+        let control = msg.control();
+        if control == self.level.name() {
+            self.level.control(msg, emitter)?;
             return Ok(());
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(())
+        }
+        bail!("no control for {} matched for {control}", Self::NAME);
     }
 }
-
-pub type StateChange = UnipolarFloat;
-
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -92,19 +91,5 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         true
-    }
-}
-
-impl Dimmer {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        map.add_unipolar("Level", |x| x);
-    }
-}
-
-impl HandleOscStateChange<StateChange> for Dimmer {
-    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
-    where
-        S: crate::osc::EmitScopedOscMessage + ?Sized,
-    {
     }
 }
