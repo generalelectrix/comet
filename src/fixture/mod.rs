@@ -34,4 +34,5 @@ pub mod prelude {
     pub use super::FixtureGroupControls;
     pub use crate::channel::ChannelStateEmitter;
     pub use crate::fixture::animation_target::TargetedAnimationValues;
+    pub use crate::fixture::generic::*;
 }

@@ -4,7 +4,8 @@ use std::time::Duration;
 
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::{unipolar_to_range, RampingParameter};
 
 /// Control abstraction for the RA venus.
@@ -135,3 +136,29 @@ pub enum StateChange {
 
 // Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
+
+const GROUP: &str = Venus::NAME.0;
+
+const LAMP_ON: Button = button(GROUP, "LampControl");
+
+impl Venus {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+
+        map.add_bipolar("BaseRotation", |v| {
+            BaseRotation(bipolar_fader_with_detent(v))
+        });
+        map.add_unipolar("CradleMotion", |v| {
+            CradleMotion(unipolar_fader_with_detent(v))
+        });
+        map.add_bipolar("HeadRotation", |v| {
+            HeadRotation(bipolar_fader_with_detent(v))
+        });
+        map.add_bipolar("ColorRotation", |v| {
+            ColorRotation(bipolar_fader_with_detent(v))
+        });
+        LAMP_ON.map_state(map, LampOn);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Venus {}

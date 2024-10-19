@@ -4,7 +4,8 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
@@ -96,3 +97,11 @@ impl AnimationTarget {
         true
     }
 }
+
+impl UvLedBrick {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        map.add_unipolar("Level", |x| x);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for UvLedBrick {}

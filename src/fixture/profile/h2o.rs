@@ -3,7 +3,8 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -171,5 +172,40 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer)
+    }
+}
+
+const GROUP: &str = H2O::NAME.0;
+const FIXED_COLOR: &str = "FixedColor";
+
+const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
+
+impl EnumRadioButton for FixedColor {}
+
+impl H2O {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Dimmer", Dimmer);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+        map.add_enum_handler(FIXED_COLOR, ignore_payload, |c, _| FixedColor(c));
+        COLOR_ROTATE.map_state(map, ColorRotate);
+        map.add_bipolar("ColorRotation", |v| {
+            ColorRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+impl HandleOscStateChange<StateChange> for H2O {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        #[allow(clippy::single_match)]
+        match sc {
+            StateChange::FixedColor(c) => {
+                c.set(GROUP, FIXED_COLOR, send);
+            }
+            _ => (),
+        }
     }
 }

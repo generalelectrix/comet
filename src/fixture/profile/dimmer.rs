@@ -4,7 +4,8 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
@@ -91,5 +92,19 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         true
+    }
+}
+
+impl Dimmer {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        map.add_unipolar("Level", |x| x);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Dimmer {
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
     }
 }

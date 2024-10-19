@@ -15,7 +15,8 @@ use super::fixture::{Fixture, FixtureType};
 use super::prelude::ChannelStateEmitter;
 use crate::channel::ChannelControlMessage;
 use crate::dmx::DmxBuffer;
-use crate::master::{FixtureGroupControls, MasterControls};
+use crate::fixture::FixtureGroupControls;
+use crate::master::MasterControls;
 use crate::osc::{FixtureStateEmitter, OscControlMessage};
 
 #[derive(Debug)]

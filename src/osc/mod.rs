@@ -24,8 +24,6 @@ mod channels;
 mod control_message;
 mod fader_array;
 mod label_array;
-mod master;
-mod profile;
 mod radio_button;
 mod register;
 
@@ -188,7 +186,7 @@ impl ControlMessageType {
     /// Any unknown type will be treated as a fixture control message.
     pub fn parse(t: &str) -> Self {
         match t {
-            master::GROUP => Self::Master,
+            crate::master::GROUP => Self::Master,
             channels::GROUP => Self::Channel,
             animation::GROUP => Self::Animation,
             _ => Self::Fixture,
@@ -430,13 +428,13 @@ fn get_phase(v: &OscControlMessage) -> Result<Phase, OscError> {
     Ok(Phase::new(get_float(v)?))
 }
 
-fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
+pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
     UnipolarFloat::new(v.val().powi(2))
 }
 
 /// Get a single boolean argument from the provided OSC message.
 /// Coerce ints and floats to boolean values.
-fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
+pub fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
     let bval = match &v.arg {
         OscType::Bool(b) => *b,
         OscType::Int(i) => *i != 0,
@@ -458,7 +456,7 @@ pub fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
 }
 
 /// Send an OSC message setting the state of a float control.
-fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &S)
+pub fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &S)
 where
     S: crate::osc::EmitOscMessage + ?Sized,
 {
@@ -470,12 +468,13 @@ where
 
 pub mod prelude {
     pub use super::basic_controls::{button, Button};
+    pub use super::fader_array::FaderArray;
     pub use super::label_array::LabelArray;
-    pub use super::profile::generic::map_strobe;
     pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;
     pub use super::{
-        ignore_payload, GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage,
+        get_bool, ignore_payload, quadratic, send_float, GroupControlMap, HandleOscStateChange,
+        HandleStateChange, OscControlMessage,
     };
     pub use crate::util::*;
 }

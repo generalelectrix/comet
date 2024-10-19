@@ -3,7 +3,8 @@
 use log::error;
 use number::UnipolarFloat;
 
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Debug)]
@@ -79,3 +80,16 @@ impl ControllableFixture for Faderboard {
 pub type StateChange = (usize, UnipolarFloat);
 
 pub type ControlMessage = StateChange;
+
+const CONTROLS: FaderArray = FaderArray {
+    group: Faderboard::NAME.0,
+    control: "Fader",
+};
+
+impl Faderboard {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        CONTROLS.map(map, |index, val| Ok((index, val)))
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Faderboard {}

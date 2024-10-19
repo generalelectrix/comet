@@ -4,7 +4,8 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -164,5 +165,53 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         false
+    }
+}
+
+const GROUP: &str = SolarSystem::NAME.0;
+
+const FRONT_GOBO_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "FrontGobo",
+    n: SolarSystem::GOBO_COUNT,
+    x_primary_coordinate: false,
+};
+
+const REAR_GOBO_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "RearGobo",
+    n: SolarSystem::GOBO_COUNT,
+    x_primary_coordinate: false,
+};
+
+const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
+const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
+
+impl SolarSystem {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        SHUTTER_OPEN.map_state(map, ShutterOpen);
+        AUTO_SHUTTER.map_state(map, AutoShutter);
+        FRONT_GOBO_SELECT.map(map, FrontGobo);
+        map.add_bipolar("FrontRotation", |v| {
+            FrontRotation(bipolar_fader_with_detent(v))
+        });
+        REAR_GOBO_SELECT.map(map, RearGobo);
+        map.add_bipolar("RearRotation", |v| {
+            RearRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+impl HandleOscStateChange<StateChange> for SolarSystem {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        match sc {
+            StateChange::FrontGobo(v) => FRONT_GOBO_SELECT.set(v, send),
+            StateChange::RearGobo(v) => REAR_GOBO_SELECT.set(v, send),
+            _ => (), // TODO: talkback for all controls
+        }
     }
 }

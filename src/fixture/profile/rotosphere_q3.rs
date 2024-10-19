@@ -11,7 +11,6 @@ use super::color::{
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::color::map_color;
 use crate::fixture::prelude::*;
-use crate::master::FixtureGroupControls;
 use crate::osc::prelude::*;
 use crate::util::bipolar_to_split_range;
 

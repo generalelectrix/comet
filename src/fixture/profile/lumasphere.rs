@@ -3,7 +3,8 @@ use std::time::Duration;
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::osc::HandleStateChange;
 use crate::util::{unipolar_to_range, RampingParameter};
 
@@ -216,3 +217,51 @@ pub enum StateChange {
 
 // Lumasphere has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
+
+const GROUP: &str = Lumasphere::NAME.0;
+
+const BALL_START: Button = button(GROUP, "ball_start");
+const COLOR_START: Button = button(GROUP, "color_start");
+
+impl Lumasphere {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("lamp_1_intensity", |v| {
+            Lamp1Intensity(unipolar_fader_with_detent(v))
+        });
+        map.add_unipolar("lamp_2_intensity", |v| {
+            Lamp2Intensity(unipolar_fader_with_detent(v))
+        });
+
+        map.add_bipolar("ball_rotation", |v| {
+            BallRotation(bipolar_fader_with_detent(v))
+        });
+        BALL_START.map_state(map, BallStart);
+
+        map.add_unipolar("color_rotation", |v| {
+            ColorRotation(unipolar_fader_with_detent(v))
+        });
+        COLOR_START.map_state(map, ColorStart);
+        map_strobe(map, 1, Strobe1);
+        map_strobe(map, 2, Strobe2);
+    }
+}
+
+fn map_strobe<W>(map: &mut GroupControlMap<ControlMessage>, index: u8, wrap: W)
+where
+    W: Fn(StrobeStateChange) -> ControlMessage + 'static + Copy,
+{
+    use GenericStrobeStateChange::*;
+    use StrobeStateChange::*;
+    map.add_bool(&format!("strobe_{}_state", index), move |v| {
+        wrap(State(On(v)))
+    });
+    map.add_unipolar(&format!("strobe_{}_rate", index), move |v| {
+        wrap(State(Rate(v)))
+    });
+    map.add_unipolar(&format!("strobe_{}_intensity", index), move |v| {
+        wrap(Intensity(v))
+    });
+}
+
+impl HandleOscStateChange<StateChange> for Lumasphere {}

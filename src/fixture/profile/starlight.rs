@@ -4,7 +4,8 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::bipolar_to_split_range;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
@@ -123,5 +124,27 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer)
+    }
+}
+
+impl Starlight {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Dimmer", Dimmer);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+        map_strobe(map, "Strobe", &wrap_strobe);
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+impl HandleOscStateChange<StateChange> for Starlight {
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        // FIXME: implement talkback
     }
 }

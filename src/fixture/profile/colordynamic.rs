@@ -5,8 +5,8 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
-use crate::master::FixtureGroupControls;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -168,5 +168,38 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::ColorPosition | Self::ColorRotationSpeed)
+    }
+}
+
+const GROUP: &str = Colordynamic::NAME.0;
+
+const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
+const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
+
+impl Colordynamic {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        SHUTTER_OPEN.map_state(map, ShutterOpen);
+        map_strobe(map, "Strobe", &wrap_strobe);
+
+        COLOR_ROTATION_ON.map_state(map, ColorRotationOn);
+        map.add_unipolar("ColorRotationSpeed", ColorRotationSpeed);
+        map.add_unipolar("ColorPosition", ColorPosition);
+        map.add_bipolar("FiberRotation", |v| {
+            FiberRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+impl HandleOscStateChange<StateChange> for Colordynamic {
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        // FIXME no talkback
     }
 }

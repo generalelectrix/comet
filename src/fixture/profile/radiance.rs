@@ -6,8 +6,9 @@ use std::{collections::HashMap, time::Duration};
 use number::UnipolarFloat;
 
 use super::generic::Timer;
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
+use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
 pub struct Radiance {
@@ -95,3 +96,13 @@ pub enum StateChange {
 
 // Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
+
+impl Radiance {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Haze", Haze);
+        map.add_unipolar("Fan", Fan);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Radiance {}
