@@ -1,5 +1,3 @@
-mod aquarius;
-mod astroscan;
 mod color;
 mod colordynamic;
 mod comet;

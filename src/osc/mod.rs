@@ -453,7 +453,7 @@ fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
 }
 
 /// A OSC message processor that ignores the message payload, returning unit.
-fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
+pub fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
     Ok(())
 }
 
@@ -470,6 +470,11 @@ where
 
 pub mod prelude {
     pub use super::basic_controls::{button, Button};
+    pub use super::profile::generic::map_strobe;
+    pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;
-    pub use super::{GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage};
+    pub use super::{
+        ignore_payload, GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage,
+    };
+    pub use crate::util::*;
 }
