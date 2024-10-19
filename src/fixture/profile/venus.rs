@@ -135,7 +135,7 @@ pub type ControlMessage = StateChange;
 
 const GROUP: &str = Venus::NAME.0;
 
-const LAMP_ON: Button = button(GROUP, "LampControl");
+const LAMP_ON: Button = button("LampControl");
 
 impl Venus {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {

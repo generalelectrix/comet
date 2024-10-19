@@ -79,10 +79,7 @@ pub type StateChange = (usize, UnipolarFloat);
 
 pub type ControlMessage = StateChange;
 
-const CONTROLS: FaderArray = FaderArray {
-    group: Faderboard::NAME.0,
-    control: "Fader",
-};
+const CONTROLS: FaderArray = FaderArray { control: "Fader" };
 
 impl Faderboard {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {

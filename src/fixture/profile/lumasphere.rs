@@ -215,8 +215,8 @@ pub type ControlMessage = StateChange;
 
 const GROUP: &str = Lumasphere::NAME.0;
 
-const BALL_START: Button = button(GROUP, "ball_start");
-const COLOR_START: Button = button(GROUP, "color_start");
+const BALL_START: Button = button("ball_start");
+const COLOR_START: Button = button("color_start");
 
 impl Lumasphere {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {

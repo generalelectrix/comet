@@ -169,21 +169,19 @@ impl AnimationTarget {
 const GROUP: &str = SolarSystem::NAME.0;
 
 const FRONT_GOBO_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "FrontGobo",
     n: SolarSystem::GOBO_COUNT,
     x_primary_coordinate: false,
 };
 
 const REAR_GOBO_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "RearGobo",
     n: SolarSystem::GOBO_COUNT,
     x_primary_coordinate: false,
 };
 
-const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
-const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
+const SHUTTER_OPEN: Button = button("ShutterOpen");
+const AUTO_SHUTTER: Button = button("AutoShutter");
 
 impl SolarSystem {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
@@ -204,7 +202,7 @@ impl SolarSystem {
 impl HandleOscStateChange<StateChange> for SolarSystem {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             StateChange::FrontGobo(v) => FRONT_GOBO_SELECT.set(v, send),

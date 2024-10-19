@@ -85,7 +85,7 @@ impl FixtureGroup {
     /// Emit the current state of all controls.
     pub fn emit_state(&self, emitter: ChannelStateEmitter) {
         self.fixture
-            .emit_state(&FixtureStateEmitter::new(self.key.group.as_ref(), emitter));
+            .emit_state(&FixtureStateEmitter::new(&self.key, emitter));
     }
 
     /// Process the provided control message.
@@ -95,10 +95,7 @@ impl FixtureGroup {
         emitter: ChannelStateEmitter,
     ) -> anyhow::Result<()> {
         self.fixture
-            .control(
-                msg,
-                &FixtureStateEmitter::new(self.key.group.as_ref(), emitter),
-            )
+            .control(msg, &FixtureStateEmitter::new(&self.key, emitter))
             .with_context(|| self.key.clone())
     }
 
@@ -108,10 +105,8 @@ impl FixtureGroup {
         msg: &ChannelControlMessage,
         channel_emitter: ChannelStateEmitter,
     ) {
-        self.fixture.control_from_channel(
-            msg,
-            &FixtureStateEmitter::new(self.key.group.as_ref(), channel_emitter),
-        );
+        self.fixture
+            .control_from_channel(msg, &FixtureStateEmitter::new(&self.key, channel_emitter));
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {

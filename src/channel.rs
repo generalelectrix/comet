@@ -10,7 +10,8 @@ use serde::Deserialize;
 use crate::{
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
     osc::{
-        EmitControlMessage, EmitOscMessage, GroupControlMap, HandleStateChange, OscControlMessage,
+        EmitControlMessage, EmitOscMessage, EmitScopedControlMessage, GroupControlMap,
+        HandleStateChange, OscControlMessage, ScopedControlEmitter,
     },
 };
 
@@ -141,12 +142,16 @@ impl Channels {
         patch: &Patch,
         emitter: &dyn EmitControlMessage,
     ) {
+        let scoped_emitter = ScopedControlEmitter {
+            entity: crate::osc::channels::GROUP,
+            emitter,
+        };
         if let Some(channel) = self.current_channel {
-            Self::emit(StateChange::SelectChannel(channel), emitter);
+            Self::emit(StateChange::SelectChannel(channel), &scoped_emitter);
         }
         Self::emit(
             StateChange::ChannelLabels(self.channel_labels(patch).collect()),
-            emitter,
+            &scoped_emitter,
         );
         if selected_fixture_only {
             if let Some(channel_id) = self.current_channel {
@@ -236,7 +241,13 @@ impl<'a> ChannelStateEmitter<'a> {
         let Some(channel_id) = self.channel_id else {
             return;
         };
-        Channels::emit(StateChange::State { channel_id, msg }, self.emitter);
+        Channels::emit(
+            StateChange::State { channel_id, msg },
+            &ScopedControlEmitter {
+                entity: crate::osc::channels::GROUP,
+                emitter: self.emitter,
+            },
+        );
     }
 }
 

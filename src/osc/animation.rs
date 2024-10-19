@@ -25,28 +25,25 @@ const DUTY_CYCLE: &str = "DutyCycle";
 const SMOOTHING: &str = "Smoothing";
 
 // assorted parameters
-const PULSE: Button = button(GROUP, "Pulse");
-const INVERT: Button = button(GROUP, "Invert");
-const USE_AUDIO_SIZE: Button = button(GROUP, "UseAudioSize");
-const USE_AUDIO_SPEED: Button = button(GROUP, "UseAudioSpeed");
-const STANDING: Button = button(GROUP, "Standing");
+const PULSE: Button = button("Pulse");
+const INVERT: Button = button("Invert");
+const USE_AUDIO_SIZE: Button = button("UseAudioSize");
+const USE_AUDIO_SPEED: Button = button("UseAudioSpeed");
+const STANDING: Button = button("Standing");
 
 const WAVEFORM_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "Waveform",
     n: 5,
     x_primary_coordinate: false,
 };
 
 const N_PERIODS_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "NPeriods",
     n: 16,
     x_primary_coordinate: false,
 };
 
 const CLOCK_SOURCE: RadioButton = RadioButton {
-    group: GROUP,
     control: "ClockSource",
     n: N_CLOCKS + 1,
     x_primary_coordinate: false,
@@ -99,21 +96,18 @@ impl AnimationUIState {
 const N_ANIM_TARGET: usize = 8;
 
 const ANIMATION_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "Select",
     n: N_ANIM,
     x_primary_coordinate: false,
 };
 
 const ANIMATION_TARGET_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "Target",
     n: N_ANIM_TARGET,
     x_primary_coordinate: false,
 };
 
 const ANIMATION_TARGET_LABELS: LabelArray = LabelArray {
-    group: GROUP,
     control: "TargetLabel",
     n: N_ANIM_TARGET,
     empty_label: "",
@@ -122,7 +116,7 @@ const ANIMATION_TARGET_LABELS: LabelArray = LabelArray {
 impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
     fn emit_osc_state_change<S>(sc: crate::animation::StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             crate::animation::StateChange::Animation(msg) => Self::emit_osc_state_change(msg, send),
@@ -138,7 +132,7 @@ impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
 impl HandleOscStateChange<StateChange> for AnimationUIState {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         use StateChange::*;
         match sc {
@@ -152,10 +146,10 @@ impl HandleOscStateChange<StateChange> for AnimationUIState {
                 },
                 send,
             ),
-            Speed(v) => send_float(GROUP, SPEED, v, send),
-            Size(v) => send_float(GROUP, SIZE, v, send),
-            DutyCycle(v) => send_float(GROUP, DUTY_CYCLE, v, send),
-            Smoothing(v) => send_float(GROUP, SMOOTHING, v, send),
+            Speed(v) => send_float(SPEED, v, send),
+            Size(v) => send_float(SIZE, v, send),
+            DutyCycle(v) => send_float(DUTY_CYCLE, v, send),
+            Smoothing(v) => send_float(SMOOTHING, v, send),
 
             NPeriods(v) => N_PERIODS_SELECT.set(v, send),
             ClockSource(maybe_clock) => {

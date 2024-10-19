@@ -1,5 +1,6 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
-use crate::fixture::GroupName;
+use crate::fixture::prelude::FixtureType;
+use crate::fixture::{FixtureGroupKey, GroupName};
 use anyhow::bail;
 use anyhow::Result;
 use log::{error, info};
@@ -18,9 +19,9 @@ use thiserror::Error;
 
 use self::radio_button::{EnumRadioButton, RadioButton};
 
-mod animation;
+pub mod animation;
 mod basic_controls;
-mod channels;
+pub mod channels;
 mod control_message;
 mod fader_array;
 mod label_array;
@@ -29,6 +30,17 @@ mod register;
 
 pub use control_message::OscControlMessage;
 pub use register::prompt_osc_config;
+
+/// Emit an implicitly-scoped OSC message.
+pub trait EmitScopedOscMessage {
+    fn emit_osc(&self, msg: ScopedOscMessage);
+}
+
+/// Emit scoped control messages.
+/// Will be extended in the future to potentially cover more cases.
+pub trait EmitScopedControlMessage: EmitScopedOscMessage {}
+
+impl<T> EmitScopedControlMessage for T where T: EmitScopedOscMessage {}
 
 /// Emit control messages.
 /// Will be extended in the future to potentially cover more cases.
@@ -45,7 +57,7 @@ pub trait HandleOscStateChange<SC> {
     /// Convert the provided state change into OSC messages and send them.
     fn emit_osc_state_change<S>(_sc: SC, _send: &S)
     where
-        S: EmitOscMessage + ?Sized,
+        S: EmitScopedOscMessage + ?Sized,
     {
     }
 }
@@ -54,7 +66,7 @@ pub trait HandleOscStateChange<SC> {
 pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
     fn emit<S>(sc: SC, send: &S)
     where
-        S: EmitControlMessage + ?Sized,
+        S: EmitScopedControlMessage + ?Sized,
     {
         Self::emit_osc_state_change(sc, send);
     }
@@ -127,14 +139,14 @@ impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
 /// Decorate a control message emitter to inject a group into the address.
 #[derive(Clone, Copy)]
 pub struct FixtureStateEmitter<'a> {
-    group: Option<&'a GroupName>,
+    key: &'a FixtureGroupKey,
     channel_emitter: ChannelStateEmitter<'a>,
 }
 
 impl<'a> FixtureStateEmitter<'a> {
-    pub fn new(group: Option<&'a GroupName>, channel_emitter: ChannelStateEmitter<'a>) -> Self {
+    pub fn new(key: &'a FixtureGroupKey, channel_emitter: ChannelStateEmitter<'a>) -> Self {
         Self {
-            group,
+            key,
             channel_emitter,
         }
     }
@@ -144,18 +156,40 @@ impl<'a> FixtureStateEmitter<'a> {
     }
 }
 
-impl<'a> EmitOscMessage for FixtureStateEmitter<'a> {
-    fn emit_osc(&self, mut msg: OscMessage) {
-        if let Some(g) = &self.group {
-            // If a group is set, prepend the ID to the address.
-            // FIXME: would be nice to think through this a bit and see if
-            // we can avoid this allocation by somehow transparently threading
-            // the group into the send call via something like constructor
-            // injection.
-            msg.addr = format!("/:{}{}", g, msg.addr);
-        }
-        self.channel_emitter.emit_osc(msg);
+impl<'a> EmitScopedOscMessage for FixtureStateEmitter<'a> {
+    fn emit_osc(&self, msg: ScopedOscMessage) {
+        let addr = if let Some(g) = &self.key.group {
+            format!("/:{}/{}{}", g, self.key.fixture, msg.control)
+        } else {
+            format!("/{}{}", self.key.fixture, msg.control)
+        };
+        self.channel_emitter.emit_osc(OscMessage {
+            addr,
+            args: vec![msg.arg],
+        });
     }
+}
+
+pub struct ScopedControlEmitter<'a> {
+    pub entity: &'a str,
+    pub emitter: &'a dyn EmitControlMessage,
+}
+
+impl<'a> EmitScopedOscMessage for ScopedControlEmitter<'a> {
+    fn emit_osc(&self, msg: ScopedOscMessage) {
+        self.emitter.emit_osc(OscMessage {
+            addr: format!("/{}{}", self.entity, msg.control),
+            args: vec![msg.arg],
+        });
+    }
+}
+
+/// An OSC message that is implicitly scoped to a particular entity.
+/// Only the name of the control and the value to be sent are required.
+/// TODO: decide how to handle situations where we need more address.
+pub struct ScopedOscMessage<'a> {
+    control: &'a str,
+    arg: OscType,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Deserialize)]
@@ -456,13 +490,13 @@ pub fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
 }
 
 /// Send an OSC message setting the state of a float control.
-pub fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &S)
+pub fn send_float<S, V: Into<f64>>(control: &str, val: V, emitter: &S)
 where
-    S: crate::osc::EmitOscMessage + ?Sized,
+    S: crate::osc::EmitScopedOscMessage + ?Sized,
 {
-    emitter.emit_osc(OscMessage {
-        addr: format!("/{group}/{control}"),
-        args: vec![OscType::Float(val.into() as f32)],
+    emitter.emit_osc(ScopedOscMessage {
+        control,
+        arg: OscType::Float(val.into() as f32),
     });
 }
 

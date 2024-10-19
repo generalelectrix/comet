@@ -170,8 +170,8 @@ impl AnimationTarget {
 
 const GROUP: &str = Colordynamic::NAME.0;
 
-const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
-const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
+const SHUTTER_OPEN: Button = button("ShutterOpen");
+const COLOR_ROTATION_ON: Button = button("ColorRotationOn");
 
 impl Colordynamic {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
@@ -195,7 +195,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for Colordynamic {
     fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         // FIXME no talkback
     }

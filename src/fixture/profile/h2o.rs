@@ -175,7 +175,7 @@ impl AnimationTarget {
 const GROUP: &str = H2O::NAME.0;
 const FIXED_COLOR: &str = "FixedColor";
 
-const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
+const COLOR_ROTATE: Button = button("ColorRotate");
 
 impl EnumRadioButton for FixedColor {}
 
@@ -195,12 +195,12 @@ impl H2O {
 impl HandleOscStateChange<StateChange> for H2O {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         #[allow(clippy::single_match)]
         match sc {
             StateChange::FixedColor(c) => {
-                c.set(GROUP, FIXED_COLOR, send);
+                c.set(FIXED_COLOR, send);
             }
             _ => (),
         }

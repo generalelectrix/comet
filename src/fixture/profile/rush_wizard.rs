@@ -160,13 +160,12 @@ const GROUP: &str = RushWizard::NAME.0;
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "Gobo",
     n: 16,
     x_primary_coordinate: false,
 };
 
-const TWINKLE: Button = button(GROUP, "Twinkle");
+const TWINKLE: Button = button("Twinkle");
 
 impl EnumRadioButton for Color {}
 
@@ -196,11 +195,11 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for RushWizard {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             StateChange::Color(c) => {
-                c.set(GROUP, COLOR, send);
+                c.set(COLOR, send);
             }
             StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
             _ => (),

@@ -406,14 +406,13 @@ pub enum WhiteStrobeStateChange {
 const GROUP: &str = Swarmolon::NAME.0;
 
 const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "WhiteStrobeProgram",
     n: 10,
     x_primary_coordinate: false,
 };
 
-const RED_LASER_ON: Button = button(GROUP, "RedLaserOn");
-const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
+const RED_LASER_ON: Button = button("RedLaserOn");
+const GREEN_LASER_ON: Button = button("GreenLaserOn");
 
 impl EnumRadioButton for DerbyColor {}
 
@@ -461,7 +460,7 @@ fn wrap_laser_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for Swarmolon {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         use StateChange::*;
         #[allow(clippy::single_match)]

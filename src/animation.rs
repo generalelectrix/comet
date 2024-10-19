@@ -9,7 +9,10 @@ use crate::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
         Patch,
     },
-    osc::{EmitControlMessage, GroupControlMap, HandleStateChange, OscControlMessage},
+    osc::{
+        EmitControlMessage, EmitScopedControlMessage, GroupControlMap, HandleStateChange,
+        OscControlMessage, ScopedControlEmitter,
+    },
     show::ChannelId,
 };
 
@@ -38,7 +41,7 @@ impl AnimationUIState {
         channel: ChannelId,
         channels: &Channels,
         patch: &Patch,
-        emitter: &dyn EmitControlMessage,
+        emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
         let (ta, index) = self.current_animation_with_index(channel, channels, patch)?;
         ta.anim().emit_state(&mut InnerAnimationEmitter(emitter));
@@ -55,7 +58,7 @@ impl AnimationUIState {
         channel: ChannelId,
         channels: &Channels,
         patch: &mut Patch,
-        emitter: &dyn EmitControlMessage,
+        emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
             return Ok(());
@@ -142,7 +145,7 @@ impl AnimationUIState {
     }
 }
 
-struct InnerAnimationEmitter<'a>(&'a dyn EmitControlMessage);
+struct InnerAnimationEmitter<'a>(&'a dyn EmitScopedControlMessage);
 
 impl<'a> EmitAnimationStateChange for InnerAnimationEmitter<'a> {
     fn emit_animation_state_change(&mut self, sc: tunnels::animation::StateChange) {

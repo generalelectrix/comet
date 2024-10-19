@@ -288,20 +288,19 @@ const GROUP: &str = Astroscan::NAME.0;
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "Gobo",
     n: Astroscan::GOBO_COUNT,
     x_primary_coordinate: false,
 };
 
-const LAMP_ON: Button = button(GROUP, "LampOn");
+const LAMP_ON: Button = button("LampOn");
 
-const MIRROR_GOBO_ROTATION: Button = button(GROUP, "MirrorGoboRotation");
-const MIRROR_MIRROR_ROTATION: Button = button(GROUP, "MirrorMirrorRotation");
-const MIRROR_PAN: Button = button(GROUP, "MirrorPan");
-const MIRROR_TILT: Button = button(GROUP, "MirrorTilt");
+const MIRROR_GOBO_ROTATION: Button = button("MirrorGoboRotation");
+const MIRROR_MIRROR_ROTATION: Button = button("MirrorMirrorRotation");
+const MIRROR_PAN: Button = button("MirrorPan");
+const MIRROR_TILT: Button = button("MirrorTilt");
 
-const ACTIVE: Button = button(GROUP, "Active");
+const ACTIVE: Button = button("Active");
 
 impl EnumRadioButton for Color {}
 
@@ -337,7 +336,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for Astroscan {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             StateChange::LampOn(v) => LAMP_ON.send(v, send),
@@ -347,7 +346,7 @@ impl HandleOscStateChange<StateChange> for Astroscan {
             StateChange::MirrorTilt(v) => MIRROR_TILT.send(v, send),
             StateChange::Active(v) => ACTIVE.send(v, send),
             StateChange::Color(c) => {
-                c.set(GROUP, COLOR, send);
+                c.set(COLOR, send);
             }
             StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
             _ => (),

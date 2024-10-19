@@ -104,7 +104,7 @@ impl Dimmer {
 impl HandleOscStateChange<StateChange> for Dimmer {
     fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
     }
 }

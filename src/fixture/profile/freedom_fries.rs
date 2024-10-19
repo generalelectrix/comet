@@ -159,11 +159,10 @@ impl AnimationTarget {
 
 const GROUP: &str = FreedomFries::NAME.0;
 
-const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
-const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
+const RUN_PROGRAM: Button = button("RunProgram");
+const PROGRAM_CYCLE_ALL: Button = button("ProgramCycleAll");
 
 const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
-    group: GROUP,
     control: "ProgramLabel",
     n: 1,
     empty_label: "",
@@ -196,7 +195,7 @@ fn wrap_color(sc: ColorStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for FreedomFries {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         if let StateChange::Program(v) = sc {
             let label = v.to_string();

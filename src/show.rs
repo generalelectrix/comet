@@ -8,7 +8,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
-    osc::{ControlMessageType, OscController},
+    osc::{ControlMessageType, OscController, ScopedControlEmitter},
 };
 
 pub use crate::channel::ChannelId;
@@ -48,7 +48,10 @@ impl Show {
         }
 
         let master_controls = MasterControls::new();
-        master_controls.emit_state(&osc_controller.sender_with_metadata(None));
+        master_controls.emit_state(&ScopedControlEmitter {
+            entity: crate::master::GROUP,
+            emitter: &osc_controller.sender_with_metadata(None),
+        });
 
         let initial_channel = channels.validate_channel(0).ok();
 
@@ -62,7 +65,10 @@ impl Show {
                 initial_channel.unwrap(),
                 &channels,
                 &patch,
-                &osc_controller.sender_with_metadata(None),
+                &ScopedControlEmitter {
+                    entity: crate::osc::animation::GROUP,
+                    emitter: &osc_controller.sender_with_metadata(None),
+                },
             )?;
         };
 
@@ -147,7 +153,10 @@ impl Show {
                     channel,
                     &self.channels,
                     &mut self.patch,
-                    &sender,
+                    &ScopedControlEmitter {
+                        entity: crate::osc::animation::GROUP,
+                        emitter: &sender,
+                    },
                 )
             }
             ControlMessageType::Fixture => {

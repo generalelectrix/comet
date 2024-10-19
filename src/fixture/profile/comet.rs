@@ -259,17 +259,16 @@ pub enum StateChange {
 const GROUP: &str = Comet::NAME.0;
 
 // Buttons.
-const SHUTTER: Button = button(GROUP, "Shutter");
-const STROBE_ON: Button = button(GROUP, "StrobeOn");
-const AUTO_STEP: Button = button(GROUP, "AutoStep");
-const STEP_BACKWARDS: Button = button(GROUP, "StepBackwards");
-const STEP_FORWARDS: Button = button(GROUP, "StepForwards");
-const SHUTTER_SOUND_ACTIVE: Button = button(GROUP, "ShutterSoundActive");
-const TRIG_SOUND_ACTIVE: Button = button(GROUP, "TrigSoundActive");
-const RESET: Button = button(GROUP, "Reset");
+const SHUTTER: Button = button("Shutter");
+const STROBE_ON: Button = button("StrobeOn");
+const AUTO_STEP: Button = button("AutoStep");
+const STEP_BACKWARDS: Button = button("StepBackwards");
+const STEP_FORWARDS: Button = button("StepForwards");
+const SHUTTER_SOUND_ACTIVE: Button = button("ShutterSoundActive");
+const TRIG_SOUND_ACTIVE: Button = button("TrigSoundActive");
+const RESET: Button = button("Reset");
 
 const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
-    group: GROUP,
     control: "SelectMacro",
     n: 10,
     x_primary_coordinate: true,
@@ -303,7 +302,7 @@ impl Comet {
 impl HandleOscStateChange<StateChange> for Comet {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         use StateChange::*;
         #[allow(clippy::single_match)]

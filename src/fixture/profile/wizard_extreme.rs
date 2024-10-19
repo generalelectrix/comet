@@ -301,19 +301,18 @@ const GROUP: &str = WizardExtreme::NAME.0;
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {
-    group: GROUP,
     control: "Gobo",
     n: WizardExtreme::GOBO_COUNT,
     x_primary_coordinate: false,
 };
 
-const TWINKLE: Button = button(GROUP, "Twinkle");
+const TWINKLE: Button = button("Twinkle");
 
-const MIRROR_DRUM_ROTATION: Button = button(GROUP, "MirrorDrumRotation");
-const MIRROR_DRUM_SWIVEL: Button = button(GROUP, "MirrorDrumSwivel");
-const MIRROR_REFLECTOR_ROTATION: Button = button(GROUP, "MirrorReflectorRotation");
+const MIRROR_DRUM_ROTATION: Button = button("MirrorDrumRotation");
+const MIRROR_DRUM_SWIVEL: Button = button("MirrorDrumSwivel");
+const MIRROR_REFLECTOR_ROTATION: Button = button("MirrorReflectorRotation");
 
-const ACTIVE: Button = button(GROUP, "Active");
+const ACTIVE: Button = button("Active");
 
 impl EnumRadioButton for Color {}
 
@@ -347,14 +346,14 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for WizardExtreme {
     fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             StateChange::Dimmer(v) => {
-                send_float(GROUP, "Dimmer", v, send);
+                send_float("Dimmer", v, send);
             }
             StateChange::Color(c) => {
-                c.set(GROUP, COLOR, send);
+                c.set(COLOR, send);
             }
             StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
             StateChange::MirrorDrumRotation(v) => MIRROR_DRUM_ROTATION.send(v, send),

@@ -75,7 +75,7 @@ impl ControllableFixture for Aquarius {
     }
 }
 
-const LAMP_ON: Button = button(Aquarius::NAME.0, "LampOn");
+const LAMP_ON: Button = button("LampOn");
 
 impl Aquarius {
     fn map_controls(map: &mut GroupControlMap<ControlMessage>) {

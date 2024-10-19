@@ -139,7 +139,7 @@ fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
 impl HandleOscStateChange<StateChange> for Starlight {
     fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         // FIXME: implement talkback
     }

@@ -2,12 +2,11 @@ use super::{get_bool, send_float};
 
 #[derive(Clone)]
 pub struct Button {
-    pub group: &'static str,
     pub control: &'static str,
 }
 
-pub const fn button(group: &'static str, control: &'static str) -> Button {
-    Button { group, control }
+pub const fn button(control: &'static str) -> Button {
+    Button { control }
 }
 
 impl Button {
@@ -34,8 +33,8 @@ impl Button {
 
     pub fn send<S>(&self, val: bool, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
-        send_float(self.group, self.control, if val { 1.0 } else { 0.0 }, send);
+        send_float(self.control, if val { 1.0 } else { 0.0 }, send);
     }
 }

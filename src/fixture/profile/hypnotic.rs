@@ -127,9 +127,9 @@ impl AnimationTarget {
 
 const GROUP: &str = Hypnotic::NAME.0;
 
-const RED_LASER_ON: Button = button(GROUP, "RedLaserOn");
-const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
-const BLUE_LASER_ON: Button = button(GROUP, "BlueLaserOn");
+const RED_LASER_ON: Button = button("RedLaserOn");
+const GREEN_LASER_ON: Button = button("GreenLaserOn");
+const BLUE_LASER_ON: Button = button("BlueLaserOn");
 
 impl Hypnotic {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
