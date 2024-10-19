@@ -8,7 +8,7 @@ mod patch;
 mod profile;
 
 pub use group::{FixtureGroup, FixtureGroupKey, GroupName};
-pub use patch::{Patch, PatchAnimatedFixture, PatchFixture};
+pub use patch::Patch;
 pub use profile::*;
 
 /// Wrap up the master and group-level controls into a single struct to pass
