@@ -4,33 +4,33 @@ controllers:
     port: 9000
 debug: False
 fixtures:
-  - name: wizard_extreme
+  - name: WizardExtreme
     addr: 16
     channel: True
-  - name: wizard_extreme
+  - name: WizardExtreme
     addr: 32
     channel: True
-  - name: solar_system
+  - name: SolarSystem
     addr: 50
     channel: True
-  - name: solar_system
+  - name: SolarSystem
     addr: 60
     group: ss2
     channel: True
-  - name: colordynamic
+  - name: Colordynamic
     addr: 81
-  - name: dimmer
+  - name: Dimmer
     addr: 300
     group: fp_s4_0
     channel: True
-  - name: dimmer
+  - name: Dimmer
     addr: 301
     group: fp_s4_1
     channel: True
-  - name: starlight
+  - name: Starlight
     addr: 70
     channel: True
-  - name: starlight
+  - name: Starlight
     addr: 75
     channel: True
     group: tree_star

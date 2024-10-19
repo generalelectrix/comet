@@ -1,18 +1,15 @@
 //! SGM Colordynamic 575
 //! The granddaddy Aquarius.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{BipolarFloat, UnipolarFloat};
-
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
-use crate::master::FixtureGroupControls;
-use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Colordynamic {
+    controls: GroupControlMap<ControlMessage>,
     shutter_open: bool,
     strobe: GenericStrobe,
     color_rotation_on: bool,
@@ -35,18 +32,14 @@ pub struct Colordynamic {
 // }
 
 impl PatchAnimatedFixture for Colordynamic {
-    const NAME: FixtureType = FixtureType("colordynamic");
+    const NAME: FixtureType = FixtureType("Colordynamic");
     fn channel_count(&self) -> usize {
         4
     }
 }
 
 impl Colordynamic {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             ShutterOpen(v) => self.shutter_open = v,
@@ -61,6 +54,10 @@ impl Colordynamic {
 }
 
 impl ControllableFixture for Colordynamic {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
@@ -76,13 +73,13 @@ impl ControllableFixture for Colordynamic {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -168,5 +165,38 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::ColorPosition | Self::ColorRotationSpeed)
+    }
+}
+
+const GROUP: &str = Colordynamic::NAME.0;
+
+const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
+const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
+
+impl Colordynamic {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        SHUTTER_OPEN.map_state(map, ShutterOpen);
+        map_strobe(map, "Strobe", &wrap_strobe);
+
+        COLOR_ROTATION_ON.map_state(map, ColorRotationOn);
+        map.add_unipolar("ColorRotationSpeed", ColorRotationSpeed);
+        map.add_unipolar("ColorPosition", ColorPosition);
+        map.add_bipolar("FiberRotation", |v| {
+            FiberRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+impl HandleOscStateChange<StateChange> for Colordynamic {
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        // FIXME no talkback
     }
 }

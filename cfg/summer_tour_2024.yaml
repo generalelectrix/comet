@@ -4,34 +4,34 @@ controllers:
     port: 9000
 debug: False
 fixtures:
-  - name: wizard_extreme
+  - name: WizardExtreme
     universe: 0
     addr: 123
     channel: True
 
-  - name: wizard_extreme
+  - name: WizardExtreme
     universe: 0
     addr: 134
     channel: True
 
-  - name: astroscan
+  - name: Astroscan
     universe: 0
     addr: 423
     channel: True
 
-  - name: wizard_extreme
+  - name: WizardExtreme
     universe: 0
     addr: 145
     channel: True
     mirror: True
 
-  - name: wizard_extreme
+  - name: WizardExtreme
     universe: 0
     addr: 297
     channel: True
     mirror: True
 
-  - name: astroscan
+  - name: Astroscan
     universe: 0
     addr: 437
     channel: True

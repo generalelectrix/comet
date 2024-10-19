@@ -1,21 +1,20 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
-use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Aquarius {
+    controls: GroupControlMap<ControlMessage>,
     lamp_on: bool,
     rotation: BipolarFloat,
 }
 
 impl PatchAnimatedFixture for Aquarius {
-    const NAME: FixtureType = FixtureType("aquarius");
+    const NAME: FixtureType = FixtureType("Aquarius");
     fn channel_count(&self) -> usize {
         2
     }
@@ -53,6 +52,10 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(LampOn(self.lamp_on), emitter);
@@ -61,16 +64,28 @@ impl ControllableFixture for Aquarius {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
+
+const LAMP_ON: Button = button(Aquarius::NAME.0, "LampOn");
+
+impl Aquarius {
+    fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        LAMP_ON.map_state(map, LampOn);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Aquarius {}
 
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {

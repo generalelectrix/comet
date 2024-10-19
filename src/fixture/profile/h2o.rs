@@ -1,16 +1,14 @@
 //! Intuitive control profile for the American DJ H2O DMX Pro.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{BipolarFloat, UnipolarFloat};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
-use crate::util::bipolar_to_split_range;
-use crate::util::unipolar_to_range;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct H2O {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     rotation: BipolarFloat,
     fixed_color: FixedColor,
@@ -19,18 +17,14 @@ pub struct H2O {
 }
 
 impl PatchAnimatedFixture for H2O {
-    const NAME: FixtureType = FixtureType("h2o");
+    const NAME: FixtureType = FixtureType("H2O");
     fn channel_count(&self) -> usize {
         3
     }
 }
 
 impl H2O {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -76,15 +70,19 @@ impl AnimatedFixture for H2O {
 }
 
 impl ControllableFixture for H2O {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 
@@ -171,5 +169,40 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer)
+    }
+}
+
+const GROUP: &str = H2O::NAME.0;
+const FIXED_COLOR: &str = "FixedColor";
+
+const COLOR_ROTATE: Button = button(GROUP, "ColorRotate");
+
+impl EnumRadioButton for FixedColor {}
+
+impl H2O {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Dimmer", Dimmer);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+        map.add_enum_handler(FIXED_COLOR, ignore_payload, |c, _| FixedColor(c));
+        COLOR_ROTATE.map_state(map, ColorRotate);
+        map.add_bipolar("ColorRotation", |v| {
+            ColorRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+impl HandleOscStateChange<StateChange> for H2O {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        #[allow(clippy::single_match)]
+        match sc {
+            StateChange::FixedColor(c) => {
+                c.set(GROUP, FIXED_COLOR, send);
+            }
+            _ => (),
+        }
     }
 }

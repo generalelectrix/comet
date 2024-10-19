@@ -1,20 +1,19 @@
 //! A DMX faderboard utility.
 
-use anyhow::Context;
 use log::error;
-use number::UnipolarFloat;
 
 use crate::fixture::prelude::*;
-use crate::util::unipolar_to_range;
+use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct Faderboard {
+    controls: GroupControlMap<ControlMessage>,
     channel_count: usize,
     vals: Vec<UnipolarFloat>,
 }
 
 impl PatchFixture for Faderboard {
-    const NAME: FixtureType = FixtureType("faderboard");
+    const NAME: FixtureType = FixtureType("Faderboard");
     fn channel_count(&self) -> usize {
         self.channel_count
     }
@@ -25,6 +24,7 @@ const DEFAULT_CHANNEL_COUNT: usize = 16;
 impl Default for Faderboard {
     fn default() -> Self {
         Self {
+            controls: Default::default(),
             vals: vec![UnipolarFloat::ZERO; DEFAULT_CHANNEL_COUNT],
             channel_count: DEFAULT_CHANNEL_COUNT,
         }
@@ -32,11 +32,7 @@ impl Default for Faderboard {
 }
 
 impl Faderboard {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         let (chan, val) = sc;
         if chan >= self.channel_count {
             error!("Channel out of range: {}.", chan);
@@ -56,6 +52,10 @@ impl NonAnimatedFixture for Faderboard {
 }
 
 impl ControllableFixture for Faderboard {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         for (i, v) in self.vals.iter().enumerate() {
             Self::emit((i, *v), emitter);
@@ -64,13 +64,13 @@ impl ControllableFixture for Faderboard {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -78,3 +78,16 @@ impl ControllableFixture for Faderboard {
 pub type StateChange = (usize, UnipolarFloat);
 
 pub type ControlMessage = StateChange;
+
+const CONTROLS: FaderArray = FaderArray {
+    group: Faderboard::NAME.0,
+    control: "Fader",
+};
+
+impl Faderboard {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        CONTROLS.map(map, |index, val| Ok((index, val)))
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Faderboard {}

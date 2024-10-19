@@ -4,8 +4,7 @@ use rosc::{OscMessage, OscType};
 use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;
 
-use super::{control_message::OscControlMessage, ControlMap, OscError};
-use crate::fixture::ControlMessagePayload;
+use super::{control_message::OscControlMessage, GroupControlMap, OscError};
 use anyhow::Result;
 
 /// Model a 1D button grid with radio-select behavior.
@@ -25,19 +24,19 @@ pub struct RadioButton {
 
 impl RadioButton {
     /// Wire up this radio button to a control map.
-    pub fn map<F>(self, map: &mut ControlMap<ControlMessagePayload>, process: F)
+    pub fn map<F, T>(self, map: &mut GroupControlMap<T>, process: F)
     where
-        F: Fn(usize) -> ControlMessagePayload + 'static + Copy,
+        F: Fn(usize) -> T + 'static + Copy,
     {
         self.map_fallible(map, move |x| Ok(process(x)));
     }
 
     /// Wire up this radio button to a control map, with a fallible processor.
-    pub fn map_fallible<F>(self, map: &mut ControlMap<ControlMessagePayload>, process: F)
+    pub fn map_fallible<F, T>(self, map: &mut GroupControlMap<T>, process: F)
     where
-        F: Fn(usize) -> Result<ControlMessagePayload> + 'static + Copy,
+        F: Fn(usize) -> Result<T> + 'static + Copy,
     {
-        map.add(self.group, self.control, move |m| {
+        map.add(self.control, move |m| {
             self.parse(m)?.map(process).transpose()
         })
     }

@@ -1,29 +1,23 @@
 //! Control profile for a uv_led_brick.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
-use crate::util::unipolar_to_range;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
-pub struct UvLedBrick(UnipolarFloat);
+pub struct UvLedBrick(UnipolarFloat, GroupControlMap<ControlMessage>);
 
 impl PatchAnimatedFixture for UvLedBrick {
-    const NAME: FixtureType = FixtureType("uv_led_brick");
+    const NAME: FixtureType = FixtureType("UvLedBrick");
     fn channel_count(&self) -> usize {
         7
     }
 }
 
 impl UvLedBrick {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         self.0 = sc;
         Self::emit(sc, emitter);
     }
@@ -51,19 +45,23 @@ impl AnimatedFixture for UvLedBrick {
 }
 
 impl ControllableFixture for UvLedBrick {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.1);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         Self::emit(self.0, emitter);
     }
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.1.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -97,3 +95,11 @@ impl AnimationTarget {
         true
     }
 }
+
+impl UvLedBrick {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        map.add_unipolar("Level", |x| x);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for UvLedBrick {}

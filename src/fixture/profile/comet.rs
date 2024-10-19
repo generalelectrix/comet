@@ -1,14 +1,12 @@
-use anyhow::Context;
 use log::error;
-use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::prelude::*;
-use crate::util::unipolar_to_range;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Comet {
+    controls: GroupControlMap<ControlMessage>,
     shutter_open: bool,
     strobe: GenericStrobe,
     shutter_sound_active: bool,
@@ -19,7 +17,7 @@ pub struct Comet {
 }
 
 impl PatchFixture for Comet {
-    const NAME: FixtureType = FixtureType("comet");
+    const NAME: FixtureType = FixtureType("Comet");
     fn channel_count(&self) -> usize {
         5
     }
@@ -48,15 +46,11 @@ impl Comet {
         use ControlMessage::*;
         match msg {
             Set(sc) => self.handle_state_change(sc, emitter),
-            Step(direction) => self.trigger_state.enqueue_step(direction),
+            TakeStep(direction) => self.trigger_state.enqueue_step(direction),
         }
     }
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Shutter(v) => self.shutter_open = v,
@@ -89,6 +83,10 @@ impl NonAnimatedFixture for Comet {
     }
 }
 impl ControllableFixture for Comet {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         self.trigger_state.update(delta_t);
     }
@@ -111,13 +109,13 @@ impl ControllableFixture for Comet {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.control(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.control(ctl, emitter);
         Ok(())
     }
 }
@@ -241,7 +239,7 @@ pub enum Step {
 #[derive(Clone, Copy, Debug)]
 pub enum ControlMessage {
     Set(StateChange),
-    Step(Step),
+    TakeStep(Step),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -255,4 +253,65 @@ pub enum StateChange {
     AutoStep(bool),
     AutoStepRate(UnipolarFloat),
     Reset(bool),
+}
+
+// Control group names.
+const GROUP: &str = Comet::NAME.0;
+
+// Buttons.
+const SHUTTER: Button = button(GROUP, "Shutter");
+const STROBE_ON: Button = button(GROUP, "StrobeOn");
+const AUTO_STEP: Button = button(GROUP, "AutoStep");
+const STEP_BACKWARDS: Button = button(GROUP, "StepBackwards");
+const STEP_FORWARDS: Button = button(GROUP, "StepForwards");
+const SHUTTER_SOUND_ACTIVE: Button = button(GROUP, "ShutterSoundActive");
+const TRIG_SOUND_ACTIVE: Button = button(GROUP, "TrigSoundActive");
+const RESET: Button = button(GROUP, "Reset");
+
+const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
+    group: GROUP,
+    control: "SelectMacro",
+    n: 10,
+    x_primary_coordinate: true,
+};
+
+impl Comet {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use ControlMessage::*;
+        use StateChange::*;
+        SHUTTER.map_state(map, |v| Set(Shutter(v)));
+        STROBE_ON.map_state(map, |v| Set(Strobe(GenericStrobeStateChange::On(v))));
+        map.add_unipolar("StrobeRate", |v| {
+            Set(Strobe(GenericStrobeStateChange::Rate(quadratic(v))))
+        });
+        map.add_unipolar("Mspeed", |v| Set(MirrorSpeed(v)));
+        AUTO_STEP.map_state(map, |v| Set(AutoStep(v)));
+        map.add_unipolar("AutoStepRate", |v| Set(AutoStepRate(v)));
+
+        STEP_BACKWARDS.map_trigger(map, || TakeStep(Step::Backward));
+        STEP_FORWARDS.map_trigger(map, || TakeStep(Step::Forward));
+
+        MACRO_SELECT_RADIO_BUTTON.map(map, |v| Set(SelectMacro(v)));
+
+        SHUTTER_SOUND_ACTIVE.map_state(map, |v| Set(ShutterSoundActive(v)));
+        TRIG_SOUND_ACTIVE.map_state(map, |v| Set(TrigSoundActive(v)));
+
+        RESET.map_state(map, |v| Set(Reset(v)));
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Comet {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        use StateChange::*;
+        #[allow(clippy::single_match)]
+        match sc {
+            // Most controls do not have talkback due to network latency issues.
+            // Consider changing this.
+            SelectMacro(v) => MACRO_SELECT_RADIO_BUTTON.set(v, send),
+            _ => (),
+        }
+    }
 }

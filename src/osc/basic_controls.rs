@@ -1,5 +1,3 @@
-use crate::fixture::ControlMessagePayload;
-
 use super::{get_bool, send_float};
 
 #[derive(Clone)]
@@ -13,21 +11,19 @@ pub const fn button(group: &'static str, control: &'static str) -> Button {
 }
 
 impl Button {
-    pub fn map_state<F>(&self, map: &mut super::FixtureControlMap, process: F)
+    pub fn map_state<F, T>(&self, map: &mut super::GroupControlMap<T>, process: F)
     where
-        F: Fn(bool) -> ControlMessagePayload + 'static + Copy,
+        F: Fn(bool) -> T + 'static + Copy,
     {
-        map.add_fetch_process(self.group, self.control, get_bool, move |v| {
-            Some(process(v))
-        })
+        map.add_fetch_process(self.control, get_bool, move |v| Some(process(v)))
     }
 
-    pub fn map_trigger(
+    pub fn map_trigger<T>(
         &self,
-        map: &mut super::FixtureControlMap,
-        event_factory: impl Fn() -> ControlMessagePayload + 'static,
+        map: &mut super::GroupControlMap<T>,
+        event_factory: impl Fn() -> T + 'static,
     ) {
-        map.add_fetch_process(self.group, self.control, get_bool, move |v| {
+        map.add_fetch_process(self.control, get_bool, move |v| {
             if v {
                 Some(event_factory())
             } else {

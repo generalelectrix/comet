@@ -1,17 +1,16 @@
 //! Control profle for the Chauvet Swarm 5 FX, aka the Swarmolon.
 //! Also
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log::error;
-use number::{BipolarFloat, UnipolarFloat};
-
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
-use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
+
 #[derive(Default, Debug)]
 pub struct Swarmolon {
+    controls: GroupControlMap<ControlMessage>,
     derby_color: DerbyColorState,
     derby_strobe: GenericStrobe,
     derby_rotation: BipolarFloat,
@@ -33,7 +32,7 @@ const QUAD_PHASE_CHANNEL_COUNT: usize = 4;
 const GALAXIAN_CHANNEL_COUNT: usize = 5;
 
 impl PatchFixture for Swarmolon {
-    const NAME: FixtureType = FixtureType("swarmolon");
+    const NAME: FixtureType = FixtureType("Swarmolon");
     fn channel_count(&self) -> usize {
         let mut count = CHANNEL_COUNT;
         if self.quad_phase_mindmeld {
@@ -58,11 +57,7 @@ impl PatchFixture for Swarmolon {
 }
 
 impl Swarmolon {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             DerbyColor(color, state) => {
@@ -154,6 +149,10 @@ impl NonAnimatedFixture for Swarmolon {
 }
 
 impl ControllableFixture for Swarmolon {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);
@@ -177,10 +176,13 @@ impl ControllableFixture for Swarmolon {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        match *msg.unpack_as::<ControlMessage>().context(Self::NAME)? {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        match ctl {
             ControlMessage::Set(sc) => {
                 self.handle_state_change(sc, emitter);
             }
@@ -399,4 +401,73 @@ pub enum WhiteStrobeStateChange {
     /// Valid range is 0 to 9.
     Program(usize),
     State(GenericStrobeStateChange),
+}
+
+const GROUP: &str = Swarmolon::NAME.0;
+
+const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "WhiteStrobeProgram",
+    n: 10,
+    x_primary_coordinate: false,
+};
+
+const RED_LASER_ON: Button = button(GROUP, "RedLaserOn");
+const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
+
+impl EnumRadioButton for DerbyColor {}
+
+impl Swarmolon {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use ControlMessage::*;
+        use StateChange::*;
+
+        map.add_enum_handler("DerbyColor", get_bool, |c, v| Set(DerbyColor(c, v)));
+        map_strobe(map, "DerbyStrobe", &wrap_derby_strobe);
+        map.add_bipolar("DerbyRotation", |v| {
+            Set(DerbyRotation(bipolar_fader_with_detent(v)))
+        });
+        map_strobe(map, "WhiteStrobe", &wrap_white_strobe);
+        STROBE_PROGRAM_SELECT.map(map, |v| {
+            Set(WhiteStrobe(WhiteStrobeStateChange::Program(v)))
+        });
+
+        RED_LASER_ON.map_state(map, |v| Set(RedLaserOn(v)));
+        GREEN_LASER_ON.map_state(map, |v| Set(GreenLaserOn(v)));
+        map_strobe(map, "LaserStrobe", &wrap_laser_strobe);
+        map.add_bipolar("LaserRotation", |v| {
+            Set(LaserRotation(bipolar_fader_with_detent(v)))
+        });
+
+        // "Global" strobe rate control, for simpler one-fader control.
+        // This is a bit of a hack, since it has no talkback channel.
+        // This will need to be refactored if we want to use uniform talkback.
+        map.add_unipolar("StrobeRate", StrobeRate);
+    }
+}
+
+fn wrap_derby_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    ControlMessage::Set(StateChange::DerbyStrobe(sc))
+}
+
+fn wrap_white_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    ControlMessage::Set(StateChange::WhiteStrobe(WhiteStrobeStateChange::State(sc)))
+}
+
+fn wrap_laser_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    ControlMessage::Set(StateChange::LaserStrobe(sc))
+}
+
+impl HandleOscStateChange<StateChange> for Swarmolon {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        use StateChange::*;
+        #[allow(clippy::single_match)]
+        match sc {
+            WhiteStrobe(WhiteStrobeStateChange::Program(v)) => STROBE_PROGRAM_SELECT.set(v, send),
+            _ => (),
+        }
+    }
 }

@@ -3,21 +3,18 @@
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
-use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::UnipolarFloat;
-
-use super::{
-    color::{Color, StateChange as ColorStateChange},
-    generic::{GenericStrobe, GenericStrobeStateChange},
-};
-use crate::fixture::prelude::*;
-use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+
+use super::color::{Color, StateChange as ColorStateChange};
+use crate::fixture::color::map_color;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct FreedomFries {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     color: Color,
     speed: UnipolarFloat,
@@ -28,7 +25,7 @@ pub struct FreedomFries {
 }
 
 impl PatchAnimatedFixture for FreedomFries {
-    const NAME: FixtureType = FixtureType("freedom_fries");
+    const NAME: FixtureType = FixtureType("FreedomFries");
     fn channel_count(&self) -> usize {
         8
     }
@@ -36,11 +33,7 @@ impl PatchAnimatedFixture for FreedomFries {
 
 impl FreedomFries {
     pub const PROGRAM_COUNT: usize = 27;
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -100,6 +93,10 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
@@ -110,13 +107,13 @@ impl ControllableFixture for FreedomFries {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -157,5 +154,53 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer | Self::Speed)
+    }
+}
+
+const GROUP: &str = FreedomFries::NAME.0;
+
+const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
+const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
+
+const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
+    group: GROUP,
+    control: "ProgramLabel",
+    n: 1,
+    empty_label: "",
+};
+
+impl FreedomFries {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+
+        map.add_unipolar("Dimmer", Dimmer);
+        map_color(map, &wrap_color);
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_unipolar("Speed", Speed);
+        RUN_PROGRAM.map_state(map, RunProgram);
+        map.add_unipolar("Program", |v| {
+            Program(unipolar_to_range(0, FreedomFries::PROGRAM_COUNT as u8 - 1, v) as usize)
+        });
+        PROGRAM_CYCLE_ALL.map_state(map, ProgramCycleAll);
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+fn wrap_color(sc: ColorStateChange) -> ControlMessage {
+    StateChange::Color(sc)
+}
+
+impl HandleOscStateChange<StateChange> for FreedomFries {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        if let StateChange::Program(v) = sc {
+            let label = v.to_string();
+            PROGRAM_SELECT_LABEL.set([label].into_iter(), send);
+        }
     }
 }

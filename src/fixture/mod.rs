@@ -1,11 +1,4 @@
-use fixture::OwnedFixtureControlMessage;
-use std::any::Any;
-use std::fmt::Debug;
-
-use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::channel::ControlMessage as ChannelsControlMessage;
-use crate::master::{ControlMessage as MasterControlMessage, MasterControls, Strobe};
-use crate::osc::{OscClientId, TalkbackMode};
+use crate::master::{MasterControls, Strobe};
 
 pub mod animation_target;
 #[allow(clippy::module_inception)]
@@ -14,34 +7,9 @@ mod group;
 mod patch;
 mod profile;
 
-pub use fixture::FixtureType;
 pub use group::{FixtureGroup, FixtureGroupKey, GroupName};
-pub use patch::{Patch, PatchAnimatedFixture, PatchFixture};
+pub use patch::Patch;
 pub use profile::*;
-
-#[derive(Debug)]
-pub struct ControlMessage {
-    pub sender_id: OscClientId,
-    pub talkback: TalkbackMode,
-    // FIXME: this should be tied to the fixture message payload, not this scope!
-    pub key: Option<FixtureGroupKey>,
-    pub msg: ControlMessagePayload,
-}
-
-#[derive(Debug)]
-pub enum ControlMessagePayload {
-    Fixture(OwnedFixtureControlMessage),
-    Master(MasterControlMessage),
-    RefreshUI,
-    Animation(AnimationControlMessage),
-    Channel(ChannelsControlMessage),
-}
-
-impl ControlMessagePayload {
-    pub fn fixture<T: Any>(msg: T) -> Self {
-        Self::Fixture(OwnedFixtureControlMessage(Box::new(msg)))
-    }
-}
 
 /// Wrap up the master and group-level controls into a single struct to pass
 /// into fixtures.
@@ -60,13 +28,12 @@ impl<'a> FixtureGroupControls<'a> {
 
 pub mod prelude {
     pub use super::fixture::{
-        AnimatedFixture, ControllableFixture, FixtureControlMessage, FixtureType,
-        NonAnimatedFixture,
+        AnimatedFixture, ControllableFixture, FixtureType, NonAnimatedFixture,
     };
     pub use super::patch::{PatchAnimatedFixture, PatchFixture};
     pub use super::FixtureGroupControls;
-    pub use crate::channel::ChannelStateEmitter;
+    pub use crate::channel::{ChannelControlMessage, ChannelStateChange, ChannelStateEmitter};
     pub use crate::fixture::animation_target::TargetedAnimationValues;
-    pub use crate::osc::FixtureStateEmitter;
-    pub use crate::osc::HandleStateChange;
+    pub use crate::fixture::generic::*;
+    pub use number::{BipolarFloat, Phase, UnipolarFloat};
 }

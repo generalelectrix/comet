@@ -1,16 +1,15 @@
 //! Optikinetics Solar System - the grand champion gobo rotator
 
-use anyhow::Context;
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::BipolarFloat;
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
-use crate::util::unipolar_to_range;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct SolarSystem {
+    controls: GroupControlMap<ControlMessage>,
     shutter_open: bool,
     auto_shutter: bool,
     front_gobo: usize,
@@ -20,7 +19,7 @@ pub struct SolarSystem {
 }
 
 impl PatchAnimatedFixture for SolarSystem {
-    const NAME: FixtureType = FixtureType("solar_system");
+    const NAME: FixtureType = FixtureType("SolarSystem");
     fn channel_count(&self) -> usize {
         7
     }
@@ -56,6 +55,10 @@ impl SolarSystem {
 }
 
 impl ControllableFixture for SolarSystem {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(ShutterOpen(self.shutter_open), emitter);
@@ -68,13 +71,13 @@ impl ControllableFixture for SolarSystem {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -160,5 +163,53 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         false
+    }
+}
+
+const GROUP: &str = SolarSystem::NAME.0;
+
+const FRONT_GOBO_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "FrontGobo",
+    n: SolarSystem::GOBO_COUNT,
+    x_primary_coordinate: false,
+};
+
+const REAR_GOBO_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "RearGobo",
+    n: SolarSystem::GOBO_COUNT,
+    x_primary_coordinate: false,
+};
+
+const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
+const AUTO_SHUTTER: Button = button(GROUP, "AutoShutter");
+
+impl SolarSystem {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        SHUTTER_OPEN.map_state(map, ShutterOpen);
+        AUTO_SHUTTER.map_state(map, AutoShutter);
+        FRONT_GOBO_SELECT.map(map, FrontGobo);
+        map.add_bipolar("FrontRotation", |v| {
+            FrontRotation(bipolar_fader_with_detent(v))
+        });
+        REAR_GOBO_SELECT.map(map, RearGobo);
+        map.add_bipolar("RearRotation", |v| {
+            RearRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+impl HandleOscStateChange<StateChange> for SolarSystem {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        match sc {
+            StateChange::FrontGobo(v) => FRONT_GOBO_SELECT.set(v, send),
+            StateChange::RearGobo(v) => REAR_GOBO_SELECT.set(v, send),
+            _ => (), // TODO: talkback for all controls
+        }
     }
 }

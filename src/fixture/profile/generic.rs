@@ -5,6 +5,7 @@ use std::time::Duration;
 use number::UnipolarFloat;
 
 use crate::master::Strobe as MasterStrobe;
+use crate::osc::prelude::*;
 use crate::{config::Options, util::unipolar_to_range};
 
 /// Most basic strobe control - active/not, plus rate.
@@ -77,6 +78,18 @@ impl GenericStrobe {
 pub enum GenericStrobeStateChange {
     On(bool),
     Rate(UnipolarFloat),
+}
+
+pub fn map_strobe<F, T>(map: &mut GroupControlMap<T>, name: &str, wrap: &'static F)
+where
+    F: Fn(GenericStrobeStateChange) -> T + 'static,
+{
+    map.add_bool(&format!("{}On", name), move |v| {
+        wrap(GenericStrobeStateChange::On(v))
+    });
+    map.add_unipolar(&format!("{}Rate", name), move |v| {
+        wrap(GenericStrobeStateChange::Rate(v))
+    });
 }
 
 #[derive(Debug)]

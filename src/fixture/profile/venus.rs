@@ -2,11 +2,8 @@
 
 use std::time::Duration;
 
-use anyhow::Context;
-use number::{BipolarFloat, UnipolarFloat};
-
 use crate::fixture::prelude::*;
-use crate::util::{unipolar_to_range, RampingParameter};
+use crate::osc::prelude::*;
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus
@@ -29,6 +26,7 @@ use crate::util::{unipolar_to_range, RampingParameter};
 /// 8 - Lamp Control
 #[derive(Debug)]
 pub struct Venus {
+    controls: GroupControlMap<ControlMessage>,
     base_rotation: RampingParameter<BipolarFloat>,
     cradle_motion: RampingParameter<UnipolarFloat>,
     head_rotation: RampingParameter<BipolarFloat>,
@@ -37,7 +35,7 @@ pub struct Venus {
 }
 
 impl PatchFixture for Venus {
-    const NAME: FixtureType = FixtureType("venus");
+    const NAME: FixtureType = FixtureType("Venus");
     fn channel_count(&self) -> usize {
         8
     }
@@ -46,6 +44,7 @@ impl PatchFixture for Venus {
 impl Default for Venus {
     fn default() -> Self {
         Self {
+            controls: Default::default(),
             base_rotation: RampingParameter::new(BipolarFloat::ZERO, BipolarFloat::ONE),
             cradle_motion: RampingParameter::new(UnipolarFloat::ZERO, UnipolarFloat::ONE),
             head_rotation: RampingParameter::new(BipolarFloat::ZERO, BipolarFloat::ONE),
@@ -85,6 +84,10 @@ impl NonAnimatedFixture for Venus {
 }
 
 impl ControllableFixture for Venus {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         self.base_rotation.update(delta_t);
         self.cradle_motion.update(delta_t);
@@ -103,13 +106,13 @@ impl ControllableFixture for Venus {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -130,3 +133,29 @@ pub enum StateChange {
 
 // Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
+
+const GROUP: &str = Venus::NAME.0;
+
+const LAMP_ON: Button = button(GROUP, "LampControl");
+
+impl Venus {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+
+        map.add_bipolar("BaseRotation", |v| {
+            BaseRotation(bipolar_fader_with_detent(v))
+        });
+        map.add_unipolar("CradleMotion", |v| {
+            CradleMotion(unipolar_fader_with_detent(v))
+        });
+        map.add_bipolar("HeadRotation", |v| {
+            HeadRotation(bipolar_fader_with_detent(v))
+        });
+        map.add_bipolar("ColorRotation", |v| {
+            ColorRotation(bipolar_fader_with_detent(v))
+        });
+        LAMP_ON.map_state(map, LampOn);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Venus {}

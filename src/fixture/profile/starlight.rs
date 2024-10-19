@@ -1,35 +1,28 @@
 //! Control profile for the "house light" Starlight white laser moonflower.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{BipolarFloat, UnipolarFloat};
-
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
-use crate::util::bipolar_to_split_range;
-use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Starlight {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     strobe: GenericStrobe,
     rotation: BipolarFloat,
 }
 
 impl PatchAnimatedFixture for Starlight {
-    const NAME: FixtureType = FixtureType("starlight");
+    const NAME: FixtureType = FixtureType("Starlight");
     fn channel_count(&self) -> usize {
         4
     }
 }
 
 impl Starlight {
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -68,15 +61,18 @@ impl AnimatedFixture for Starlight {
 }
 
 impl ControllableFixture for Starlight {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 
@@ -124,5 +120,27 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer)
+    }
+}
+
+impl Starlight {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Dimmer", Dimmer);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+        map_strobe(map, "Strobe", &wrap_strobe);
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+impl HandleOscStateChange<StateChange> for Starlight {
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        // FIXME: implement talkback
     }
 }

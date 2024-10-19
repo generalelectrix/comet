@@ -3,19 +3,18 @@ use tunnels::clock_bank::{ClockIdxExt, N_CLOCKS};
 
 use crate::animation::AnimationUIState;
 use crate::animation::ControlMessage as AnimationControlMessage;
-use crate::animation::ControlMessage::Animation as WrapAnimation;
 
 use crate::fixture::animation_target::N_ANIM;
-use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{send_float, ControlMap, MapControls, RadioButton};
+use crate::osc::{send_float, RadioButton};
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
 
 use super::basic_controls::{button, Button};
 use super::label_array::LabelArray;
+use super::GroupControlMap;
 
-const GROUP: &str = "Animation";
+pub(crate) const GROUP: &str = "Animation";
 
 // Base animation system
 
@@ -53,10 +52,10 @@ const CLOCK_SOURCE: RadioButton = RadioButton {
     x_primary_coordinate: false,
 };
 
-impl MapControls for AnimationUIState {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
+impl AnimationUIState {
+    pub fn map_controls(map: &mut GroupControlMap<AnimationControlMessage>) {
+        use crate::animation::ControlMessage::Animation as WrapAnimation;
         use ControlMessage::*;
-        use ControlMessagePayload::Animation as FixtureAnimation;
         use StateChange::*;
         WAVEFORM_SELECT.map_fallible(map, |v| {
             match v {
@@ -67,47 +66,31 @@ impl MapControls for AnimationUIState {
                 4 => Some(Constant),
                 _ => None,
             }
-            .map(|waveform| FixtureAnimation(WrapAnimation(Set(Waveform(waveform)))))
+            .map(|waveform| WrapAnimation(Set(Waveform(waveform))))
             .ok_or_else(|| anyhow!("waveform select out of range: {v}"))
         });
 
-        map.add_bipolar(GROUP, SPEED, |v| {
-            FixtureAnimation(WrapAnimation(Set(Speed(v))))
-        });
-        map.add_unipolar(GROUP, SIZE, |v| {
-            FixtureAnimation(WrapAnimation(Set(Size(v))))
-        });
-        map.add_unipolar(GROUP, DUTY_CYCLE, |v| {
-            FixtureAnimation(WrapAnimation(Set(DutyCycle(v))))
-        });
-        map.add_unipolar(GROUP, SMOOTHING, |v| {
-            FixtureAnimation(WrapAnimation(Set(Smoothing(v))))
-        });
+        map.add_bipolar(SPEED, |v| WrapAnimation(Set(Speed(v))));
+        map.add_unipolar(SIZE, |v| WrapAnimation(Set(Size(v))));
+        map.add_unipolar(DUTY_CYCLE, |v| WrapAnimation(Set(DutyCycle(v))));
+        map.add_unipolar(SMOOTHING, |v| WrapAnimation(Set(Smoothing(v))));
 
-        N_PERIODS_SELECT.map(map, |v| FixtureAnimation(WrapAnimation(Set(NPeriods(v)))));
+        N_PERIODS_SELECT.map(map, |v| WrapAnimation(Set(NPeriods(v))));
         CLOCK_SOURCE.map(map, |v| {
             if v == 0 {
-                FixtureAnimation(WrapAnimation(SetClockSource(None)))
+                WrapAnimation(SetClockSource(None))
             } else {
-                FixtureAnimation(WrapAnimation(SetClockSource(Some(ClockIdxExt(v - 1)))))
+                WrapAnimation(SetClockSource(Some(ClockIdxExt(v - 1))))
             }
         });
-        PULSE.map_trigger(map, || FixtureAnimation(WrapAnimation(TogglePulse)));
-        INVERT.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleInvert)));
-        STANDING.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleStanding)));
-        USE_AUDIO_SPEED.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSpeed)));
-        USE_AUDIO_SIZE.map_trigger(map, || FixtureAnimation(WrapAnimation(ToggleUseAudioSize)));
+        PULSE.map_trigger(map, || WrapAnimation(TogglePulse));
+        INVERT.map_trigger(map, || WrapAnimation(ToggleInvert));
+        STANDING.map_trigger(map, || WrapAnimation(ToggleStanding));
+        USE_AUDIO_SPEED.map_trigger(map, || WrapAnimation(ToggleUseAudioSpeed));
+        USE_AUDIO_SIZE.map_trigger(map, || WrapAnimation(ToggleUseAudioSize));
 
-        ANIMATION_TARGET_SELECT.map(map, |msg| {
-            ControlMessagePayload::Animation(AnimationControlMessage::Target(msg))
-        });
-        ANIMATION_SELECT.map(map, |msg| {
-            ControlMessagePayload::Animation(AnimationControlMessage::SelectAnimation(msg))
-        });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        Default::default()
+        ANIMATION_TARGET_SELECT.map(map, AnimationControlMessage::Target);
+        ANIMATION_SELECT.map(map, AnimationControlMessage::SelectAnimation);
     }
 }
 

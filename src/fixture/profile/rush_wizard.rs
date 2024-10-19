@@ -1,16 +1,14 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
-use anyhow::Context;
 use log::error;
-use number::{BipolarFloat, UnipolarFloat};
-
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
-use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct RushWizard {
+    controls: GroupControlMap<ControlMessage>,
     dimmer: UnipolarFloat,
     strobe: GenericStrobe,
     color: Color,
@@ -23,7 +21,7 @@ pub struct RushWizard {
 }
 
 impl PatchFixture for RushWizard {
-    const NAME: FixtureType = FixtureType("rush_wizard");
+    const NAME: FixtureType = FixtureType("RushWizard");
     fn channel_count(&self) -> usize {
         10
     }
@@ -32,11 +30,7 @@ impl PatchFixture for RushWizard {
 impl RushWizard {
     const GOBO_COUNT: usize = 16; // includes the open position
 
-    fn handle_state_change(
-        &mut self,
-        sc: StateChange,
-        emitter: &FixtureStateEmitter,
-    ) {
+    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         match sc {
             Dimmer(v) => self.dimmer = v,
@@ -83,6 +77,10 @@ impl NonAnimatedFixture for RushWizard {
 }
 
 impl ControllableFixture for RushWizard {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Dimmer(self.dimmer), emitter);
@@ -101,13 +99,13 @@ impl ControllableFixture for RushWizard {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -154,6 +152,58 @@ impl Color {
             Red => 176,
             Orange => 179,
             Green => 182,
+        }
+    }
+}
+
+const GROUP: &str = RushWizard::NAME.0;
+const COLOR: &str = "Color";
+
+const GOBO_SELECT: RadioButton = RadioButton {
+    group: GROUP,
+    control: "Gobo",
+    n: 16,
+    x_primary_coordinate: false,
+};
+
+const TWINKLE: Button = button(GROUP, "Twinkle");
+
+impl EnumRadioButton for Color {}
+
+impl RushWizard {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Dimmer", Dimmer);
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_enum_handler(COLOR, ignore_payload, |c, _| Color(c));
+        TWINKLE.map_state(map, Twinkle);
+        map.add_unipolar("TwinkleSpeed", TwinkleSpeed);
+        GOBO_SELECT.map(map, Gobo);
+        map.add_bipolar("DrumRotation", |v| {
+            DrumRotation(bipolar_fader_with_detent(v))
+        });
+        map.add_bipolar("DrumSwivel", DrumSwivel);
+        map.add_bipolar("ReflectorRotation", |v| {
+            ReflectorRotation(bipolar_fader_with_detent(v))
+        });
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+impl HandleOscStateChange<StateChange> for RushWizard {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        match sc {
+            StateChange::Color(c) => {
+                c.set(GROUP, COLOR, send);
+            }
+            StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
+            _ => (),
         }
     }
 }

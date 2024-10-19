@@ -1,32 +1,25 @@
 use crate::channel::{ChannelControlMessage, ChannelStateChange, Channels};
 use crate::channel::{ControlMessage, StateChange};
 
-use crate::fixture::ControlMessagePayload;
 use crate::osc::HandleOscStateChange;
-use crate::osc::{ControlMap, MapControls, RadioButton};
+use crate::osc::{GroupControlMap, RadioButton};
 
 use super::fader_array::FaderArray;
 use super::label_array::LabelArray;
 
 const N_CHANNELS: usize = 8;
 
-const GROUP: &str = "Show";
+pub(crate) const GROUP: &str = "Show";
 
-impl MapControls for Channels {
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>) {
-        CHANNEL_SELECT.map(map, |msg| {
-            ControlMessagePayload::Channel(ControlMessage::SelectChannel(msg))
-        });
+impl Channels {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        CHANNEL_SELECT.map(map, ControlMessage::SelectChannel);
         CHANNEL_FADERS.map(map, |channel_id, level| {
-            Ok(ControlMessagePayload::Channel(ControlMessage::Control {
+            Ok(ControlMessage::Control {
                 channel_id: Some(channel_id),
                 msg: ChannelControlMessage::Level(level),
-            }))
+            })
         });
-    }
-
-    fn fixture_type_aliases(&self) -> Vec<(String, crate::fixture::FixtureType)> {
-        Default::default()
     }
 }
 

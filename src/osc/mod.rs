@@ -1,9 +1,7 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
-use crate::fixture::FixtureGroupKey;
-use crate::fixture::{ControlMessage, ControlMessagePayload, FixtureType, GroupName};
+use crate::fixture::GroupName;
 use anyhow::bail;
 use anyhow::Result;
-use control_message::OscControlMessage;
 use log::{error, info};
 use number::{BipolarFloat, Phase, UnipolarFloat};
 use rosc::{encoder, OscMessage, OscPacket, OscType};
@@ -26,22 +24,11 @@ mod channels;
 mod control_message;
 mod fader_array;
 mod label_array;
-mod master;
-mod profile;
 mod radio_button;
 mod register;
 
+pub use control_message::OscControlMessage;
 pub use register::prompt_osc_config;
-
-/// Map OSC control inputs for a fixture type.
-pub trait MapControls {
-    /// Add OSC control mappings to the provided control map.
-    fn map_controls(&self, map: &mut ControlMap<ControlMessagePayload>);
-
-    /// Return aliases for fixture type, if this is a fixture.
-    /// Return None if we're not mapping fixture controls.
-    fn fixture_type_aliases(&self) -> Vec<(String, FixtureType)>;
-}
 
 /// Emit control messages.
 /// Will be extended in the future to potentially cover more cases.
@@ -76,8 +63,6 @@ pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
 impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 
 pub struct OscController {
-    control_map: ControlMap<ControlMessagePayload>,
-    key_map: HashMap<String, FixtureType>,
     recv: Receiver<OscControlMessage>,
     send: Sender<OscControlResponse>,
 }
@@ -88,56 +73,17 @@ impl OscController {
         let control_recv = start_listener(recv_addr)?;
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
-            control_map: ControlMap::new(),
-            key_map: HashMap::new(),
             recv: control_recv,
             send: response_send,
         })
     }
 
-    pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>> {
-        let msg = match self.recv.recv_timeout(timeout) {
-            Ok(msg) => msg,
-            Err(RecvTimeoutError::Timeout) => {
-                return Ok(None);
-            }
+    pub fn recv(&self, timeout: Duration) -> Result<Option<OscControlMessage>> {
+        match self.recv.recv_timeout(timeout) {
+            Ok(msg) => Ok(Some(msg)),
+            Err(RecvTimeoutError::Timeout) => Ok(None),
             Err(RecvTimeoutError::Disconnected) => {
                 bail!("OSC receiver disconnected");
-            }
-        };
-        Ok(self
-            .control_map
-            .handle(&msg)?
-            .map(|(m, talkback)| ControlMessage {
-                sender_id: msg.client_id,
-                talkback,
-                msg: m,
-                key: self
-                    .key_map
-                    .get(msg.entity_type())
-                    .map(|fixture| FixtureGroupKey {
-                        fixture: *fixture,
-                        group: msg.group,
-                    }),
-            }))
-    }
-
-    pub fn map_controls<M: MapControls>(&mut self, fixture: &M) {
-        fixture.map_controls(&mut self.control_map);
-        for (control_key, fixture_type) in fixture.fixture_type_aliases() {
-            match self.key_map.entry(control_key) {
-                Entry::Vacant(e) => {
-                    e.insert(fixture_type);
-                }
-                Entry::Occupied(existing) => {
-                    assert!(
-                        existing.get() == &fixture_type,
-                        "fixture type alias conflict for {}: {}, {}",
-                        existing.key(),
-                        existing.get(),
-                        fixture_type
-                    );
-                }
             }
         }
     }
@@ -147,11 +93,9 @@ impl OscController {
     pub fn sender_with_metadata<'a>(
         &'a self,
         sender_id: Option<&'a OscClientId>,
-        talkback: TalkbackMode,
     ) -> OscMessageWithMetadataSender<'_> {
         OscMessageWithMetadataSender {
             sender_id,
-            talkback,
             controller: self,
         }
     }
@@ -160,7 +104,6 @@ impl OscController {
 /// Decorate the OscController to add message metedata to control responses.
 pub struct OscMessageWithMetadataSender<'a> {
     pub sender_id: Option<&'a OscClientId>,
-    pub talkback: TalkbackMode,
     pub controller: &'a OscController,
 }
 
@@ -171,7 +114,7 @@ impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
             .send
             .send(OscControlResponse {
                 sender_id: self.sender_id.cloned(),
-                talkback: self.talkback,
+                talkback: TalkbackMode::All, // FIXME: hardcoded talkback
                 msg,
             })
             .is_err()
@@ -224,43 +167,68 @@ impl OscClientId {
     }
 }
 
-type ControlMessageCreator<C> =
-    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
-
-pub struct ControlMap<C>(HashMap<String, ControlMessageCreator<C>>);
-
-pub type FixtureControlMap = ControlMap<ControlMessagePayload>;
-
 impl Display for OscClientId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "OSC client at {}", self.0)
     }
 }
 
-impl<C> ControlMap<C> {
-    pub fn new() -> Self {
-        Self(HashMap::new())
-    }
+#[derive(Debug, Copy, Clone)]
+pub enum ControlMessageType {
+    Master,
+    Channel,
+    Animation,
+    Fixture,
+}
 
-    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
-        let key = msg.control_key();
-        match self.0.get(key) {
-            None => {
-                bail!("No control handler matched key \"{}\".", key);
-            }
-            Some(handler) => handler(msg),
+impl ControlMessageType {
+    /// Parse the provided type string as a control message type.
+    /// Any unknown type will be treated as a fixture control message.
+    pub fn parse(t: &str) -> Self {
+        match t {
+            crate::master::GROUP => Self::Master,
+            channels::GROUP => Self::Channel,
+            animation::GROUP => Self::Animation,
+            _ => Self::Fixture,
         }
     }
+}
 
-    pub fn add<F>(&mut self, group: &str, control: &str, handler: F)
+type ControlMessageCreator<C> =
+    Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
+
+pub type Control = String;
+
+pub struct GroupControlMap<C>(HashMap<Control, ControlMessageCreator<C>>);
+
+impl<C> Default for GroupControlMap<C> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<C> core::fmt::Debug for GroupControlMap<C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<{} control mappings>", self.0.len())
+    }
+}
+
+impl<C> GroupControlMap<C> {
+    pub fn handle(&self, msg: &OscControlMessage) -> Result<Option<(C, TalkbackMode)>> {
+        let control = msg.control();
+        let Some(handler) = self.0.get(control) else {
+            bail!("no control handler matched \"{control}\"");
+        };
+        handler(msg)
+    }
+
+    pub fn add<F>(&mut self, control: &str, handler: F)
     where
         F: Fn(&OscControlMessage) -> Result<Option<C>> + 'static,
     {
-        let key = format!("/{}/{}", group, control);
-        match self.0.entry(key) {
-            Entry::Occupied(e) => {
-                let key = e.key();
-                panic!("Duplicate control definition for {}", key,)
+        match self.0.entry(control.to_string()) {
+            Entry::Occupied(_) => {
+                panic!("duplicate control definition \"{control}\"");
             }
             Entry::Vacant(v) => v.insert(Box::new(move |m| {
                 Ok(handler(m)?.map(|msg| (msg, TalkbackMode::All)))
@@ -268,46 +236,45 @@ impl<C> ControlMap<C> {
         };
     }
 
-    pub fn add_fetch_process<F, T, P>(&mut self, group: &str, control: &str, fetch: F, process: P)
+    pub fn add_fetch_process<F, T, P>(&mut self, control: &str, fetch: F, process: P)
     where
         F: Fn(&OscControlMessage) -> Result<T, OscError> + 'static,
         P: Fn(T) -> Option<C> + 'static,
     {
-        self.add(group, control, move |v| Ok(process(fetch(v)?)))
+        self.add(control, move |v| Ok(process(fetch(v)?)))
     }
 
-    pub fn add_unipolar<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_unipolar<F>(&mut self, control: &str, process: F)
     where
         F: Fn(UnipolarFloat) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_unipolar, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_unipolar, move |v| Some(process(v)))
     }
 
-    pub fn add_bipolar<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_bipolar<F>(&mut self, control: &str, process: F)
     where
         F: Fn(BipolarFloat) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_bipolar, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_bipolar, move |v| Some(process(v)))
     }
 
-    pub fn add_phase<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_phase<F>(&mut self, control: &str, process: F)
     where
         F: Fn(Phase) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_phase, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_phase, move |v| Some(process(v)))
     }
 
-    pub fn add_bool<F>(&mut self, group: &str, control: &str, process: F)
+    pub fn add_bool<F>(&mut self, control: &str, process: F)
     where
         F: Fn(bool) -> C + 'static,
     {
-        self.add_fetch_process(group, control, get_bool, move |v| Some(process(v)))
+        self.add_fetch_process(control, get_bool, move |v| Some(process(v)))
     }
 
     /// Add a collection of control actions for each variant of the specified enum type.
     pub fn add_enum_handler<EnumType, Parse, Process, ParseResult>(
         &mut self,
-        group: &str,
         control: &str,
         parse: Parse,
         process: Process,
@@ -317,7 +284,7 @@ impl<C> ControlMap<C> {
         Parse: Fn(&OscControlMessage) -> Result<ParseResult, OscError> + 'static,
         Process: Fn(EnumType, ParseResult) -> C + 'static,
     {
-        self.add(group, control, move |m| {
+        self.add(control, move |m| {
             let variant: EnumType = EnumType::parse(m)?;
             let val = parse(m)?;
             Ok(Some(process(variant, val)))
@@ -461,13 +428,13 @@ fn get_phase(v: &OscControlMessage) -> Result<Phase, OscError> {
     Ok(Phase::new(get_float(v)?))
 }
 
-fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
+pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
     UnipolarFloat::new(v.val().powi(2))
 }
 
 /// Get a single boolean argument from the provided OSC message.
 /// Coerce ints and floats to boolean values.
-fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
+pub fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
     let bval = match &v.arg {
         OscType::Bool(b) => *b,
         OscType::Int(i) => *i != 0,
@@ -484,12 +451,12 @@ fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
 }
 
 /// A OSC message processor that ignores the message payload, returning unit.
-fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
+pub fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
     Ok(())
 }
 
 /// Send an OSC message setting the state of a float control.
-fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &S)
+pub fn send_float<S, V: Into<f64>>(group: &str, control: &str, val: V, emitter: &S)
 where
     S: crate::osc::EmitOscMessage + ?Sized,
 {
@@ -497,4 +464,17 @@ where
         addr: format!("/{group}/{control}"),
         args: vec![OscType::Float(val.into() as f32)],
     });
+}
+
+pub mod prelude {
+    pub use super::basic_controls::{button, Button};
+    pub use super::fader_array::FaderArray;
+    pub use super::label_array::LabelArray;
+    pub use super::radio_button::{EnumRadioButton, RadioButton};
+    pub use super::FixtureStateEmitter;
+    pub use super::{
+        get_bool, ignore_payload, quadratic, send_float, GroupControlMap, HandleOscStateChange,
+        HandleStateChange, OscControlMessage,
+    };
+    pub use crate::util::*;
 }

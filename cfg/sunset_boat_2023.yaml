@@ -4,35 +4,35 @@ controllers:
     port: 9000
 debug: False
 fixtures:
-  - name: wizard_extreme
+  - name: WizardExtreme
     addr: 16
     channel: True
-  - name: wizard_extreme
+  - name: WizardExtreme
     addr: 32
     channel: True
-  - name: starlight
+  - name: Starlight
     addr: 200
     channel: True
-  - name: starlight
+  - name: Starlight
     addr: 205
     channel: True
-  - name: h2o
+  - name: H2O
     channel: True
     addr: 50
-  - name: h2o
+  - name: H2O
     channel: True
     addr: 53
-  - name: h2o
+  - name: H2O
     channel: True
     addr: 56
-  - name: h2o
+  - name: H2O
     channel: True
     addr: 59
-  - name: hypnotic
+  - name: Hypnotic
     addr: 100
-  - name: hypnotic
+  - name: Hypnotic
     addr: 102
-  - name: uv_led_brick
+  - name: UvLedBrick
     addr: 250
-  - name: rotosphere_q3
+  - name: RotosphereQ3
     addr: 300

@@ -1,23 +1,21 @@
 //! Control profile for a Radiance hazer.
 //! Probably fine for any generic 2-channel hazer.
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::{collections::HashMap, time::Duration};
 
-use number::UnipolarFloat;
-
-use super::generic::Timer;
 use crate::fixture::prelude::*;
-use crate::{master::FixtureGroupControls, util::unipolar_to_range};
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Radiance {
+    controls: GroupControlMap<ControlMessage>,
     haze: UnipolarFloat,
     fan: UnipolarFloat,
     timer: Option<Timer>,
 }
 
 impl PatchFixture for Radiance {
-    const NAME: FixtureType = FixtureType("radiance");
+    const NAME: FixtureType = FixtureType("Radiance");
     fn channel_count(&self) -> usize {
         2
     }
@@ -57,6 +55,10 @@ impl NonAnimatedFixture for Radiance {
 }
 
 impl ControllableFixture for Radiance {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn update(&mut self, delta_t: Duration) {
         if let Some(timer) = self.timer.as_mut() {
             timer.update(delta_t);
@@ -71,13 +73,13 @@ impl ControllableFixture for Radiance {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -90,3 +92,13 @@ pub enum StateChange {
 
 // Venus has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
+
+impl Radiance {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        map.add_unipolar("Haze", Haze);
+        map.add_unipolar("Fan", Fan);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Radiance {}

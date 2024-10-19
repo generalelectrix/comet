@@ -1,18 +1,16 @@
 //! Control profile for a dimmer.
 
-use anyhow::Context;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
-use crate::util::unipolar_to_range;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
-pub struct Dimmer(UnipolarFloat);
+pub struct Dimmer(UnipolarFloat, GroupControlMap<ControlMessage>);
 
 impl PatchAnimatedFixture for Dimmer {
-    const NAME: FixtureType = FixtureType("dimmer");
+    const NAME: FixtureType = FixtureType("Dimmer");
     fn channel_count(&self) -> usize {
         1
     }
@@ -44,19 +42,23 @@ impl AnimatedFixture for Dimmer {
 }
 
 impl ControllableFixture for Dimmer {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.1);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         Self::emit(self.0, emitter);
     }
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.1.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -88,5 +90,19 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         true
+    }
+}
+
+impl Dimmer {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        map.add_unipolar("Level", |x| x);
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Dimmer {
+    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
     }
 }

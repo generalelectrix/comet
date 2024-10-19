@@ -40,6 +40,7 @@ type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 #[derive(Default)]
 pub struct Patch {
     fixtures: HashMap<FixtureGroupKey, FixtureGroup>,
+    fixture_type_lookup: HashMap<&'static str, FixtureType>,
     used_addrs: UsedAddrs,
 }
 
@@ -74,7 +75,7 @@ impl Patch {
             .iter()
             .flat_map(|p| p(&cfg))
             .collect::<Result<Vec<_>>>()?;
-        let candidate = match candidates.len() {
+        let mut candidate = match candidates.len() {
             0 => bail!("unable to patch {cfg:?}"),
             1 => candidates.pop().unwrap(),
             _ => bail!(
@@ -112,6 +113,10 @@ impl Patch {
         }
         // No existing group; create a new one.
         cfg.channel.then(|| channels.add(key.clone()));
+
+        // Populate fixture controls.
+        candidate.fixture.populate_controls();
+
         let group = FixtureGroup::new(
             key.clone(),
             GroupFixtureConfig {
@@ -122,6 +127,8 @@ impl Patch {
             candidate.channel_count,
             candidate.fixture,
         );
+
+        self.fixture_type_lookup.insert(key.fixture.0, key.fixture);
         self.fixtures.insert(key, group);
 
         Ok(())
@@ -166,6 +173,11 @@ impl Patch {
             }
         }
         Ok(used_addrs)
+    }
+
+    /// Look up the static version of a fixture type registered with the patch.
+    pub fn lookup_fixture_type(&self, t: &str) -> Option<FixtureType> {
+        self.fixture_type_lookup.get(t).copied()
     }
 
     /// Get the fixture/channel patched with this key.

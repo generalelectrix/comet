@@ -1,16 +1,13 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
-
-use anyhow::Context;
-use number::BipolarFloat;
+use num_derive::{FromPrimitive, ToPrimitive};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
-use crate::util::bipolar_to_split_range;
-use num_derive::{FromPrimitive, ToPrimitive};
-
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Hypnotic {
+    controls: GroupControlMap<ControlMessage>,
     red_laser_on: bool,
     green_laser_on: bool,
     blue_laser_on: bool,
@@ -18,7 +15,7 @@ pub struct Hypnotic {
 }
 
 impl PatchAnimatedFixture for Hypnotic {
-    const NAME: FixtureType = FixtureType("hypnotic");
+    const NAME: FixtureType = FixtureType("Hypnotic");
     fn channel_count(&self) -> usize {
         2
     }
@@ -67,6 +64,10 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {
+    fn populate_controls(&mut self) {
+        Self::map_controls(&mut self.controls);
+    }
+
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(RedLaserOn(self.red_laser_on), emitter);
@@ -77,13 +78,13 @@ impl ControllableFixture for Hypnotic {
 
     fn control(
         &mut self,
-        msg: FixtureControlMessage,
+        msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        self.handle_state_change(
-            *msg.unpack_as::<ControlMessage>().context(Self::NAME)?,
-            emitter,
-        );
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.handle_state_change(ctl, emitter);
         Ok(())
     }
 }
@@ -123,3 +124,22 @@ impl AnimationTarget {
         false
     }
 }
+
+const GROUP: &str = Hypnotic::NAME.0;
+
+const RED_LASER_ON: Button = button(GROUP, "RedLaserOn");
+const GREEN_LASER_ON: Button = button(GROUP, "GreenLaserOn");
+const BLUE_LASER_ON: Button = button(GROUP, "BlueLaserOn");
+
+impl Hypnotic {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        RED_LASER_ON.map_state(map, RedLaserOn);
+        GREEN_LASER_ON.map_state(map, GreenLaserOn);
+        BLUE_LASER_ON.map_state(map, BlueLaserOn);
+
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Hypnotic {}
