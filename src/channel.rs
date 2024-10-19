@@ -10,8 +10,8 @@ use serde::Deserialize;
 use crate::{
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
     osc::{
-        EmitControlMessage, EmitOscMessage, EmitScopedControlMessage, GroupControlMap,
-        HandleStateChange, OscControlMessage, ScopedControlEmitter,
+        EmitControlMessage, EmitOscMessage, GroupControlMap, HandleStateChange, OscControlMessage,
+        ScopedControlEmitter,
     },
 };
 

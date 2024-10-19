@@ -133,7 +133,7 @@ pub enum StateChange {
 
 pub type ControlMessage = StateChange;
 
-const GROUP: &str = Venus::NAME.0;
+
 
 const LAMP_ON: Button = button("LampControl");
 

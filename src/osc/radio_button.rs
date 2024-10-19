@@ -1,5 +1,5 @@
 use log::error;
-use rosc::{OscMessage, OscType};
+use rosc::OscType;
 
 use std::{fmt::Display, str::FromStr};
 use strum::IntoEnumIterator;

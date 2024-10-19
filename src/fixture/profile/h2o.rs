@@ -172,7 +172,7 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = H2O::NAME.0;
+
 const FIXED_COLOR: &str = "FixedColor";
 
 const COLOR_ROTATE: Button = button("ColorRotate");

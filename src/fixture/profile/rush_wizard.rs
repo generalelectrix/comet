@@ -156,7 +156,7 @@ impl Color {
     }
 }
 
-const GROUP: &str = RushWizard::NAME.0;
+
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {

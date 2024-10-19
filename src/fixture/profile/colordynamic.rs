@@ -168,8 +168,6 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = Colordynamic::NAME.0;
-
 const SHUTTER_OPEN: Button = button("ShutterOpen");
 const COLOR_ROTATION_ON: Button = button("ColorRotationOn");
 

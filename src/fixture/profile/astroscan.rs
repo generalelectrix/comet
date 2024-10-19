@@ -284,7 +284,6 @@ impl AnimationTarget {
 
 // OSC control
 
-const GROUP: &str = Astroscan::NAME.0;
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {

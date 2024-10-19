@@ -403,7 +403,7 @@ pub enum WhiteStrobeStateChange {
     State(GenericStrobeStateChange),
 }
 
-const GROUP: &str = Swarmolon::NAME.0;
+
 
 const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
     control: "WhiteStrobeProgram",

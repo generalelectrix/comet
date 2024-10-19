@@ -256,7 +256,7 @@ pub enum StateChange {
 }
 
 // Control group names.
-const GROUP: &str = Comet::NAME.0;
+
 
 // Buttons.
 const SHUTTER: Button = button("Shutter");

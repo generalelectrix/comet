@@ -1,6 +1,6 @@
 //! TouchOSC array of unipolar fader.
 use number::UnipolarFloat;
-use rosc::{OscMessage, OscType};
+use rosc::OscType;
 
 use super::{GroupControlMap, ScopedOscMessage};
 use anyhow::{bail, Result};

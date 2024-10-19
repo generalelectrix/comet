@@ -157,7 +157,7 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = FreedomFries::NAME.0;
+
 
 const RUN_PROGRAM: Button = button("RunProgram");
 const PROGRAM_CYCLE_ALL: Button = button("ProgramCycleAll");

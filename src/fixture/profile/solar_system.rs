@@ -166,7 +166,7 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = SolarSystem::NAME.0;
+
 
 const FRONT_GOBO_SELECT: RadioButton = RadioButton {
     control: "FrontGobo",

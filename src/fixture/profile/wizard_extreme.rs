@@ -297,7 +297,7 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = WizardExtreme::NAME.0;
+
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {

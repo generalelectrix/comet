@@ -125,7 +125,7 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = Hypnotic::NAME.0;
+
 
 const RED_LASER_ON: Button = button("RedLaserOn");
 const GREEN_LASER_ON: Button = button("GreenLaserOn");

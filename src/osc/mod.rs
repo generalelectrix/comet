@@ -1,6 +1,5 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
-use crate::fixture::prelude::FixtureType;
-use crate::fixture::{FixtureGroupKey, GroupName};
+use crate::fixture::FixtureGroupKey;
 use anyhow::bail;
 use anyhow::Result;
 use log::{error, info};

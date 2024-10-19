@@ -1,4 +1,4 @@
-use rosc::{OscMessage, OscType};
+use rosc::OscType;
 
 use super::ScopedOscMessage;
 

@@ -9,10 +9,7 @@ use crate::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
         Patch,
     },
-    osc::{
-        EmitControlMessage, EmitScopedControlMessage, GroupControlMap, HandleStateChange,
-        OscControlMessage, ScopedControlEmitter,
-    },
+    osc::{EmitScopedControlMessage, GroupControlMap, HandleStateChange, OscControlMessage},
     show::ChannelId,
 };
 
