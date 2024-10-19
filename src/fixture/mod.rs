@@ -1,6 +1,7 @@
 use crate::master::{MasterControls, Strobe};
 
 pub mod animation_target;
+mod control;
 #[allow(clippy::module_inception)]
 mod fixture;
 mod group;
