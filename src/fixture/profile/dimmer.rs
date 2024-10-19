@@ -7,7 +7,10 @@ use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
-pub struct Dimmer(UnipolarFloat, GroupControlMap<ControlMessage>);
+pub struct Dimmer {
+    level: UnipolarFloat,
+    controls: GroupControlMap<ControlMessage>,
+}
 
 impl PatchAnimatedFixture for Dimmer {
     const NAME: FixtureType = FixtureType("Dimmer");
@@ -18,7 +21,7 @@ impl PatchAnimatedFixture for Dimmer {
 
 impl Dimmer {
     fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        self.0 = sc;
+        self.level = sc;
         Self::emit(sc, emitter);
     }
 }
@@ -32,7 +35,7 @@ impl AnimatedFixture for Dimmer {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut level = self.0.val();
+        let mut level = self.level.val();
 
         for (val, _target) in animation_vals {
             level += val;
@@ -43,11 +46,11 @@ impl AnimatedFixture for Dimmer {
 
 impl ControllableFixture for Dimmer {
     fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.1);
+        Self::map_controls(&mut self.controls);
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        Self::emit(self.0, emitter);
+        Self::emit(self.level, emitter);
     }
 
     fn control(
@@ -55,7 +58,7 @@ impl ControllableFixture for Dimmer {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.1.handle(msg)? else {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
             return Ok(());
         };
         self.handle_state_change(ctl, emitter);
