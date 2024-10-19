@@ -58,6 +58,10 @@ impl Channels {
         let id = ChannelId(self.channel_index.len());
         self.channel_index.push(group.clone());
         self.fixture_channel_index.insert(group, id);
+        // If this is the first channel we're configuring, set it as selected.
+        if self.current_channel.is_none() {
+            self.current_channel = Some(id);
+        }
         id
     }
 

@@ -177,7 +177,7 @@ pub struct ScopedControlEmitter<'a> {
 impl<'a> EmitScopedOscMessage for ScopedControlEmitter<'a> {
     fn emit_osc(&self, msg: ScopedOscMessage) {
         self.emitter.emit_osc(OscMessage {
-            addr: format!("/{}{}", self.entity, msg.control),
+            addr: format!("/{}/{}", self.entity, msg.control),
             args: vec![msg.arg],
         });
     }
@@ -389,7 +389,7 @@ fn start_sender(clients: Vec<OscClientId>) -> Result<Sender<OscControlResponse>>
                 continue;
             }
         };
-        // debug!("Sending OSC message: {:?}", msg);
+        //log::debug!("Sending OSC message: {packet:?}");
         for client in &clients {
             if resp.talkback == TalkbackMode::Off && resp.sender_id == Some(*client) {
                 continue;

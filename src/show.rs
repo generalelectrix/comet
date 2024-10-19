@@ -53,7 +53,7 @@ impl Show {
             emitter: &osc_controller.sender_with_metadata(None),
         });
 
-        let initial_channel = channels.validate_channel(0).ok();
+        let initial_channel = channels.current_channel();
 
         channels.emit_state(false, &patch, &osc_controller.sender_with_metadata(None));
 
