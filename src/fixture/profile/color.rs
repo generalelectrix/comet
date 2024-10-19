@@ -8,7 +8,7 @@ use number::{Phase, UnipolarFloat};
 
 use crate::master::FixtureGroupControls;
 
-use crate::fixture::prelude::*;
+use crate::fixture::prelude::*;use crate::osc::prelude::*;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]

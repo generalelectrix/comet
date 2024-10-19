@@ -467,3 +467,9 @@ where
         args: vec![OscType::Float(val.into() as f32)],
     });
 }
+
+pub mod prelude {
+    pub use super::basic_controls::{button, Button};
+    pub use super::FixtureStateEmitter;
+    pub use super::{GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage};
+}

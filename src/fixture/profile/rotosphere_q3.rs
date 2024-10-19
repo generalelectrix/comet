@@ -9,7 +9,7 @@ use super::color::{
     StateChange as ColorStateChange,
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
+use crate::fixture::prelude::*;use crate::osc::prelude::*;
 use crate::master::FixtureGroupControls;
 use crate::util::bipolar_to_split_range;
 

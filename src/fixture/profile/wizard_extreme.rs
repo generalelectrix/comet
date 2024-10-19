@@ -6,7 +6,7 @@ use number::{BipolarFloat, UnipolarFloat};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::channel::{ChannelControlMessage, ChannelStateChange};
-use crate::fixture::prelude::*;
+use crate::fixture::prelude::*;use crate::osc::prelude::*;
 use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 

@@ -5,6 +5,8 @@ use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
+use crate::util::bipolar_fader_with_detent;
 use crate::{master::FixtureGroupControls, util::bipolar_to_split_range};
 
 #[derive(Default, Debug)]
@@ -75,6 +77,18 @@ impl ControllableFixture for Aquarius {
         Ok(())
     }
 }
+
+const LAMP_ON: Button = button(Aquarius::NAME.0, "LampOn");
+
+impl Aquarius {
+    fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+        LAMP_ON.map_state(map, LampOn);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+    }
+}
+
+impl HandleOscStateChange<StateChange> for Aquarius {}
 
 #[derive(Clone, Copy, Debug)]
 pub enum StateChange {

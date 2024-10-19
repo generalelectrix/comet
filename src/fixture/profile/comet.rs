@@ -3,7 +3,7 @@ use number::UnipolarFloat;
 use std::{collections::VecDeque, time::Duration};
 
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
+use crate::fixture::prelude::*;use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]

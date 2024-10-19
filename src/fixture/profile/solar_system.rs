@@ -4,7 +4,7 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use number::BipolarFloat;
 
-use crate::fixture::prelude::*;
+use crate::fixture::prelude::*;use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
