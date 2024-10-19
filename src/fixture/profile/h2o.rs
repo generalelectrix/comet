@@ -1,13 +1,10 @@
 //! Intuitive control profile for the American DJ H2O DMX Pro.
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{BipolarFloat, UnipolarFloat};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::bipolar_to_split_range;
-use crate::util::unipolar_to_range;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct H2O {

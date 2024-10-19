@@ -1,14 +1,10 @@
 //! Control profile for the "house light" Starlight white laser moonflower.
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{BipolarFloat, UnipolarFloat};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::bipolar_to_split_range;
-use crate::util::unipolar_to_range;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Starlight {

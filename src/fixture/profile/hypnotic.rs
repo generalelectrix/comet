@@ -1,13 +1,9 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
-
-use number::BipolarFloat;
+use num_derive::{FromPrimitive, ToPrimitive};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::bipolar_to_split_range;
-use num_derive::{FromPrimitive, ToPrimitive};
-
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Hypnotic {

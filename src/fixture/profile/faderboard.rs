@@ -1,11 +1,9 @@
 //! A DMX faderboard utility.
 
 use log::error;
-use number::UnipolarFloat;
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::unipolar_to_range;
 
 #[derive(Debug)]
 pub struct Faderboard {

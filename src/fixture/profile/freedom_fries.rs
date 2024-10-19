@@ -5,16 +5,12 @@
 
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::UnipolarFloat;
-
-use super::{
-    color::{Color, StateChange as ColorStateChange},
-    generic::{GenericStrobe, GenericStrobeStateChange},
-};
-use crate::fixture::{color::map_color, prelude::*};
-use crate::osc::prelude::*;
-use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+
+use super::color::{Color, StateChange as ColorStateChange};
+use crate::fixture::color::map_color;
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct FreedomFries {

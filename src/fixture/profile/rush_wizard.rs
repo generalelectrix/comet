@@ -1,13 +1,10 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
 use log::error;
-use number::{BipolarFloat, UnipolarFloat};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::{bipolar_to_range, bipolar_to_split_range, unipolar_to_range};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct RushWizard {

@@ -1,18 +1,16 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::BipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::color::{
     AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
     StateChange as ColorStateChange,
 };
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::color::map_color;
+
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::bipolar_to_split_range;
 
 #[derive(Debug)]
 pub struct RotosphereQ3 {

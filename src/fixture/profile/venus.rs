@@ -2,11 +2,8 @@
 
 use std::time::Duration;
 
-use number::{BipolarFloat, UnipolarFloat};
-
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::{unipolar_to_range, RampingParameter};
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus

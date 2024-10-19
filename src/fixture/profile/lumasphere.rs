@@ -1,12 +1,7 @@
 use std::time::Duration;
 
-use number::{BipolarFloat, UnipolarFloat};
-
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::osc::HandleStateChange;
-use crate::util::{unipolar_to_range, RampingParameter};
 
 /// DMX 255 is too fast; restrict to a reasonable value.
 const MAX_ROTATION_SPEED: u8 = 100;

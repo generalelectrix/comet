@@ -4,11 +4,10 @@ use std::collections::HashMap;
 
 use anyhow::{bail, Result};
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::{Phase, UnipolarFloat};
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct Color {

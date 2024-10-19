@@ -1,12 +1,10 @@
 //! Control profile for a uv_led_brick.
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::UnipolarFloat;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::unipolar_to_range;
 
 #[derive(Default, Debug)]
 pub struct UvLedBrick(UnipolarFloat, GroupControlMap<ControlMessage>);

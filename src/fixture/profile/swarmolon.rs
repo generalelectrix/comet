@@ -2,14 +2,11 @@
 //! Also
 use anyhow::Result;
 use log::error;
-use number::{BipolarFloat, UnipolarFloat};
-
-use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
-use crate::util::{bipolar_to_split_range, unipolar_to_range};
 use strum::IntoEnumIterator;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
+
+use crate::fixture::prelude::*;
+use crate::osc::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Swarmolon {

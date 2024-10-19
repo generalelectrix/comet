@@ -2,12 +2,10 @@
 
 use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
-use number::BipolarFloat;
+use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
-use crate::util::unipolar_to_range;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 #[derive(Default, Debug)]
 pub struct SolarSystem {
