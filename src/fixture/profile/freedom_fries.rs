@@ -11,7 +11,8 @@ use super::{
     color::{Color, StateChange as ColorStateChange},
     generic::{GenericStrobe, GenericStrobeStateChange},
 };
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::{color::map_color, prelude::*};
+use crate::osc::prelude::*;
 use crate::util::unipolar_to_range;
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -157,5 +158,53 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer | Self::Speed)
+    }
+}
+
+const GROUP: &str = FreedomFries::NAME.0;
+
+const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
+const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
+
+const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
+    group: GROUP,
+    control: "ProgramLabel",
+    n: 1,
+    empty_label: "",
+};
+
+impl FreedomFries {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+
+        map.add_unipolar("Dimmer", Dimmer);
+        map_color(map, &wrap_color);
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_unipolar("Speed", Speed);
+        RUN_PROGRAM.map_state(map, RunProgram);
+        map.add_unipolar("Program", |v| {
+            Program(unipolar_to_range(0, FreedomFries::PROGRAM_COUNT as u8 - 1, v) as usize)
+        });
+        PROGRAM_CYCLE_ALL.map_state(map, ProgramCycleAll);
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+fn wrap_color(sc: ColorStateChange) -> ControlMessage {
+    StateChange::Color(sc)
+}
+
+impl HandleOscStateChange<StateChange> for FreedomFries {
+    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    where
+        S: crate::osc::EmitOscMessage + ?Sized,
+    {
+        if let StateChange::Program(v) = sc {
+            let label = v.to_string();
+            PROGRAM_SELECT_LABEL.set([label].into_iter(), send);
+        }
     }
 }

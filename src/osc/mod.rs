@@ -470,6 +470,7 @@ where
 
 pub mod prelude {
     pub use super::basic_controls::{button, Button};
+    pub use super::label_array::LabelArray;
     pub use super::profile::generic::map_strobe;
     pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;

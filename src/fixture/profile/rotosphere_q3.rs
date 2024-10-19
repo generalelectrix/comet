@@ -9,8 +9,10 @@ use super::color::{
     StateChange as ColorStateChange,
 };
 use super::generic::{GenericStrobe, GenericStrobeStateChange};
-use crate::fixture::prelude::*;use crate::osc::prelude::*;
+use crate::fixture::color::map_color;
+use crate::fixture::prelude::*;
 use crate::master::FixtureGroupControls;
+use crate::osc::prelude::*;
 use crate::util::bipolar_to_split_range;
 
 #[derive(Debug)]
@@ -151,3 +153,23 @@ impl AnimationTarget {
         false
     }
 }
+
+impl RotosphereQ3 {
+    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
+        use StateChange::*;
+
+        map_color(map, &wrap_color);
+        map_strobe(map, "Strobe", &wrap_strobe);
+        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
+    }
+}
+
+fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
+    StateChange::Strobe(sc)
+}
+
+fn wrap_color(sc: ColorStateChange) -> ControlMessage {
+    StateChange::Color(sc)
+}
+
+impl HandleOscStateChange<StateChange> for RotosphereQ3 {}
