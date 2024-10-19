@@ -313,6 +313,7 @@ name = "cobra_commander"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "fixture_macros",
  "itertools 0.13.0",
  "lazy_static",
  "local-ip-address",
@@ -608,6 +609,15 @@ name = "event-listener"
 version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
+
+[[package]]
+name = "fixture_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2 1.0.86",
+ "quote 1.0.37",
+ "syn 2.0.77",
+]
 
 [[package]]
 name = "fnv"
