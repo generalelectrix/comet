@@ -55,10 +55,10 @@ impl ControllableFixture for Aquarius {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        if self.lamp_on.control_ok(msg, emitter)? {
+        if self.lamp_on.control(msg, emitter)? {
             return Ok(true);
         }
-        if self.rotation.control_ok(msg, emitter)? {
+        if self.rotation.control(msg, emitter)? {
             return Ok(true);
         }
         Ok(false)

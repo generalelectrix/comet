@@ -60,23 +60,26 @@ impl Bipolar<RenderBipolarToSplitRange> {
 }
 
 impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Bipolar<R> {
+    fn val(&self) -> BipolarFloat {
+        self.val
+    }
+
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<Option<BipolarFloat>> {
+    ) -> anyhow::Result<bool> {
         if msg.control() != self.name {
-            return Ok(None);
+            return Ok(false);
         }
         let v = msg.get_bipolar().with_context(|| self.name.clone())?;
         self.val = v;
         emitter.emit_float(&self.name, self.val.into());
-        Ok(Some(self.val))
+        Ok(true)
     }
 
-    fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) -> BipolarFloat {
+    fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
         emitter.emit_float(&self.name, self.val.into());
-        self.val
     }
 }
 

@@ -11,8 +11,8 @@ use crate::{config::Options, util::unipolar_to_range};
 /// Most basic strobe control - active/not, plus rate.
 #[derive(Default, Clone, Debug)]
 pub struct GenericStrobe {
-    on: bool,
-    rate: UnipolarFloat,
+    pub on: bool,
+    pub rate: UnipolarFloat,
 }
 
 impl GenericStrobe {

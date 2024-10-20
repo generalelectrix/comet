@@ -71,10 +71,10 @@ impl ControllableFixture for Radiance {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        if self.haze.control_ok(msg, emitter)? {
+        if self.haze.control(msg, emitter)? {
             return Ok(true);
         }
-        if self.fan.control_ok(msg, emitter)? {
+        if self.fan.control(msg, emitter)? {
             return Ok(true);
         }
         Ok(false)

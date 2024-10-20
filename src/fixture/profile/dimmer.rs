@@ -53,7 +53,7 @@ impl ControllableFixture for Dimmer {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        if self.level.control_ok(msg, emitter)? {
+        if self.level.control(msg, emitter)? {
             return Ok(true);
         }
         Ok(false)

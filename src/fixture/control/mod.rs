@@ -13,29 +13,20 @@ pub use bool::*;
 pub use unipolar::*;
 
 pub trait OscControl<T> {
-    /// Potentially handle an OSC control message.
-    /// If we handle the message, return the current value for further processing.
-    /// If we don't handle the message, return None.
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<Option<T>>;
+    /// Return the current state of this control.
+    fn val(&self) -> T;
 
     /// Potentially handle an OSC control message.
     /// If we handle the message, return true.
     /// If we don't handle the message, return false.
-    fn control_ok(
+    fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<bool> {
-        self.control(msg, emitter).map(|r| r.is_some())
-    }
+    ) -> anyhow::Result<bool>;
 
     /// Emit the current state of this control.
-    /// Also return the current value for upstream processing.
-    fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) -> T;
+    fn emit_state(&self, emitter: &dyn EmitScopedOscMessage);
 }
 
 pub trait RenderToDmxWithAnimations {
