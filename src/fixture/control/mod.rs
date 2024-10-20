@@ -13,9 +13,6 @@ pub use bool::*;
 pub use unipolar::*;
 
 pub trait OscControl<T> {
-    /// Return the OSC control name for this control.
-    fn name(&self) -> &str;
-
     /// Potentially handle an OSC control message.
     /// If we handle the message, return the current value for further processing.
     /// If we don't handle the message, return None.

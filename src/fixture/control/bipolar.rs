@@ -60,10 +60,6 @@ impl Bipolar<RenderBipolarToSplitRange> {
 }
 
 impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Bipolar<R> {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

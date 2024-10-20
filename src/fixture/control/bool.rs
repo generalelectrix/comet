@@ -43,10 +43,6 @@ impl Bool<RenderBoolToRange> {
 }
 
 impl<R: RenderToDmx<bool>> OscControl<bool> for Bool<R> {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,
