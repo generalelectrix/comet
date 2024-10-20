@@ -38,11 +38,13 @@ pub trait ControllableFixture {
     fn emit_state(&self, emitter: &FixtureStateEmitter);
 
     /// Process the provided OSC control message.
+    ///
+    /// Return true if the control message was handled.
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()>;
+    ) -> anyhow::Result<bool>;
 
     /// Process a channel control message, if the fixture uses it.
     #[allow(unused)]
@@ -140,7 +142,7 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         self.fixture.control(msg, emitter)
     }
 

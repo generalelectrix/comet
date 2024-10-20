@@ -142,12 +142,12 @@ impl ControllableFixture for Lumasphere {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
+            return Ok(true);
         };
         self.handle_state_change(ctl, emitter);
-        Ok(())
+        Ok(true)
     }
 }
 

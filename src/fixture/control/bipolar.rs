@@ -68,11 +68,14 @@ impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Bipolar<R> {
         &mut self,
         msg: &OscControlMessage,
         emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<BipolarFloat> {
+    ) -> anyhow::Result<Option<BipolarFloat>> {
+        if msg.control() != self.name {
+            return Ok(None);
+        }
         let v = msg.get_bipolar().with_context(|| self.name.clone())?;
         self.val = v;
         emitter.emit_float(&self.name, self.val.into());
-        Ok(self.val)
+        Ok(Some(self.val))
     }
 
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) -> BipolarFloat {

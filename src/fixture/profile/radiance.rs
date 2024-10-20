@@ -70,16 +70,13 @@ impl ControllableFixture for Radiance {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        let control = msg.control();
-        if control == self.haze.name() {
-            self.haze.control(msg, emitter)?;
-            return Ok(());
+    ) -> anyhow::Result<bool> {
+        if self.haze.control_ok(msg, emitter)? {
+            return Ok(true);
         }
-        if control == self.fan.name() {
-            self.fan.control(msg, emitter)?;
-            return Ok(());
+        if self.fan.control_ok(msg, emitter)? {
+            return Ok(true);
         }
-        bail!("no control for {} matched for {control}", Self::NAME);
+        Ok(false)
     }
 }

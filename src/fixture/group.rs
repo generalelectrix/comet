@@ -1,6 +1,6 @@
 //! Define groups of fixtures, sharing a common fixture
 
-use anyhow::Context;
+use anyhow::{ensure, Context};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 use std::sync::Arc;
@@ -94,9 +94,16 @@ impl FixtureGroup {
         msg: &OscControlMessage,
         emitter: ChannelStateEmitter,
     ) -> anyhow::Result<()> {
-        self.fixture
+        let handled = self
+            .fixture
             .control(msg, &FixtureStateEmitter::new(&self.key, emitter))
-            .with_context(|| self.key.clone())
+            .with_context(|| self.key.clone())?;
+        ensure!(
+            handled,
+            "{} unexpectedly did not handle OSC message: {msg:?}",
+            self.key
+        );
+        Ok(())
     }
 
     /// Process the provided channel control message.

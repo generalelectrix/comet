@@ -51,11 +51,14 @@ impl<R: RenderToDmx<bool>> OscControl<bool> for Bool<R> {
         &mut self,
         msg: &OscControlMessage,
         emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<bool> {
+    ) -> anyhow::Result<Option<bool>> {
+        if msg.control() != self.name {
+            return Ok(None);
+        }
         let v = msg.get_bool().with_context(|| self.name.clone())?;
         self.val = v;
         emitter.emit_float(&self.name, self.val.into());
-        Ok(self.val)
+        Ok(Some(self.val))
     }
 
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) -> bool {

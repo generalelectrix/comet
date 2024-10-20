@@ -54,17 +54,14 @@ impl ControllableFixture for Aquarius {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        let control = msg.control();
-        if control == self.lamp_on.name() {
-            self.lamp_on.control(msg, emitter)?;
-            return Ok(());
+    ) -> anyhow::Result<bool> {
+        if self.lamp_on.control_ok(msg, emitter)? {
+            return Ok(true);
         }
-        if control == self.rotation.name() {
-            self.rotation.control(msg, emitter)?;
-            return Ok(());
+        if self.rotation.control_ok(msg, emitter)? {
+            return Ok(true);
         }
-        bail!("no control for {} matched for {control}", Self::NAME);
+        Ok(false)
     }
 }
 

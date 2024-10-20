@@ -16,14 +16,25 @@ pub trait OscControl<T> {
     /// Return the OSC control name for this control.
     fn name(&self) -> &str;
 
-    /// Handle an OSC message for setting this value.
-    ///
-    /// Return the new value if the message is handled successfully.
+    /// Potentially handle an OSC control message.
+    /// If we handle the message, return the current value for further processing.
+    /// If we don't handle the message, return None.
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<T>;
+    ) -> anyhow::Result<Option<T>>;
+
+    /// Potentially handle an OSC control message.
+    /// If we handle the message, return true.
+    /// If we don't handle the message, return false.
+    fn control_ok(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<bool> {
+        self.control(msg, emitter).map(|r| r.is_some())
+    }
 
     /// Emit the current state of this control.
     /// Also return the current value for upstream processing.
@@ -45,4 +56,10 @@ pub trait RenderToDmxWithAnimations {
 pub trait RenderToDmx<T> {
     /// Render a control into a DMX buffer using some strategy.
     fn render(&self, val: &T, dmx_buf: &mut [u8]);
+}
+
+/// A render strategy that does nothing.
+/// Used for controls which themselves are not rendered directly to DMX.
+impl<T> RenderToDmx<T> for () {
+    fn render(&self, _val: &T, _dmx_buf: &mut [u8]) {}
 }

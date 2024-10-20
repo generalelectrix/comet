@@ -55,11 +55,14 @@ impl<R: RenderToDmx<UnipolarFloat>> OscControl<UnipolarFloat> for Unipolar<R> {
         &mut self,
         msg: &OscControlMessage,
         emitter: &dyn EmitScopedOscMessage,
-    ) -> anyhow::Result<UnipolarFloat> {
+    ) -> anyhow::Result<Option<UnipolarFloat>> {
+        if msg.control() != self.name {
+            return Ok(None);
+        }
         let v = msg.get_unipolar().with_context(|| self.name.clone())?;
         self.val = v;
         emitter.emit_float(&self.name, self.val.into());
-        Ok(self.val)
+        Ok(Some(self.val))
     }
 
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) -> UnipolarFloat {

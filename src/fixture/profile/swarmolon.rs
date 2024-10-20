@@ -178,9 +178,9 @@ impl ControllableFixture for Swarmolon {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
+            return Ok(true);
         };
         match ctl {
             ControlMessage::Set(sc) => {
@@ -204,7 +204,7 @@ impl ControllableFixture for Swarmolon {
             }
         }
 
-        Ok(())
+        Ok(true)
     }
 }
 

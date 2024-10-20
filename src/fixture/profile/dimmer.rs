@@ -52,13 +52,11 @@ impl ControllableFixture for Dimmer {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        let control = msg.control();
-        if control == self.level.name() {
-            self.level.control(msg, emitter)?;
-            return Ok(());
+    ) -> anyhow::Result<bool> {
+        if self.level.control_ok(msg, emitter)? {
+            return Ok(true);
         }
-        bail!("no control for {} matched for {control}", Self::NAME);
+        Ok(false)
     }
 }
 
