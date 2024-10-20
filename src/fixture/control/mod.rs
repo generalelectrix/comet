@@ -6,10 +6,12 @@ use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 
 mod bipolar;
 mod bool;
+mod phase;
 mod unipolar;
 
 pub use bipolar::*;
 pub use bool::*;
+pub use phase::*;
 pub use unipolar::*;
 
 pub trait OscControl<T> {

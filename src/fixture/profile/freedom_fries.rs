@@ -7,8 +7,7 @@ use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::color::{Color, StateChange as ColorStateChange};
-use crate::fixture::color::map_color;
+use super::color::Color;
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 

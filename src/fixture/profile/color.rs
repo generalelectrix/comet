@@ -9,13 +9,23 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Color {
-    controls: GroupControlMap<ControlMessage>,
-    hue: Phase,
-    sat: UnipolarFloat,
-    val: UnipolarFloat,
+    hue: PhaseControl<()>,
+    sat: Unipolar<()>,
+    val: Unipolar<()>,
     model: Model,
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Self {
+            hue: PhaseControl::new("Hue", ()),
+            sat: Unipolar::new("Sat", ()),
+            val: Unipolar::new("Val", ()),
+            model: Default::default(),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for Color {
@@ -43,36 +53,11 @@ impl PatchAnimatedFixture for Color {
 }
 
 impl Color {
-    pub fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        self.update_state(sc);
-        Self::emit(sc, emitter);
-    }
-
-    pub fn update_state(&mut self, sc: StateChange) {
-        use StateChange::*;
-        match sc {
-            Hue(v) => self.hue = v,
-            Sat(v) => self.sat = v,
-            Val(v) => self.val = v,
-        };
-    }
-
     pub fn from_model(m: Model) -> Self {
         Self {
             model: m,
             ..Self::default()
         }
-    }
-
-    /// Call the provided callback with all controllable state.
-    pub fn state<F>(&self, f: &mut F)
-    where
-        F: FnMut(StateChange),
-    {
-        use StateChange::*;
-        f(Hue(self.hue));
-        f(Sat(self.sat));
-        f(Val(self.val));
     }
 }
 
@@ -84,9 +69,9 @@ impl AnimatedFixture for Color {
         animation_vals: &TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut hue = self.hue.val();
-        let mut sat = self.sat.val();
-        let mut val = self.val.val();
+        let mut hue = self.hue.val().val();
+        let mut sat = self.sat.val().val();
+        let mut val = self.val.val().val();
         for (anim_val, target) in animation_vals {
             use AnimationTarget::*;
             match target {
@@ -106,12 +91,10 @@ impl AnimatedFixture for Color {
 }
 
 impl ControllableFixture for Color {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
+    fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.state(&mut |sc| Self::emit(sc, emitter));
+        OscControl::emit_state(self, emitter);
     }
 
     fn control(
@@ -119,22 +102,38 @@ impl ControllableFixture for Color {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(true);
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(true)
+        OscControl::control(self, msg, emitter)
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Hue(Phase),
-    Sat(UnipolarFloat),
-    Val(UnipolarFloat),
-}
+impl OscControl<(Phase, UnipolarFloat, UnipolarFloat)> for Color {
+    fn val(&self) -> (Phase, UnipolarFloat, UnipolarFloat) {
+        (self.hue.val(), self.sat.val(), self.val.val())
+    }
 
-pub type ControlMessage = StateChange;
+    fn control(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<bool> {
+        if self.hue.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.sat.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.val.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
+        self.hue.emit_state(emitter);
+        self.sat.emit_state(emitter);
+        self.val.emit_state(emitter);
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Model {
@@ -248,25 +247,4 @@ impl AnimationTarget {
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Sat | Self::Val)
     }
-}
-
-impl Color {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        map_color(map, &wrap_color);
-    }
-}
-
-impl HandleOscStateChange<StateChange> for Color {}
-
-fn wrap_color(sc: StateChange) -> ControlMessage {
-    sc
-}
-
-pub fn map_color<F, T>(map: &mut GroupControlMap<T>, wrap: &'static F)
-where
-    F: Fn(StateChange) -> T + 'static,
-{
-    map.add_phase("Hue", move |v| wrap(StateChange::Hue(v)));
-    map.add_unipolar("Sat", move |v| wrap(StateChange::Sat(v)));
-    map.add_unipolar("Val", move |v| wrap(StateChange::Val(v)));
 }
