@@ -419,7 +419,9 @@ impl Swarmolon {
         use ControlMessage::*;
         use StateChange::*;
 
-        map.add_enum_handler("DerbyColor", get_bool, |c, v| Set(DerbyColor(c, v)));
+        map.add_enum_handler("DerbyColor", OscControlMessage::get_bool, |c, v| {
+            Set(DerbyColor(c, v))
+        });
         map_strobe(map, "DerbyStrobe", &wrap_derby_strobe);
         map.add_bipolar("DerbyRotation", |v| {
             Set(DerbyRotation(bipolar_fader_with_detent(v)))

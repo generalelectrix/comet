@@ -316,7 +316,9 @@ impl<C> GroupControlMap<C> {
     where
         F: Fn(bool) -> C + 'static,
     {
-        self.add_fetch_process(control, get_bool, move |v| Some(process(v)))
+        self.add_fetch_process(control, OscControlMessage::get_bool, move |v| {
+            Some(process(v))
+        })
     }
 
     /// Add a collection of control actions for each variant of the specified enum type.
@@ -475,28 +477,28 @@ impl OscControlMessage {
     pub fn get_phase(&self) -> Result<Phase, OscError> {
         Ok(Phase::new(self.get_float()?))
     }
+
+    /// Get a single boolean argument from the provided OSC message.
+    /// Coerce ints and floats to boolean values.
+    pub fn get_bool(&self) -> Result<bool, OscError> {
+        let bval = match &self.arg {
+            OscType::Bool(b) => *b,
+            OscType::Int(i) => *i != 0,
+            OscType::Float(v) => *v != 0.0,
+            OscType::Double(v) => *v != 0.0,
+            other => {
+                return Err(self.err(format!(
+                    "expected a single bool argument but found {:?}",
+                    other
+                )));
+            }
+        };
+        Ok(bval)
+    }
 }
 
 pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
     UnipolarFloat::new(v.val().powi(2))
-}
-
-/// Get a single boolean argument from the provided OSC message.
-/// Coerce ints and floats to boolean values.
-pub fn get_bool(v: &OscControlMessage) -> Result<bool, OscError> {
-    let bval = match &v.arg {
-        OscType::Bool(b) => *b,
-        OscType::Int(i) => *i != 0,
-        OscType::Float(v) => *v != 0.0,
-        OscType::Double(v) => *v != 0.0,
-        other => {
-            return Err(v.err(format!(
-                "expected a single bool argument but found {:?}",
-                other
-            )));
-        }
-    };
-    Ok(bval)
 }
 
 /// A OSC message processor that ignores the message payload, returning unit.
@@ -511,8 +513,8 @@ pub mod prelude {
     pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;
     pub use super::{
-        get_bool, ignore_payload, quadratic, GroupControlMap, HandleOscStateChange,
-        HandleStateChange, OscControlMessage,
+        ignore_payload, quadratic, GroupControlMap, HandleOscStateChange, HandleStateChange,
+        OscControlMessage,
     };
     pub use crate::util::*;
 }

@@ -5,9 +5,11 @@
 use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 
 mod bipolar;
+mod bool;
 mod unipolar;
 
 pub use bipolar::*;
+pub use bool::*;
 pub use unipolar::*;
 
 pub trait OscControl<T> {
