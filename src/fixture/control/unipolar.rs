@@ -4,7 +4,7 @@ use anyhow::Context;
 use number::UnipolarFloat;
 
 use crate::{
-    osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage},
+    osc::{EmitScopedOscMessage, OscControlMessage},
     util::unipolar_to_range,
 };
 
@@ -18,14 +18,31 @@ pub struct Unipolar<R: RenderToDmx<UnipolarFloat>> {
     render: R,
 }
 
+/// A unipolar control that renders into a single DMX channel over a range.
+pub type UnipolarChannel = Unipolar<RenderUnipolarToRange>;
+
 impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
     /// Initialize a new control with the provided OSC control name.
-    pub fn new<S: Into<String>>(osc_name: S, render: R) -> Self {
+    pub fn new<S: Into<String>>(name: S, render: R) -> Self {
         Self {
             val: UnipolarFloat::ZERO,
-            name: osc_name.into(),
+            name: name.into(),
             render,
         }
+    }
+}
+
+impl Unipolar<RenderUnipolarToRange> {
+    /// Initialize a unipolar control that renders to a full DMX channel.
+    pub fn full_channel<S: Into<String>>(name: S, dmx_buf_offset: usize) -> Self {
+        Self::new(
+            name,
+            RenderUnipolarToRange {
+                dmx_buf_offset,
+                start: 0,
+                end: 255,
+            },
+        )
     }
 }
 
@@ -66,13 +83,13 @@ impl<R: RenderToDmx<UnipolarFloat>> RenderToDmxWithAnimations for Unipolar<R> {
 /// Render a unipolar float to a continuous range.
 #[derive(Debug)]
 pub struct RenderUnipolarToRange {
-    pub offset: usize,
+    pub dmx_buf_offset: usize,
     pub start: u8,
     pub end: u8,
 }
 
 impl RenderToDmx<UnipolarFloat> for RenderUnipolarToRange {
     fn render(&self, val: &UnipolarFloat, dmx_buf: &mut [u8]) {
-        dmx_buf[self.offset] = unipolar_to_range(self.start, self.end, *val);
+        dmx_buf[self.dmx_buf_offset] = unipolar_to_range(self.start, self.end, *val);
     }
 }

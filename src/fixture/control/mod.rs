@@ -2,13 +2,12 @@
 //! These types are intended to provide both a data model for fixture state,
 //! as well as standardized ways to interact with that state.
 
-use anyhow::Context;
-use number::UnipolarFloat;
+use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 
-use crate::osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage};
-
+mod bipolar;
 mod unipolar;
 
+pub use bipolar::*;
 pub use unipolar::*;
 
 pub trait OscControl<T> {
@@ -34,6 +33,11 @@ pub trait RenderToDmxWithAnimations {
     ///
     /// Handle animation values if any are provided.
     fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]);
+
+    /// Render a control into a DMX buffer, without any animations.
+    fn render_no_anim(&self, dmx_buf: &mut [u8]) {
+        self.render(std::iter::empty(), dmx_buf);
+    }
 }
 
 pub trait RenderToDmx<T> {

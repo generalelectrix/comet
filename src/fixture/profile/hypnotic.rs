@@ -125,8 +125,6 @@ impl AnimationTarget {
     }
 }
 
-
-
 const RED_LASER_ON: Button = button("RedLaserOn");
 const GREEN_LASER_ON: Button = button("GreenLaserOn");
 const BLUE_LASER_ON: Button = button("BlueLaserOn");

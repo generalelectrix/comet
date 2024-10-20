@@ -6,12 +6,21 @@ use std::{collections::HashMap, time::Duration};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Radiance {
-    controls: GroupControlMap<ControlMessage>,
-    haze: UnipolarFloat,
-    fan: UnipolarFloat,
+    haze: UnipolarChannel,
+    fan: UnipolarChannel,
     timer: Option<Timer>,
+}
+
+impl Default for Radiance {
+    fn default() -> Self {
+        Self {
+            haze: Unipolar::full_channel("Haze", 0),
+            fan: Unipolar::full_channel("Fan", 1),
+            timer: None,
+        }
+    }
 }
 
 impl PatchFixture for Radiance {
@@ -29,17 +38,6 @@ impl PatchFixture for Radiance {
     }
 }
 
-impl Radiance {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Haze(v) => self.haze = v,
-            Fan(v) => self.fan = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl NonAnimatedFixture for Radiance {
     fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         if let Some(timer) = self.timer.as_ref() {
@@ -49,15 +47,13 @@ impl NonAnimatedFixture for Radiance {
                 return;
             }
         }
-        dmx_buf[0] = unipolar_to_range(0, 255, self.haze);
-        dmx_buf[1] = unipolar_to_range(0, 255, self.fan);
+        self.haze.render_no_anim(dmx_buf);
+        self.fan.render_no_anim(dmx_buf);
     }
 }
 
 impl ControllableFixture for Radiance {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
+    fn populate_controls(&mut self) {}
 
     fn update(&mut self, delta_t: Duration) {
         if let Some(timer) = self.timer.as_mut() {
@@ -66,9 +62,8 @@ impl ControllableFixture for Radiance {
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(Haze(self.haze), emitter);
-        Self::emit(Fan(self.fan), emitter);
+        self.haze.emit_state(emitter);
+        self.fan.emit_state(emitter);
     }
 
     fn control(
@@ -76,28 +71,15 @@ impl ControllableFixture for Radiance {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
+        let control = msg.control();
+        if control == self.haze.name() {
+            self.haze.control(msg, emitter)?;
             return Ok(());
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(())
+        }
+        if control == self.fan.name() {
+            self.fan.control(msg, emitter)?;
+            return Ok(());
+        }
+        bail!("no control for {} matched for {control}", Self::NAME);
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Haze(UnipolarFloat),
-    Fan(UnipolarFloat),
-}
-
-pub type ControlMessage = StateChange;
-
-impl Radiance {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        map.add_unipolar("Haze", Haze);
-        map.add_unipolar("Fan", Fan);
-    }
-}
-
-impl HandleOscStateChange<StateChange> for Radiance {}

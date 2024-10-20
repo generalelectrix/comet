@@ -403,8 +403,6 @@ pub enum WhiteStrobeStateChange {
     State(GenericStrobeStateChange),
 }
 
-
-
 const STROBE_PROGRAM_SELECT: RadioButton = RadioButton {
     control: "WhiteStrobeProgram",
     n: 10,

@@ -172,7 +172,6 @@ impl AnimationTarget {
     }
 }
 
-
 const FIXED_COLOR: &str = "FixedColor";
 
 const COLOR_ROTATE: Button = button("ColorRotate");

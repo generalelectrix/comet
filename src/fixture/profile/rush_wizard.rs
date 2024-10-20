@@ -156,7 +156,6 @@ impl Color {
     }
 }
 
-
 const COLOR: &str = "Color";
 
 const GOBO_SELECT: RadioButton = RadioButton {

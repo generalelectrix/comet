@@ -157,8 +157,6 @@ impl AnimationTarget {
     }
 }
 
-
-
 const RUN_PROGRAM: Button = button("RunProgram");
 const PROGRAM_CYCLE_ALL: Button = button("ProgramCycleAll");
 

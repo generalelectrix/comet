@@ -15,14 +15,7 @@ pub struct Dimmer {
 impl Default for Dimmer {
     fn default() -> Self {
         Self {
-            level: Unipolar::new(
-                "Level",
-                RenderUnipolarToRange {
-                    offset: 0,
-                    start: 0,
-                    end: 255,
-                },
-            ),
+            level: Unipolar::full_channel("Level", 0),
         }
     }
 }

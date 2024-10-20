@@ -166,8 +166,6 @@ impl AnimationTarget {
     }
 }
 
-
-
 const FRONT_GOBO_SELECT: RadioButton = RadioButton {
     control: "FrontGobo",
     n: SolarSystem::GOBO_COUNT,

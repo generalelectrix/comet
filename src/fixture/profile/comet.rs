@@ -257,7 +257,6 @@ pub enum StateChange {
 
 // Control group names.
 
-
 // Buttons.
 const SHUTTER: Button = button("Shutter");
 const STROBE_ON: Button = button("StrobeOn");

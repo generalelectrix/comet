@@ -213,8 +213,6 @@ pub enum StateChange {
 // Lumasphere has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
-
-
 const BALL_START: Button = button("ball_start");
 const COLOR_START: Button = button("color_start");
 

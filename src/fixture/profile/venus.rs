@@ -133,8 +133,6 @@ pub enum StateChange {
 
 pub type ControlMessage = StateChange;
 
-
-
 const LAMP_ON: Button = button("LampControl");
 
 impl Venus {
