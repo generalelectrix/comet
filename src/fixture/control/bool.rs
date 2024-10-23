@@ -31,12 +31,17 @@ impl<R: RenderToDmx<bool>> Bool<R> {
 impl Bool<RenderBoolToRange> {
     /// Initialize a bool control that renders to DMX 0/255.
     pub fn full_channel<S: Into<String>>(name: S, dmx_buf_offset: usize) -> Self {
+        Self::channel(name, dmx_buf_offset, 0, 255)
+    }
+
+    /// Initialize a bool control that renders to DMX vals for off/on.
+    pub fn channel<S: Into<String>>(name: S, dmx_buf_offset: usize, off: u8, on: u8) -> Self {
         Self::new(
             name,
             RenderBoolToRange {
                 dmx_buf_offset,
-                off: 0,
-                on: 255,
+                off,
+                on,
             },
         )
     }

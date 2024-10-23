@@ -1,0 +1,165 @@
+//! A radio button-style control that selects from a continuous integer range.
+
+use anyhow::{anyhow, bail, ensure, Context, Result};
+use number::UnipolarFloat;
+use rosc::OscType;
+
+use crate::{
+    osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage},
+    util::unipolar_to_range,
+};
+
+use super::{OscControl, RenderToDmx, RenderToDmxWithAnimations};
+
+/// A control for selecting a numeric index.
+/// Model a 1D button grid with radio-select behavior.
+/// This implements the TouchOSC model for a button grid.
+/// Special-cased to handle only 1D grids.
+#[derive(Debug)]
+pub struct IndexedSelect<R: RenderToDmx<usize>> {
+    /// Currently-selected value.
+    val: usize,
+    /// The largest index.
+    n: usize,
+    name: String,
+    /// If true, use the 0th coordinate as the index.  If false, use the 1st coordinate.
+    /// FIXME: this forces us to encode the orientation of the TouchOSC layout into
+    /// the control profile.  We might want to replace the button grids with individual
+    /// buttons in the future to fix this.
+    pub x_primary_coordinate: bool,
+    render: R,
+}
+
+pub type IndexedSelectMenu = IndexedSelect<RenderIndexedSelectToFixedValues>;
+
+impl<R: RenderToDmx<usize>> IndexedSelect<R> {
+    /// Initialize a new control with the provided OSC control name.
+    pub fn new<S: Into<String>>(name: S, n: usize, x_primary_coordinate: bool, render: R) -> Self {
+        Self {
+            val: 0,
+            n,
+            name: name.into(),
+            x_primary_coordinate,
+            render,
+        }
+    }
+}
+
+impl IndexedSelect<RenderIndexedSelectToFixedValues> {
+    pub fn fixed_values<S: Into<String>>(
+        name: S,
+        dmx_buf_offset: usize,
+        x_primary_coordinate: bool,
+        vals: &'static [u8],
+    ) -> Self {
+        Self::new(
+            name,
+            vals.len(),
+            x_primary_coordinate,
+            RenderIndexedSelectToFixedValues {
+                dmx_buf_offset,
+                vals,
+            },
+        )
+    }
+}
+
+impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
+    fn val(&self) -> usize {
+        self.val
+    }
+
+    fn control(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<bool> {
+        if msg.control() != self.name {
+            return Ok(false);
+        }
+
+        let (x, y) = parse_radio_button_indices(msg.addr_payload())?;
+        let (primary, secondary) = if self.x_primary_coordinate {
+            (x, y)
+        } else {
+            (y, x)
+        };
+        ensure!(
+            primary < self.n,
+            "primary index for {} out of range: {primary}",
+            self.name
+        );
+        ensure!(
+            secondary == 0,
+            "secondary index for {} unexpectedly non-zero: {secondary}",
+            self.name
+        );
+        // Ignore button release messages.
+        if msg.arg == OscType::Float(0.0) {
+            return Ok(true);
+        }
+
+        // No action needed if we pressed the select for the current value.
+        if primary == self.val {
+            return Ok(true);
+        }
+
+        self.val = primary;
+        self.emit_state(emitter);
+        Ok(true)
+    }
+
+    fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
+        for i in 0..self.n {
+            let val = if i == self.val { 1.0 } else { 0.0 };
+            let (x, y) = if self.x_primary_coordinate {
+                (i + 1, 1)
+            } else {
+                (1, i + 1)
+            };
+            emitter.emit_osc(ScopedOscMessage {
+                control: &format!("/{}/{}/{}", self.name, x, y),
+                arg: OscType::Float(val),
+            })
+        }
+    }
+}
+
+impl<R: RenderToDmx<usize>> RenderToDmxWithAnimations for IndexedSelect<R> {
+    fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
+        self.render.render(&self.val, dmx_buf);
+    }
+}
+
+/// Render a indexed select float to a fixed collection of values.
+#[derive(Debug)]
+pub struct RenderIndexedSelectToFixedValues {
+    pub dmx_buf_offset: usize,
+    pub vals: &'static [u8],
+}
+
+impl RenderToDmx<usize> for RenderIndexedSelectToFixedValues {
+    fn render(&self, val: &usize, dmx_buf: &mut [u8]) {
+        dmx_buf[self.dmx_buf_offset] = self.vals[*val];
+    }
+}
+
+/// Parse radio button indices from a TouchOSC button grid.
+fn parse_radio_button_indices(addr_payload: &str) -> Result<(usize, usize)> {
+    let mut pieces_iter = addr_payload
+        .split('/')
+        .skip(1)
+        .take(2)
+        .map(str::parse::<usize>);
+    let x = pieces_iter
+        .next()
+        .ok_or_else(|| anyhow!("x radio button index missing"))?
+        .map_err(|err| anyhow!("failed to parse radio button x index: {}", err))?;
+    let y = pieces_iter
+        .next()
+        .ok_or_else(|| anyhow!("y radio button index missing"))?
+        .map_err(|err| anyhow!("failed to parse radio button y index: {}", err))?;
+    ensure!(x != 0, "x index is unexpectedly 0");
+    ensure!(y != 0, "y index is unexpectedly 0");
+    Ok((x - 1, y - 1))
+}

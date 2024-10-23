@@ -195,8 +195,8 @@ impl<'a> EmitScopedOscMessage for ScopedControlEmitter<'a> {
 /// Only the name of the control and the value to be sent are required.
 /// TODO: decide how to handle situations where we need more address.
 pub struct ScopedOscMessage<'a> {
-    control: &'a str,
-    arg: OscType,
+    pub control: &'a str,
+    pub arg: OscType,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Deserialize)]

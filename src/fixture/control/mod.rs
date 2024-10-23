@@ -6,11 +6,13 @@ use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 
 mod bipolar;
 mod bool;
+mod indexed_select;
 mod phase;
 mod unipolar;
 
 pub use bipolar::*;
 pub use bool::*;
+pub use indexed_select::*;
 pub use phase::*;
 pub use unipolar::*;
 
