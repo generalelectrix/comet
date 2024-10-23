@@ -88,12 +88,12 @@ impl AnimatedFixture for SolarSystem {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut front_rotation = self.front_rotation.val();
         let mut rear_rotation = self.rear_rotation.val();
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 FrontRotation => front_rotation += val,

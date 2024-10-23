@@ -3,30 +3,25 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::color::{
-    AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel,
-    StateChange as ColorStateChange,
-};
-use crate::fixture::color::map_color;
+use super::color::{AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel};
+use super::strobe::{Strobe, StrobeChannel};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct RotosphereQ3 {
-    controls: GroupControlMap<ControlMessage>,
     color: Color,
-    strobe: GenericStrobe,
-    rotation: BipolarFloat,
+    strobe: StrobeChannel,
+    rotation: BipolarSplitChannel,
 }
 
 impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
-            controls: Default::default(),
             color: Color::from_model(ColorModel::Rgbw),
-            strobe: GenericStrobe::default(),
-            rotation: BipolarFloat::default(),
+            strobe: Strobe::full_channel("Strobe", 4, 1, 250, 0),
+            rotation: Bipolar::split_channel("Rotation", 5, 1, 127, 129, 255, 0),
         }
     }
 }
@@ -38,45 +33,36 @@ impl PatchAnimatedFixture for RotosphereQ3 {
     }
 }
 
-impl RotosphereQ3 {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Color(c) => self.color.update_state(c),
-            Strobe(sc) => self.strobe.handle_state_change(sc),
-            Rotation(v) => self.rotation = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl AnimatedFixture for RotosphereQ3 {
     type Target = AnimationTarget;
 
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut rotation = self.rotation.val();
         let mut color_anim_vals = vec![];
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
-                Rotation => rotation += val,
-                // FIXME: would really like to avoid allocating here.
+                // FIXME: would really like to avoid allocating here for nested
+                // animation target case.
                 Hue => color_anim_vals.push((*val, ColorAnimationTarget::Hue)),
                 Sat => color_anim_vals.push((*val, ColorAnimationTarget::Sat)),
                 Val => color_anim_vals.push((*val, ColorAnimationTarget::Val)),
+                _ => (),
             }
         }
-        self.color
-            .render_with_animations(group_controls, &color_anim_vals, &mut dmx_buf[0..4]);
-        dmx_buf[4] = self
-            .strobe
-            .render_range_with_master(group_controls.strobe(), 0, 1, 250);
-        dmx_buf[5] = bipolar_to_split_range(BipolarFloat::new(rotation), 1, 127, 129, 255, 0);
+        self.color.render_with_animations(
+            group_controls,
+            TargetedAnimationValues(&color_anim_vals),
+            &mut dmx_buf[0..4],
+        );
+        self.strobe
+            .render_with_master(group_controls.strobe(), dmx_buf);
+        self.rotation
+            .render(animation_vals.filter(&AnimationTarget::Rotation), dmx_buf);
         dmx_buf[6] = 0;
         dmx_buf[7] = 0;
         dmx_buf[8] = 0;
@@ -84,21 +70,12 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
+    fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        let mut emit_color = |sc| {
-            Self::emit(Color(sc), emitter);
-        };
-        self.color.state(&mut emit_color);
-        let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
-        };
-        self.strobe.emit_state(&mut emit_strobe);
-        Self::emit(Rotation(self.rotation), emitter);
+        OscControl::emit_state(&self.color, emitter);
+        self.strobe.emit_state(emitter);
+        self.rotation.emit_state(emitter);
     }
 
     fn control(
@@ -106,22 +83,18 @@ impl ControllableFixture for RotosphereQ3 {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
+        if OscControl::control(&mut self.color, msg, emitter)? {
             return Ok(true);
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(true)
+        }
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Color(ColorStateChange),
-    Strobe(GenericStrobeStateChange),
-    Rotation(BipolarFloat),
-}
-
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -150,23 +123,3 @@ impl AnimationTarget {
         false
     }
 }
-
-impl RotosphereQ3 {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-
-        map_color(map, &wrap_color);
-        map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
-    }
-}
-
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    StateChange::Strobe(sc)
-}
-
-fn wrap_color(sc: ColorStateChange) -> ControlMessage {
-    StateChange::Color(sc)
-}
-
-impl HandleOscStateChange<StateChange> for RotosphereQ3 {}

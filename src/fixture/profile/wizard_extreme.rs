@@ -129,7 +129,7 @@ impl AnimatedFixture for WizardExtreme {
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         if !self.active.0 {
@@ -141,7 +141,7 @@ impl AnimatedFixture for WizardExtreme {
         let mut reflector_rotation = self.reflector_rotation.val();
         let mut dimmer = self.dimmer.val();
         let mut twinkle_speed = self.twinkle_speed.val();
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 DrumSwivel => drum_swivel += val,

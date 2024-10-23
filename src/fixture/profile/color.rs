@@ -59,6 +59,11 @@ impl Color {
             ..Self::default()
         }
     }
+
+    pub fn render_without_animations(&self, dmx_buf: &mut [u8]) {
+        self.model
+            .render(dmx_buf, self.hue.val(), self.sat.val(), self.val.val());
+    }
 }
 
 impl AnimatedFixture for Color {
@@ -66,13 +71,13 @@ impl AnimatedFixture for Color {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut hue = self.hue.val().val();
         let mut sat = self.sat.val().val();
         let mut val = self.val.val().val();
-        for (anim_val, target) in animation_vals {
+        for (anim_val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 Hue => hue += anim_val,

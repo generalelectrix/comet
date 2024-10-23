@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::slice;
 
 use anyhow::bail;
 use num_traits::FromPrimitive;
@@ -15,7 +16,25 @@ pub type TargetedAnimations<T> = [TargetedAnimation<T>; N_ANIM];
 pub type AnimationTargetIndex = usize;
 
 /// A collection of animation values paired with targets.
-pub type TargetedAnimationValues<T> = [(f64, T)];
+pub struct TargetedAnimationValues<'a, T: PartialEq>(pub &'a [(f64, T)]);
+
+impl<'a, T: PartialEq + Sized + 'static> TargetedAnimationValues<'a, T> {
+    pub fn iter(&self) -> core::slice::Iter<'_, (f64, T)> {
+        self.0.iter()
+    }
+
+    /// Iterate over all of the animation values, regardless of target.
+    pub fn all(&self) -> impl Iterator<Item = f64> + '_ {
+        self.0.iter().map(|(v, _)| *v)
+    }
+
+    /// Iterate over all animation values matching the provided target.
+    pub fn filter(&'a self, target: &'a T) -> impl Iterator<Item = f64> + '_ {
+        self.0
+            .iter()
+            .filter_map(move |(v, t)| (*t == *target).then_some(*v))
+    }
+}
 
 /// A pairing of an animation and a target.
 #[derive(Debug, Clone, Default)]
@@ -26,12 +45,28 @@ pub struct TargetedAnimation<T: AnimationTarget> {
 
 /// An animation target should be an enum with a unit variant for each option.
 pub trait AnimationTarget:
-    ToPrimitive + FromPrimitive + IntoEnumIterator + Display + Clone + Copy + Default + Debug
+    ToPrimitive
+    + FromPrimitive
+    + IntoEnumIterator
+    + Display
+    + Clone
+    + Copy
+    + Default
+    + Debug
+    + PartialEq
 {
 }
 
 impl<T> AnimationTarget for T where
-    T: ToPrimitive + FromPrimitive + IntoEnumIterator + Display + Clone + Copy + Default + Debug
+    T: ToPrimitive
+        + FromPrimitive
+        + IntoEnumIterator
+        + Display
+        + Clone
+        + Copy
+        + Default
+        + Debug
+        + PartialEq
 {
 }
 

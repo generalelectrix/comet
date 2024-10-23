@@ -3,26 +3,48 @@
 use number::UnipolarFloat;
 
 use crate::{
-    fixture::control::{Bool, OscControl, Unipolar},
+    fixture::control::{Bool, OscControl, RenderToDmx, Unipolar},
     util::unipolar_to_range,
 };
 
+/// Generic strobe control, using unipolar rate.
+/// Usually also listens to the master strobe control parameter.
 #[derive(Debug)]
-pub struct Strobe {
+pub struct Strobe<R: RenderToDmx<Option<UnipolarFloat>>> {
     on: Bool<()>,
     rate: Unipolar<()>,
+    render: R,
 }
 
-impl Strobe {
-    pub fn new(name: &str) -> Self {
+/// A strobe controlling a single basic DMX channel.
+pub type StrobeChannel = Strobe<RenderStrobeToRange>;
+
+impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
+    pub fn new(name: &str, render: R) -> Self {
         Self {
             on: Bool::new(format!("{name}On"), ()),
             rate: Unipolar::new(format!("{name}Rate"), ()),
+            render,
         }
     }
 }
 
-impl OscControl<(bool, UnipolarFloat)> for Strobe {
+impl StrobeChannel {
+    /// Create a strobe that renders to DMX as a single channel, with provided bounds.
+    pub fn full_channel(name: &str, dmx_buf_offset: usize, slow: u8, fast: u8, stop: u8) -> Self {
+        Self::new(
+            name,
+            RenderStrobeToRange {
+                dmx_buf_offset,
+                slow,
+                fast,
+                stop,
+            },
+        )
+    }
+}
+
+impl<R: RenderToDmx<Option<UnipolarFloat>>> OscControl<(bool, UnipolarFloat)> for Strobe<R> {
     fn val(&self) -> (bool, UnipolarFloat) {
         (self.on.val(), self.rate.val())
     }
@@ -47,25 +69,38 @@ impl OscControl<(bool, UnipolarFloat)> for Strobe {
     }
 }
 
-impl Strobe {
-    /// Render as a single DMX range, using master as an override.
+impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
+    /// Render to DMX, using master as an override.
     /// Only strobe if master strobe is on and the local strobe is also on.
-    /// Return None if we're not strobing.
-    pub fn render_range_with_master(
-        &self,
-        master: &crate::master::Strobe,
-        slow: u8,
-        fast: u8,
-    ) -> Option<u8> {
+    pub fn render_with_master(&self, master: &crate::master::Strobe, dmx_buf: &mut [u8]) {
         let rate = if master.use_master_rate {
             master.state.rate
         } else {
             self.rate.val()
         };
+
         if self.on.val() && master.state.on {
-            Some(unipolar_to_range(slow, fast, rate))
+            self.render.render(&Some(rate), dmx_buf);
         } else {
-            None
+            self.render.render(&None, dmx_buf);
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RenderStrobeToRange {
+    dmx_buf_offset: usize,
+    slow: u8,
+    fast: u8,
+    stop: u8,
+}
+
+impl RenderToDmx<Option<UnipolarFloat>> for RenderStrobeToRange {
+    fn render(&self, val: &Option<UnipolarFloat>, dmx_buf: &mut [u8]) {
+        dmx_buf[self.dmx_buf_offset] = if let Some(rate) = *val {
+            unipolar_to_range(self.slow, self.fast, rate)
+        } else {
+            self.stop
         }
     }
 }

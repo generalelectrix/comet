@@ -40,7 +40,7 @@ impl AnimatedFixture for Hypnotic {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         dmx_buf[0] = match (self.red_laser_on, self.green_laser_on, self.blue_laser_on) {
@@ -54,7 +54,7 @@ impl AnimatedFixture for Hypnotic {
             (true, true, true) => 188,
         };
         let mut rotation = self.rotation;
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             match target {
                 AnimationTarget::Rotation => rotation += *val,
             }

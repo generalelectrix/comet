@@ -38,13 +38,13 @@ impl AnimatedFixture for Starlight {
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         dmx_buf[0] = 255; // DMX mode
         let mut dimmer = self.dimmer.val();
         let mut rotation = self.rotation.val();
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 // FIXME: might want to do something nicer for unipolar values

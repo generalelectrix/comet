@@ -90,13 +90,13 @@ impl AnimatedFixture for Colordynamic {
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut color_rotation_speed = self.color_rotation_speed.val();
         let mut color_position = self.color_position.val();
         let mut fiber_rotation = self.fiber_rotation.val();
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 // FIXME: might want to do something nicer for unipolar values

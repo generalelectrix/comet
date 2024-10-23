@@ -43,13 +43,13 @@ impl AnimatedFixture for H2O {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut color_rotation = self.color_rotation.val();
         let mut dimmer = self.dimmer.val();
         let mut rotation = self.rotation.val();
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 // FIXME: might want to do something nicer for unipolar values

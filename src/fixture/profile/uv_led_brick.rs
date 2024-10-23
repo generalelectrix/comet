@@ -29,12 +29,12 @@ impl AnimatedFixture for UvLedBrick {
     fn render_with_animations(
         &self,
         _group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         let mut level = self.0.val();
 
-        for (val, _target) in animation_vals {
+        for (val, _target) in animation_vals.iter() {
             level += val;
         }
         dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(level));

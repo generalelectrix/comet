@@ -119,7 +119,7 @@ impl AnimatedFixture for Astroscan {
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         if !self.active.0 {
@@ -132,7 +132,7 @@ impl AnimatedFixture for Astroscan {
         let mut mirror_rotation = self.mirror_rotation.val();
         let mut pan = self.pan.val();
         let mut tilt = self.tilt.val();
-        for (val, target) in animation_vals {
+        for (val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
                 Dimmer => dimmer += val,
