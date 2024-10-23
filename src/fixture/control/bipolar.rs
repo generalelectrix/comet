@@ -5,7 +5,7 @@ use number::BipolarFloat;
 
 use crate::{
     osc::{EmitScopedOscMessage, OscControlMessage},
-    util::{bipolar_to_range, bipolar_to_split_range},
+    util::bipolar_to_split_range,
 };
 
 use super::{OscControl, RenderToDmx, RenderToDmxWithAnimations};

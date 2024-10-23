@@ -37,6 +37,6 @@ pub mod prelude {
     pub use crate::fixture::animation_target::TargetedAnimationValues;
     pub use crate::fixture::control::*;
     pub use crate::fixture::generic::*;
-    pub use anyhow::{bail, Result};
+    pub use anyhow::bail;
     pub use number::{BipolarFloat, Phase, UnipolarFloat};
 }

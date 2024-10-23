@@ -1,6 +1,5 @@
 //! Control profile for a dimmer.
 
-use anyhow::bail;
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
@@ -36,8 +35,7 @@ impl AnimatedFixture for Dimmer {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        self.level
-            .render(animation_vals.iter().map(|(v, _)| *v), dmx_buf);
+        self.level.render(animation_vals.all(), dmx_buf);
     }
 }
 

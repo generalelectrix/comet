@@ -36,8 +36,7 @@ impl AnimatedFixture for Aquarius {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        self.rotation
-            .render(animation_vals.iter().map(|(v, _)| *v), dmx_buf);
+        self.rotation.render(animation_vals.all(), dmx_buf);
         self.lamp_on.render_no_anim(dmx_buf);
     }
 }

@@ -303,15 +303,6 @@ impl<C> GroupControlMap<C> {
         })
     }
 
-    pub fn add_phase<F>(&mut self, control: &str, process: F)
-    where
-        F: Fn(Phase) -> C + 'static,
-    {
-        self.add_fetch_process(control, OscControlMessage::get_phase, move |v| {
-            Some(process(v))
-        })
-    }
-
     pub fn add_bool<F>(&mut self, control: &str, process: F)
     where
         F: Fn(bool) -> C + 'static,

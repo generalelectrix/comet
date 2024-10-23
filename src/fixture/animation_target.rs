@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::slice;
 
 use anyhow::bail;
 use num_traits::FromPrimitive;
