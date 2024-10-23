@@ -35,12 +35,17 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
 impl Unipolar<RenderUnipolarToRange> {
     /// Initialize a unipolar control that renders to a full DMX channel.
     pub fn full_channel<S: Into<String>>(name: S, dmx_buf_offset: usize) -> Self {
+        Self::channel(name, dmx_buf_offset, 0, 255)
+    }
+
+    /// Initialize a unipolar channel that renders to a partial DMX channel.
+    pub fn channel<S: Into<String>>(name: S, dmx_buf_offset: usize, start: u8, end: u8) -> Self {
         Self::new(
             name,
             RenderUnipolarToRange {
                 dmx_buf_offset,
-                start: 0,
-                end: 255,
+                start,
+                end,
             },
         )
     }

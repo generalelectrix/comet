@@ -27,11 +27,22 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
             render,
         }
     }
+
+    /// Get the current value of this strobe control, if active.
+    pub fn val_with_master(&self, master: &crate::master::Strobe) -> Option<UnipolarFloat> {
+        let rate = if master.use_master_rate {
+            master.state.rate
+        } else {
+            self.rate.val()
+        };
+
+        (self.on.val() && master.state.on).then_some(rate)
+    }
 }
 
 impl StrobeChannel {
     /// Create a strobe that renders to DMX as a single channel, with provided bounds.
-    pub fn full_channel(name: &str, dmx_buf_offset: usize, slow: u8, fast: u8, stop: u8) -> Self {
+    pub fn channel(name: &str, dmx_buf_offset: usize, slow: u8, fast: u8, stop: u8) -> Self {
         Self::new(
             name,
             RenderStrobeToRange {
@@ -44,10 +55,8 @@ impl StrobeChannel {
     }
 }
 
-impl<R: RenderToDmx<Option<UnipolarFloat>>> OscControl<(bool, UnipolarFloat)> for Strobe<R> {
-    fn val(&self) -> (bool, UnipolarFloat) {
-        (self.on.val(), self.rate.val())
-    }
+impl<R: RenderToDmx<Option<UnipolarFloat>>> OscControl<()> for Strobe<R> {
+    fn val(&self) {}
 
     fn control(
         &mut self,
@@ -85,18 +94,8 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> RenderToDmxWithAnimations for Strobe
         _animations: impl Iterator<Item = f64>,
         dmx_buf: &mut [u8],
     ) {
-        let master = group_controls.strobe();
-        let rate = if master.use_master_rate {
-            master.state.rate
-        } else {
-            self.rate.val()
-        };
-
-        if self.on.val() && master.state.on {
-            self.render.render(&Some(rate), dmx_buf);
-        } else {
-            self.render.render(&None, dmx_buf);
-        }
+        self.render
+            .render(&self.val_with_master(group_controls.strobe()), dmx_buf);
     }
 }
 
