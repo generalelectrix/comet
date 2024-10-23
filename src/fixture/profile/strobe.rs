@@ -3,7 +3,7 @@
 use number::UnipolarFloat;
 
 use crate::{
-    fixture::control::{Bool, OscControl, RenderToDmx, Unipolar},
+    fixture::control::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar},
     util::unipolar_to_range,
 };
 
@@ -69,10 +69,23 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> OscControl<(bool, UnipolarFloat)> fo
     }
 }
 
-impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
-    /// Render to DMX, using master as an override.
-    /// Only strobe if master strobe is on and the local strobe is also on.
-    pub fn render_with_master(&self, master: &crate::master::Strobe, dmx_buf: &mut [u8]) {
+impl<R: RenderToDmx<Option<UnipolarFloat>>> RenderToDmxWithAnimations for Strobe<R> {
+    fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
+        // FIXME: need to tweak traits around to avoid the need for this
+        if self.on.val() {
+            self.render.render(&Some(self.rate.val()), dmx_buf);
+        } else {
+            self.render.render(&None, dmx_buf);
+        }
+    }
+
+    fn render_with_group(
+        &self,
+        group_controls: &crate::fixture::FixtureGroupControls,
+        _animations: impl Iterator<Item = f64>,
+        dmx_buf: &mut [u8],
+    ) {
+        let master = group_controls.strobe();
         let rate = if master.use_master_rate {
             master.state.rate
         } else {

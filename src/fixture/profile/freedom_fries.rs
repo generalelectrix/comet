@@ -55,7 +55,7 @@ impl AnimatedFixture for FreedomFries {
         self.color.render_without_animations(&mut dmx_buf[1..4]);
         dmx_buf[4] = 0;
         self.strobe
-            .render_with_master(group_controls.strobe(), dmx_buf);
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
         self.program.render(std::iter::empty(), dmx_buf);
     }
 }

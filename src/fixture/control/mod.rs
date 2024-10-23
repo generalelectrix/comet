@@ -14,6 +14,8 @@ pub use bool::*;
 pub use phase::*;
 pub use unipolar::*;
 
+use super::FixtureGroupControls;
+
 pub trait OscControl<T> {
     /// Return the current state of this control.
     fn val(&self) -> T;
@@ -36,6 +38,17 @@ pub trait RenderToDmxWithAnimations {
     ///
     /// Handle animation values if any are provided.
     fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]);
+
+    /// Render a control into a DMX buffer, optionally making use of group controls.
+    #[allow(unused)]
+    fn render_with_group(
+        &self,
+        group_controls: &FixtureGroupControls,
+        animations: impl Iterator<Item = f64>,
+        dmx_buf: &mut [u8],
+    ) {
+        self.render(animations, dmx_buf);
+    }
 
     /// Render a control into a DMX buffer, without any animations.
     fn render_no_anim(&self, dmx_buf: &mut [u8]) {
