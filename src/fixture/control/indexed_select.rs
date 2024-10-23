@@ -1,13 +1,9 @@
 //! A radio button-style control that selects from a continuous integer range.
 
-use anyhow::{anyhow, bail, ensure, Context, Result};
-use number::UnipolarFloat;
+use anyhow::{anyhow, ensure, Result};
 use rosc::OscType;
 
-use crate::{
-    osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage},
-    util::unipolar_to_range,
-};
+use crate::osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage};
 
 use super::{OscControl, RenderToDmx, RenderToDmxWithAnimations};
 

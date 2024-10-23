@@ -504,8 +504,7 @@ pub mod prelude {
     pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;
     pub use super::{
-        ignore_payload, quadratic, GroupControlMap, HandleOscStateChange, HandleStateChange,
-        OscControlMessage,
+        ignore_payload, GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage,
     };
     pub use crate::util::*;
 }

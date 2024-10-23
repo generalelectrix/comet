@@ -1,4 +1,3 @@
-use log::error;
 use std::{collections::VecDeque, time::Duration};
 
 use crate::fixture::prelude::*;
@@ -22,6 +21,7 @@ impl Default for Comet {
         Self {
             shutter_open: Bool::full_channel("Shutter", 0),
             trigger_state: TriggerState::default(),
+            // FIXME: need to make strobe rate a quadratic fader
             strobe: Strobe::channel("Strobe", 0, 151, 255, 75),
             shutter_sound_active: Bool::channel("ShutterSoundActive", 0, 0, 125),
             macro_pattern: IndexedSelect::fixed_values("SelectMacro", 1, true, &PATTERN_DMX_VALS),
