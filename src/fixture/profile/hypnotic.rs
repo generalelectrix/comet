@@ -5,32 +5,29 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Hypnotic {
-    controls: GroupControlMap<ControlMessage>,
-    red_laser_on: bool,
-    green_laser_on: bool,
-    blue_laser_on: bool,
-    rotation: BipolarFloat,
+    red_laser_on: Bool<()>,
+    green_laser_on: Bool<()>,
+    blue_laser_on: Bool<()>,
+    rotation: BipolarSplitChannel,
+}
+
+impl Default for Hypnotic {
+    fn default() -> Self {
+        Self {
+            red_laser_on: Bool::new("RedLaserOn", ()),
+            green_laser_on: Bool::new("GreenLaserOn", ()),
+            blue_laser_on: Bool::new("BlueLaserOn", ()),
+            rotation: Bipolar::split_channel("Rotation", 1, 135, 245, 120, 10, 0),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for Hypnotic {
     const NAME: FixtureType = FixtureType("Hypnotic");
     fn channel_count(&self) -> usize {
         2
-    }
-}
-
-impl Hypnotic {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            RedLaserOn(v) => self.red_laser_on = v,
-            GreenLaserOn(v) => self.green_laser_on = v,
-            BlueLaserOn(v) => self.blue_laser_on = v,
-            Rotation(v) => self.rotation = v,
-        };
-        Self::emit(sc, emitter);
     }
 }
 
@@ -43,7 +40,11 @@ impl AnimatedFixture for Hypnotic {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        dmx_buf[0] = match (self.red_laser_on, self.green_laser_on, self.blue_laser_on) {
+        dmx_buf[0] = match (
+            self.red_laser_on.val(),
+            self.green_laser_on.val(),
+            self.blue_laser_on.val(),
+        ) {
             (false, false, false) => 0,
             (true, false, false) => 8,
             (false, true, false) => 68,
@@ -53,27 +54,18 @@ impl AnimatedFixture for Hypnotic {
             (false, true, true) => 98,
             (true, true, true) => 188,
         };
-        let mut rotation = self.rotation;
-        for (val, target) in animation_vals.iter() {
-            match target {
-                AnimationTarget::Rotation => rotation += *val,
-            }
-        }
-        dmx_buf[1] = bipolar_to_split_range(self.rotation, 135, 245, 120, 10, 0);
+        self.rotation.render(animation_vals.all(), dmx_buf);
     }
 }
 
 impl ControllableFixture for Hypnotic {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
+    fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(RedLaserOn(self.red_laser_on), emitter);
-        Self::emit(GreenLaserOn(self.green_laser_on), emitter);
-        Self::emit(BlueLaserOn(self.blue_laser_on), emitter);
-        Self::emit(Rotation(self.rotation), emitter);
+        self.red_laser_on.emit_state(emitter);
+        self.green_laser_on.emit_state(emitter);
+        self.blue_laser_on.emit_state(emitter);
+        self.rotation.emit_state(emitter);
     }
 
     fn control(
@@ -81,24 +73,21 @@ impl ControllableFixture for Hypnotic {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
+        if self.red_laser_on.control(msg, emitter)? {
             return Ok(true);
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(true)
+        }
+        if self.green_laser_on.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.blue_laser_on.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    RedLaserOn(bool),
-    GreenLaserOn(bool),
-    BlueLaserOn(bool),
-    Rotation(BipolarFloat),
-}
-
-// Hypnotic has no controls that are not represented as state changes.
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -124,20 +113,3 @@ impl AnimationTarget {
         false
     }
 }
-
-const RED_LASER_ON: Button = button("RedLaserOn");
-const GREEN_LASER_ON: Button = button("GreenLaserOn");
-const BLUE_LASER_ON: Button = button("BlueLaserOn");
-
-impl Hypnotic {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        RED_LASER_ON.map_state(map, RedLaserOn);
-        GREEN_LASER_ON.map_state(map, GreenLaserOn);
-        BLUE_LASER_ON.map_state(map, BlueLaserOn);
-
-        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
-    }
-}
-
-impl HandleOscStateChange<StateChange> for Hypnotic {}
