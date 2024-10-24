@@ -200,9 +200,7 @@ impl RenderToDmx<BipolarFloat> for RenderBipolarToRange {
 /// A decorator for bipolar controls that adds configurable mirroring.
 ///
 /// "Mirror" is pre-pended to the inner control name to create the mirror
-/// activation toggle. Since auto-mirroring is awesome, this defaults to on,
-/// so that control layouts will by default respect the patch-level mirroring
-/// settings even if no explicit mirror buttons are included in the layout.
+/// activation toggle.
 #[derive(Debug)]
 pub struct Mirrored<R: RenderToDmx<BipolarFloat>> {
     control: Bipolar<R>,
@@ -211,6 +209,8 @@ pub struct Mirrored<R: RenderToDmx<BipolarFloat>> {
 
 impl<R: RenderToDmx<BipolarFloat>> Mirrored<R> {
     /// Decorate a bipolar float control with auto-mirroring.
+    ///
+    /// If init is true, enable mirroring by default.
     fn new(control: Bipolar<R>, init: bool) -> Self {
         let mirror_name = format!("Mirror{}", control.name);
         Self {
