@@ -111,9 +111,9 @@ impl FixtureGroup {
         &mut self,
         msg: &ChannelControlMessage,
         channel_emitter: ChannelStateEmitter,
-    ) {
+    ) -> anyhow::Result<()> {
         self.fixture
-            .control_from_channel(msg, &FixtureStateEmitter::new(&self.key, channel_emitter));
+            .control_from_channel(msg, &FixtureStateEmitter::new(&self.key, channel_emitter))
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {

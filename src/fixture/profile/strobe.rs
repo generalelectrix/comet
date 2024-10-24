@@ -151,7 +151,7 @@ where
         Self {
             shutter,
             strobe,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 }

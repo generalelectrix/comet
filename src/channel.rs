@@ -216,7 +216,7 @@ impl Channels {
                             channel_id: Some(channel_id),
                             emitter,
                         },
-                    );
+                    )?;
             }
         }
         Ok(())
