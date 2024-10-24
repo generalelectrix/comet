@@ -6,20 +6,23 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
-pub struct UvLedBrick(UnipolarFloat, GroupControlMap<ControlMessage>);
+#[derive(Debug)]
+pub struct UvLedBrick {
+    dimmer: UnipolarChannel,
+}
+
+impl Default for UvLedBrick {
+    fn default() -> Self {
+        Self {
+            dimmer: Unipolar::full_channel("Level", 0),
+        }
+    }
+}
 
 impl PatchAnimatedFixture for UvLedBrick {
     const NAME: FixtureType = FixtureType("UvLedBrick");
     fn channel_count(&self) -> usize {
         7
-    }
-}
-
-impl UvLedBrick {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        self.0 = sc;
-        Self::emit(sc, emitter);
     }
 }
 
@@ -32,12 +35,7 @@ impl AnimatedFixture for UvLedBrick {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut level = self.0.val();
-
-        for (val, _target) in animation_vals.iter() {
-            level += val;
-        }
-        dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(level));
+        self.dimmer.render(animation_vals.all(), dmx_buf);
         dmx_buf[4] = 255;
         dmx_buf[5] = 255;
         dmx_buf[6] = 255;
@@ -45,12 +43,10 @@ impl AnimatedFixture for UvLedBrick {
 }
 
 impl ControllableFixture for UvLedBrick {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.1);
-    }
+    fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        Self::emit(self.0, emitter);
+        self.dimmer.emit_state(emitter);
     }
 
     fn control(
@@ -58,17 +54,9 @@ impl ControllableFixture for UvLedBrick {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        let Some((ctl, _)) = self.1.handle(msg)? else {
-            return Ok(true);
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(true)
+        self.dimmer.control(msg, emitter)
     }
 }
-
-pub type StateChange = UnipolarFloat;
-
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -94,11 +82,3 @@ impl AnimationTarget {
         true
     }
 }
-
-impl UvLedBrick {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        map.add_unipolar("Level", |x| x);
-    }
-}
-
-impl HandleOscStateChange<StateChange> for UvLedBrick {}
