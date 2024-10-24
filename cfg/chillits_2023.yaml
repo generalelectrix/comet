@@ -6,6 +6,7 @@ fixtures:
   - name: WizardExtreme
     addr: 300
     channel: True
+    mirror: True
   - name: WizardExtreme
     addr: 32
     channel: True
