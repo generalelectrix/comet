@@ -60,6 +60,7 @@ impl<R: RenderToDmx<Phase>> OscControl<Phase> for PhaseControl<R> {
         emitter.emit_float(&self.name, self.val.into());
         Ok(())
     }
+
     fn control(
         &mut self,
         msg: &OscControlMessage,
@@ -72,8 +73,31 @@ impl<R: RenderToDmx<Phase>> OscControl<Phase> for PhaseControl<R> {
         Ok(true)
     }
 
+    fn control_with_callback(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&Phase),
+    ) -> anyhow::Result<bool> {
+        if self.control(msg, emitter)? {
+            callback(&self.val);
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
         emitter.emit_float(&self.name, self.val.into());
+    }
+
+    fn emit_state_with_callback(
+        &self,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&Phase),
+    ) {
+        self.emit_state(emitter);
+        callback(&self.val);
     }
 }
 

@@ -122,8 +122,31 @@ impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Bipolar<R> {
         Ok(true)
     }
 
+    fn control_with_callback(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&BipolarFloat),
+    ) -> anyhow::Result<bool> {
+        if self.control(msg, emitter)? {
+            callback(&self.val);
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
         emitter.emit_float(&self.name, self.val.into());
+    }
+
+    fn emit_state_with_callback(
+        &self,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&BipolarFloat),
+    ) {
+        self.emit_state(emitter);
+        callback(&self.val);
     }
 }
 
@@ -223,6 +246,14 @@ impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Mirrored<R> {
         self.mirror.emit_state(emitter);
     }
 
+    fn emit_state_with_callback(
+        &self,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&BipolarFloat),
+    ) {
+        self.control.emit_state_with_callback(emitter, callback);
+    }
+
     fn control_direct(
         &mut self,
         val: BipolarFloat,
@@ -243,5 +274,14 @@ impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Mirrored<R> {
             return Ok(true);
         }
         Ok(false)
+    }
+
+    fn control_with_callback(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&BipolarFloat),
+    ) -> anyhow::Result<bool> {
+        self.control.control_with_callback(msg, emitter, callback)
     }
 }

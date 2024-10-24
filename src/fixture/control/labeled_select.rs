@@ -41,6 +41,11 @@ impl LabeledSelect {
     pub fn labels(&self) -> impl Iterator<Item = &str> {
         self.options.iter().map(|(l, _)| *l)
     }
+
+    /// Return the currently-selected label.
+    pub fn selected(&self) -> &str {
+        self.options[self.selected].0
+    }
 }
 
 impl OscControl<&str> for LabeledSelect {

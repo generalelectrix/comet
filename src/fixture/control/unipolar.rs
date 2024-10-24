@@ -81,8 +81,31 @@ impl<R: RenderToDmx<UnipolarFloat>> OscControl<UnipolarFloat> for Unipolar<R> {
         Ok(true)
     }
 
+    fn control_with_callback(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&UnipolarFloat),
+    ) -> anyhow::Result<bool> {
+        if self.control(msg, emitter)? {
+            callback(&self.val);
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
         emitter.emit_float(&self.name, self.val.into());
+    }
+
+    fn emit_state_with_callback(
+        &self,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&UnipolarFloat),
+    ) {
+        self.emit_state(emitter);
+        callback(&self.val);
     }
 }
 

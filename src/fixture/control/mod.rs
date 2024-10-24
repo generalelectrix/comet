@@ -33,8 +33,34 @@ pub trait OscControl<T> {
         emitter: &dyn EmitScopedOscMessage,
     ) -> anyhow::Result<bool>;
 
+    /// Potentially handle an OSC control message.
+    /// If we handle the message, return true.
+    /// If we don't handle the message, return false.
+    ///
+    /// Call the provided callback to emit a new version of the current value
+    /// if a control message was handled.
+    #[allow(unused)]
+    fn control_with_callback(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&T),
+    ) -> anyhow::Result<bool> {
+        // Default implementation ignores a provided callback.
+        self.control(msg, emitter)
+    }
+
     /// Emit the current state of this control.
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage);
+
+    /// Emit the current state of this control.
+    ///
+    /// Call the provided callback with the current state.
+    #[allow(unused)]
+    fn emit_state_with_callback(&self, emitter: &dyn EmitScopedOscMessage, callback: impl Fn(&T)) {
+        // Default implementation ignores a provided callback.
+        self.emit_state(emitter);
+    }
 }
 
 pub trait RenderToDmxWithAnimations {

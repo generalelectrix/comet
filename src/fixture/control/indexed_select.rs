@@ -141,6 +141,20 @@ impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
         Ok(true)
     }
 
+    fn control_with_callback(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&usize),
+    ) -> anyhow::Result<bool> {
+        if self.control(msg, emitter)? {
+            callback(&self.val);
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
         for i in 0..self.n {
             let val = if i == self.val { 1.0 } else { 0.0 };
@@ -154,6 +168,15 @@ impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
                 arg: OscType::Float(val),
             })
         }
+    }
+
+    fn emit_state_with_callback(
+        &self,
+        emitter: &dyn EmitScopedOscMessage,
+        callback: impl Fn(&usize),
+    ) {
+        self.emit_state(emitter);
+        callback(&self.val);
     }
 }
 
