@@ -120,9 +120,9 @@ struct TriggerState {
 impl Default for TriggerState {
     fn default() -> Self {
         Self {
-            music_trigger: Bool::new("TrigSoundActive", ()),
+            music_trigger: Bool::new_off("TrigSoundActive", ()),
             auto_step_rate: Unipolar::new("AutoStepRate", ()),
-            auto_step: Bool::new("AutoStep", ()),
+            auto_step: Bool::new_off("AutoStep", ()),
             steps_to_take: VecDeque::new(),
             prior_state: Stepping::Idle,
             updates_to_hold: 0,

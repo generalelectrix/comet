@@ -22,9 +22,9 @@ pub struct Colordynamic {
 impl Default for Colordynamic {
     fn default() -> Self {
         Colordynamic {
-            shutter_open: Bool::new("ShutterOpen", ()),
+            shutter_open: Bool::new_off("ShutterOpen", ()),
             strobe: Strobe::channel("Strobe", 3, 16, 239, 255),
-            color_rotation_on: Bool::new("ColorRotationOn", ()),
+            color_rotation_on: Bool::new_off("ColorRotationOn", ()),
             color_rotation_speed: Unipolar::channel("ColorRotationSpeed", 1, 128, 255),
             color_position: Unipolar::channel("ColorPosition", 1, 0, 127),
             fiber_rotation: Bipolar::split_channel("FiberRotation", 2, 113, 0, 142, 255, 128),

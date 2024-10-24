@@ -19,9 +19,20 @@ pub type BoolChannel = Bool<RenderBoolToRange>;
 
 impl<R: RenderToDmx<bool>> Bool<R> {
     /// Initialize a new control with the provided OSC control name.
-    pub fn new<S: Into<String>>(name: S, render: R) -> Self {
+    /// The control defaults to being off.
+    pub fn new_off<S: Into<String>>(name: S, render: R) -> Self {
         Self {
             val: false,
+            name: name.into(),
+            render,
+        }
+    }
+
+    /// Initialize a new control with the provided OSC control name.
+    /// The control defaults to being on.
+    pub fn new_on<S: Into<String>>(name: S, render: R) -> Self {
+        Self {
+            val: true,
             name: name.into(),
             render,
         }
@@ -36,7 +47,7 @@ impl Bool<RenderBoolToRange> {
 
     /// Initialize a bool control that renders to DMX vals for off/on.
     pub fn channel<S: Into<String>>(name: S, dmx_buf_offset: usize, off: u8, on: u8) -> Self {
-        Self::new(
+        Self::new_off(
             name,
             RenderBoolToRange {
                 dmx_buf_offset,

@@ -140,9 +140,9 @@ struct ProgramControl {
 impl Default for ProgramControl {
     fn default() -> Self {
         Self {
-            run_program: Bool::new("RunProgram", ()),
+            run_program: Bool::new_off("RunProgram", ()),
             select: Unipolar::new("Program", ()),
-            program_cycle_all: Bool::new("ProgramCycleAll", ()),
+            program_cycle_all: Bool::new_off("ProgramCycleAll", ()),
             selected: 0,
         }
     }

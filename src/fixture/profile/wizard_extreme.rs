@@ -7,29 +7,52 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Debug)]
-struct Active(bool);
+use super::strobe::{RenderStrobeToRange, ShutterStrobe, Strobe, StrobeChannel};
 
-impl Default for Active {
-    fn default() -> Self {
-        Self(true)
-    }
+#[derive(Debug)]
+pub struct WizardExtreme {
+    shutter: ShutterStrobe<UnipolarChannel, RenderStrobeToRange, UnipolarFloat>,
+    color: LabeledSelect,
+    twinkle: Bool<()>,
+    twinkle_speed: UnipolarChannel,
+    gobo: IndexedSelectMult,
+    drum_rotation: BipolarSplitChannelMirror,
+    drum_swivel: BipolarChannelMirror,
+    reflector_rotation: BipolarSplitChannelMirror,
 }
 
-#[derive(Default, Debug)]
-pub struct WizardExtreme {
-    controls: GroupControlMap<ControlMessage>,
-    dimmer: UnipolarFloat,
-    strobe: GenericStrobe,
-    color: Color,
-    twinkle: bool,
-    twinkle_speed: UnipolarFloat,
-    gobo: usize,
-    drum_rotation: BipolarFloat,
-    drum_swivel: BipolarFloat,
-    reflector_rotation: BipolarFloat,
-    mirror: Mirror,
-    active: Active,
+impl Default for WizardExtreme {
+    fn default() -> Self {
+        Self {
+            shutter: ShutterStrobe::new(
+                Unipolar::channel("Dimmer", 0, 0, 129),
+                Strobe::channel("Strobe", 0, 189, 130, 0),
+            ),
+            color: LabeledSelect::new(
+                "Color",
+                2,
+                vec![
+                    ("Open", 0),
+                    ("Blue", 12),
+                    ("Orange", 24),
+                    ("Purple", 36),
+                    ("Green", 48),
+                    ("DarkBlue", 60),
+                    ("Yellow", 72),
+                    ("Magenta", 84),
+                ],
+            ),
+            twinkle: Bool::new_off("Twinkle", ()),
+            twinkle_speed: Unipolar::channel("TwinkleSpeed", 2, 176, 243),
+            // 14 gobos, including the open position
+            gobo: IndexedSelect::multiple("Gobo", 4, false, 14, 12),
+            drum_rotation: Bipolar::split_channel("DrumRotation", 7, 2, 63, 127, 66, 0)
+                .with_mirroring(),
+            drum_swivel: Bipolar::channel("DrumSwivel", 6, 0, 127).with_mirroring(),
+            reflector_rotation: Bipolar::split_channel("ReflectorRotation", 1, 2, 63, 127, 66, 0)
+                .with_mirroring(),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for WizardExtreme {
@@ -39,67 +62,18 @@ impl PatchAnimatedFixture for WizardExtreme {
     }
 }
 
-impl WizardExtreme {
-    pub const GOBO_COUNT: usize = 14; // includes the open position
-
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Dimmer(v) => {
-                self.dimmer = v;
-                emitter.emit_channel(ChannelStateChange::Level(v));
-            }
-            Strobe(sc) => self.strobe.handle_state_change(sc),
-            Color(c) => self.color = c,
-            Twinkle(v) => self.twinkle = v,
-            TwinkleSpeed(v) => self.twinkle_speed = v,
-            Gobo(v) => {
-                if v >= Self::GOBO_COUNT {
-                    error!("Gobo select index {} out of range.", v);
-                    return;
-                }
-                self.gobo = v;
-            }
-            DrumRotation(v) => self.drum_rotation = v,
-            MirrorDrumRotation(v) => self.mirror.drum_rotation = v,
-            DrumSwivel(v) => self.drum_swivel = v,
-            MirrorDrumSwivel(v) => self.mirror.drum_swivel = v,
-            ReflectorRotation(v) => self.reflector_rotation = v,
-            MirrorReflectorRotation(v) => self.mirror.reflector_rotation = v,
-            Active(v) => self.active.0 = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl ControllableFixture for WizardExtreme {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
+    fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(Dimmer(self.dimmer), emitter);
-        emitter.emit_channel(crate::channel::ChannelStateChange::Level(self.dimmer));
-
-        let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
-        };
-        self.strobe.emit_state(&mut emit_strobe);
-        Self::emit(Color(self.color), emitter);
-        Self::emit(Twinkle(self.twinkle), emitter);
-        Self::emit(TwinkleSpeed(self.twinkle_speed), emitter);
-        Self::emit(Gobo(self.gobo), emitter);
-        Self::emit(DrumRotation(self.drum_rotation), emitter);
-        Self::emit(MirrorDrumRotation(self.mirror.drum_rotation), emitter);
-        Self::emit(DrumSwivel(self.drum_swivel), emitter);
-        Self::emit(MirrorDrumSwivel(self.mirror.drum_swivel), emitter);
-        Self::emit(ReflectorRotation(self.reflector_rotation), emitter);
-        Self::emit(
-            MirrorReflectorRotation(self.mirror.reflector_rotation),
-            emitter,
-        );
-        Self::emit(Active(self.active.0), emitter);
+        self.shutter.emit_state(emitter);
+        self.color.emit_state(emitter);
+        self.twinkle.emit_state(emitter);
+        self.twinkle_speed.emit_state(emitter);
+        self.gobo.emit_state(emitter);
+        self.drum_rotation.emit_state(emitter);
+        self.drum_swivel.emit_state(emitter);
+        self.reflector_rotation.emit_state(emitter);
     }
 
     fn control(
@@ -107,19 +81,35 @@ impl ControllableFixture for WizardExtreme {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
+        if self.shutter.control(msg, emitter)? {
             return Ok(true);
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(true)
+        }
+        if self.color.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.twinkle.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.twinkle_speed.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.gobo.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.drum_rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.drum_swivel.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.reflector_rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
     }
 
     fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
-        match msg {
-            ChannelControlMessage::Level(l) => {
-                self.handle_state_change(StateChange::Dimmer(*l), emitter);
-            }
-        }
+        unimplemented!("implement channel controls!")
     }
 }
 
@@ -132,139 +122,41 @@ impl AnimatedFixture for WizardExtreme {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        if !self.active.0 {
-            dmx_buf.fill(0);
-            return;
-        }
-        let mut drum_swivel = self.drum_swivel.val();
-        let mut drum_rotation = self.drum_rotation.val();
-        let mut reflector_rotation = self.reflector_rotation.val();
-        let mut dimmer = self.dimmer.val();
-        let mut twinkle_speed = self.twinkle_speed.val();
-        for (val, target) in animation_vals.iter() {
-            use AnimationTarget::*;
-            match target {
-                DrumSwivel => drum_swivel += val,
-                DrumRotation => drum_rotation += val,
-                ReflectorRotation => reflector_rotation += val,
-                // FIXME: might want to do something nicer for unipolar values
-                Dimmer => dimmer += val,
-                TwinkleSpeed => twinkle_speed += val,
-            }
-        }
-        dmx_buf[0] = {
-            let strobe_off = 0;
-            let strobe =
-                self.strobe
-                    .render_range_with_master(group_controls.strobe(), strobe_off, 189, 130);
-            if strobe == strobe_off {
-                unipolar_to_range(0, 129, UnipolarFloat::new(dimmer))
-            } else {
-                strobe
-            }
-        };
-        dmx_buf[1] = bipolar_to_split_range(
-            BipolarFloat::new(reflector_rotation)
-                .invert_if(group_controls.mirror && self.mirror.reflector_rotation),
-            2,
-            63,
-            127,
-            66,
-            0,
+        self.shutter.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::Dimmer),
+            dmx_buf,
         );
-
-        dmx_buf[2] = if self.twinkle {
-            // WHY did you put twinkle on the color wheel...
-            unipolar_to_range(176, 243, UnipolarFloat::new(twinkle_speed))
+        self.reflector_rotation.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::ReflectorRotation),
+            dmx_buf,
+        );
+        if *self.twinkle.val() {
+            self.twinkle_speed.render(
+                animation_vals.filter(&AnimationTarget::TwinkleSpeed),
+                dmx_buf,
+            );
         } else {
-            self.color.as_dmx()
-        };
+            self.color.render_no_anim(dmx_buf);
+        }
+        self.gobo.render_no_anim(dmx_buf);
+
+        self.drum_swivel.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::DrumSwivel),
+            dmx_buf,
+        );
+        self.drum_rotation.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::DrumRotation),
+            dmx_buf,
+        );
         dmx_buf[3] = 0; // color shake
-        dmx_buf[4] = (self.gobo as u8) * 12;
         dmx_buf[5] = 0; // gobo shake
-        dmx_buf[6] = bipolar_to_range(
-            0,
-            127,
-            BipolarFloat::new(drum_swivel)
-                .invert_if(group_controls.mirror && self.mirror.drum_swivel),
-        );
-        dmx_buf[7] = bipolar_to_split_range(
-            BipolarFloat::new(drum_rotation)
-                .invert_if(group_controls.mirror && self.mirror.drum_rotation),
-            2,
-            63,
-            127,
-            66,
-            0,
-        );
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
         dmx_buf[10] = 0;
-    }
-}
-
-#[derive(Debug)]
-struct Mirror {
-    drum_rotation: bool,
-    drum_swivel: bool,
-    reflector_rotation: bool,
-}
-
-impl Default for Mirror {
-    fn default() -> Self {
-        Self {
-            drum_rotation: true,
-            drum_swivel: true,
-            reflector_rotation: true,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Dimmer(UnipolarFloat),
-    Strobe(GenericStrobeStateChange),
-    Color(Color),
-    Twinkle(bool),
-    TwinkleSpeed(UnipolarFloat),
-    Gobo(usize),
-    DrumRotation(BipolarFloat),
-    DrumSwivel(BipolarFloat),
-    ReflectorRotation(BipolarFloat),
-    MirrorReflectorRotation(bool),
-    MirrorDrumRotation(bool),
-    MirrorDrumSwivel(bool),
-    Active(bool),
-}
-
-pub type ControlMessage = StateChange;
-
-#[derive(Copy, Clone, Debug, Default, PartialEq, EnumString, EnumIter, EnumDisplay)]
-pub enum Color {
-    #[default]
-    Open,
-    Blue,
-    Orange,
-    Purple,
-    Green,
-    DarkBlue,
-    Yellow,
-    Magenta,
-}
-
-impl Color {
-    fn as_dmx(self) -> u8 {
-        use Color::*;
-        match self {
-            Open => 0,
-            Blue => 12,
-            Orange => 24,
-            Purple => 36,
-            Green => 48,
-            DarkBlue => 60,
-            Yellow => 72,
-            Magenta => 84,
-        }
     }
 }
 
@@ -294,72 +186,5 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer | Self::TwinkleSpeed)
-    }
-}
-
-const COLOR: &str = "Color";
-
-const GOBO_SELECT: RadioButton = RadioButton {
-    control: "Gobo",
-    n: WizardExtreme::GOBO_COUNT,
-    x_primary_coordinate: false,
-};
-
-const TWINKLE: Button = button("Twinkle");
-
-const MIRROR_DRUM_ROTATION: Button = button("MirrorDrumRotation");
-const MIRROR_DRUM_SWIVEL: Button = button("MirrorDrumSwivel");
-const MIRROR_REFLECTOR_ROTATION: Button = button("MirrorReflectorRotation");
-
-const ACTIVE: Button = button("Active");
-
-impl EnumRadioButton for Color {}
-
-impl WizardExtreme {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        map.add_unipolar("Dimmer", Dimmer);
-        map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_enum_handler(COLOR, ignore_payload, |c, _| Color(c));
-        TWINKLE.map_state(map, Twinkle);
-        map.add_unipolar("TwinkleSpeed", TwinkleSpeed);
-        GOBO_SELECT.map(map, Gobo);
-        map.add_bipolar("DrumRotation", |v| {
-            DrumRotation(bipolar_fader_with_detent(v))
-        });
-        MIRROR_DRUM_ROTATION.map_state(map, MirrorDrumRotation);
-        map.add_bipolar("DrumSwivel", DrumSwivel);
-        MIRROR_DRUM_SWIVEL.map_state(map, MirrorDrumSwivel);
-        map.add_bipolar("ReflectorRotation", |v| {
-            ReflectorRotation(bipolar_fader_with_detent(v))
-        });
-        MIRROR_REFLECTOR_ROTATION.map_state(map, MirrorReflectorRotation);
-        ACTIVE.map_state(map, Active);
-    }
-}
-
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    StateChange::Strobe(sc)
-}
-
-impl HandleOscStateChange<StateChange> for WizardExtreme {
-    fn emit_osc_state_change<E>(sc: StateChange, emitter: &E)
-    where
-        E: crate::osc::EmitScopedOscMessage + ?Sized,
-    {
-        match sc {
-            StateChange::Dimmer(v) => {
-                emitter.emit_float("Dimmer", v.into());
-            }
-            StateChange::Color(c) => {
-                c.set(COLOR, emitter);
-            }
-            StateChange::Gobo(v) => GOBO_SELECT.set(v, emitter),
-            StateChange::MirrorDrumRotation(v) => MIRROR_DRUM_ROTATION.send(v, emitter),
-            StateChange::MirrorReflectorRotation(v) => MIRROR_REFLECTOR_ROTATION.send(v, emitter),
-            StateChange::MirrorDrumSwivel(v) => MIRROR_DRUM_SWIVEL.send(v, emitter),
-            StateChange::Active(v) => ACTIVE.send(v, emitter),
-            _ => (),
-        }
     }
 }

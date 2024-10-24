@@ -1,5 +1,7 @@
 //! Control for a generic strobe function.
 
+use std::marker::PhantomData;
+
 use number::UnipolarFloat;
 
 use crate::{
@@ -22,7 +24,7 @@ pub type StrobeChannel = Strobe<RenderStrobeToRange>;
 impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
     pub fn new(name: &str, render: R) -> Self {
         Self {
-            on: Bool::new(format!("{name}On"), ()),
+            on: Bool::new_off(format!("{name}On"), ()),
             rate: Unipolar::new(format!("{name}Rate"), ()),
             render,
         }
@@ -115,6 +117,85 @@ impl RenderToDmx<Option<UnipolarFloat>> for RenderStrobeToRange {
             unipolar_to_range(self.slow, self.fast, rate)
         } else {
             self.stop
+        }
+    }
+}
+
+/// Combine an arbitrary shutter and strobe control into one logical control.
+/// Renders strobe if active, otherwise renders other control.
+/// Animations are passed on to the shutter control.
+#[derive(Debug)]
+pub struct ShutterStrobe<
+    S: OscControl<T> + RenderToDmxWithAnimations,
+    R: RenderToDmx<Option<UnipolarFloat>>,
+    T,
+> {
+    shutter: S,
+    strobe: Strobe<R>,
+    phantom: PhantomData<T>,
+}
+
+impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<UnipolarFloat>>, T>
+    ShutterStrobe<S, R, T>
+{
+    pub fn new(shutter: S, strobe: Strobe<R>) -> Self {
+        Self {
+            shutter,
+            strobe,
+            phantom: PhantomData::default(),
+        }
+    }
+}
+
+impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<UnipolarFloat>>, T>
+    OscControl<()> for ShutterStrobe<S, R, T>
+{
+    fn val(&self) -> &() {
+        &()
+    }
+
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
+        self.shutter.emit_state(emitter);
+        self.strobe.emit_state(emitter);
+    }
+
+    fn control(
+        &mut self,
+        msg: &crate::osc::OscControlMessage,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<bool> {
+        if self.shutter.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+}
+
+impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<UnipolarFloat>>, T>
+    RenderToDmxWithAnimations for ShutterStrobe<S, R, T>
+{
+    fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
+        // FIXME: need to tweak traits around to avoid the need for this
+        if *self.strobe.on.val() {
+            self.strobe.render(std::iter::empty(), dmx_buf);
+        } else {
+            self.shutter.render(animations, dmx_buf);
+        }
+    }
+
+    fn render_with_group(
+        &self,
+        group_controls: &crate::fixture::FixtureGroupControls,
+        animations: impl Iterator<Item = f64>,
+        dmx_buf: &mut [u8],
+    ) {
+        if let Some(rate) = self.strobe.val_with_master(group_controls.strobe()) {
+            self.strobe.render.render(&Some(rate), dmx_buf);
+        } else {
+            self.shutter.render(animations, dmx_buf);
         }
     }
 }

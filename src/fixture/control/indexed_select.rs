@@ -27,6 +27,7 @@ pub struct IndexedSelect<R: RenderToDmx<usize>> {
 }
 
 pub type IndexedSelectMenu = IndexedSelect<RenderIndexedSelectToFixedValues>;
+pub type IndexedSelectMult = IndexedSelect<RenderIndexedSelectToMultiple>;
 
 impl<R: RenderToDmx<usize>> IndexedSelect<R> {
     /// Initialize a new control with the provided OSC control name.
@@ -55,6 +56,29 @@ impl IndexedSelect<RenderIndexedSelectToFixedValues> {
             RenderIndexedSelectToFixedValues {
                 dmx_buf_offset,
                 vals,
+            },
+        )
+    }
+}
+
+impl IndexedSelect<RenderIndexedSelectToMultiple> {
+    /// An IndexedSelect rendered to DMX using a fixed multiple of the index.
+    pub fn multiple<S: Into<String>>(
+        name: S,
+        dmx_buf_offset: usize,
+        x_primary_coordinate: bool,
+        n: usize,
+        mult: usize,
+    ) -> Self {
+        assert!(n > 0);
+        assert!((n - 1) * mult <= u8::MAX as usize);
+        Self::new(
+            name,
+            n,
+            x_primary_coordinate,
+            RenderIndexedSelectToMultiple {
+                dmx_buf_offset,
+                mult,
             },
         )
     }
@@ -137,6 +161,19 @@ pub struct RenderIndexedSelectToFixedValues {
 impl RenderToDmx<usize> for RenderIndexedSelectToFixedValues {
     fn render(&self, val: &usize, dmx_buf: &mut [u8]) {
         dmx_buf[self.dmx_buf_offset] = self.vals[*val];
+    }
+}
+
+/// Render a indexed select float to a multiple of the index.
+#[derive(Debug)]
+pub struct RenderIndexedSelectToMultiple {
+    pub dmx_buf_offset: usize,
+    pub mult: usize,
+}
+
+impl RenderToDmx<usize> for RenderIndexedSelectToMultiple {
+    fn render(&self, val: &usize, dmx_buf: &mut [u8]) {
+        dmx_buf[self.dmx_buf_offset] = (*val * self.mult) as u8;
     }
 }
 

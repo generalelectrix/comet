@@ -8,29 +8,38 @@ use rosc::OscType;
 
 use crate::osc::ScopedOscMessage;
 
-use super::OscControl;
+use super::{OscControl, RenderToDmxWithAnimations};
 
+/// Select from a menu of labeled options.
+#[derive(Debug)]
 pub struct LabeledSelect {
     /// Currently-selected value.
     selected: usize,
     /// The menu of pairs of label and DMX value.
-    options: Vec<(String, u8)>,
+    options: Vec<(&'static str, u8)>,
     /// Name of this control.
     name: String,
+    /// Offset into DMX buffer to render into.
+    dmx_buf_offset: usize,
 }
 
 impl LabeledSelect {
-    pub fn new<S: Into<String>>(name: S, options: Vec<(String, u8)>) -> Self {
+    pub fn new<S: Into<String>>(
+        name: S,
+        dmx_buf_offset: usize,
+        options: Vec<(&'static str, u8)>,
+    ) -> Self {
         assert!(!options.is_empty());
         Self {
             selected: 0,
             options,
             name: name.into(),
+            dmx_buf_offset,
         }
     }
 
     pub fn labels(&self) -> impl Iterator<Item = &str> {
-        self.options.iter().map(|(l, _)| l.as_str())
+        self.options.iter().map(|(l, _)| *l)
     }
 }
 
@@ -82,5 +91,11 @@ impl OscControl<str> for LabeledSelect {
                 arg: OscType::Float(if i == self.selected { 1.0 } else { 0.0 }),
             });
         }
+    }
+}
+
+impl RenderToDmxWithAnimations for LabeledSelect {
+    fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
+        dmx_buf[self.dmx_buf_offset] = self.options[self.selected].1;
     }
 }

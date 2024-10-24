@@ -16,9 +16,9 @@ pub struct Hypnotic {
 impl Default for Hypnotic {
     fn default() -> Self {
         Self {
-            red_laser_on: Bool::new("RedLaserOn", ()),
-            green_laser_on: Bool::new("GreenLaserOn", ()),
-            blue_laser_on: Bool::new("BlueLaserOn", ()),
+            red_laser_on: Bool::new_off("RedLaserOn", ()),
+            green_laser_on: Bool::new_off("GreenLaserOn", ()),
+            blue_laser_on: Bool::new_off("BlueLaserOn", ()),
             rotation: Bipolar::split_channel("Rotation", 1, 135, 245, 120, 10, 0),
         }
     }
