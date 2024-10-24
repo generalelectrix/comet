@@ -28,7 +28,7 @@ impl LabelArray {
                 return;
             }
             emitter.emit_osc(ScopedOscMessage {
-                control: &format!("/{}/{i}", self.control),
+                control: &format!("{}/{i}", self.control),
                 arg: OscType::String(label),
             })
         }

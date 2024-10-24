@@ -163,7 +163,7 @@ impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
                 (1, i + 1)
             };
             emitter.emit_osc(ScopedOscMessage {
-                control: &format!("/{}/{}/{}", self.name, x, y),
+                control: &format!("{}/{}/{}", self.name, x, y),
                 arg: OscType::Float(val),
             })
         }

@@ -90,7 +90,7 @@ impl RadioButton {
                 (1, i + 1)
             };
             emitter.emit_osc(ScopedOscMessage {
-                control: &format!("/{}/{}/{}", self.control, x, y),
+                control: &format!("{}/{}/{}", self.control, x, y),
                 arg: OscType::Float(val),
             })
         }
@@ -145,7 +145,7 @@ where
     {
         for choice in Self::iter() {
             emitter.emit_osc(ScopedOscMessage {
-                control: &format!("/{}/{}", control, choice),
+                control: &format!("{}/{}", control, choice),
                 arg: OscType::Float(if choice == *self { 1.0 } else { 0.0 }),
             });
         }

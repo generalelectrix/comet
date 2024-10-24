@@ -43,7 +43,7 @@ impl FaderArray {
         S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         emitter.emit_osc(ScopedOscMessage {
-            control: &format!("/{}/{}", self.control, n + 1),
+            control: &format!("{}/{}", self.control, n + 1),
             arg: OscType::Float(val.val() as f32),
         });
     }

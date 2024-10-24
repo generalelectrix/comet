@@ -109,7 +109,7 @@ impl OscControl<&str> for LabeledSelect {
             // TODO: consider caching outgoing addresses
             // We could also do this for matching incoming addresses.
             emitter.emit_osc(ScopedOscMessage {
-                control: &format!("/{}/{}", self.name, label),
+                control: &format!("{}/{}", self.name, label),
                 arg: OscType::Float(if i == self.selected { 1.0 } else { 0.0 }),
             });
         }
