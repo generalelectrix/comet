@@ -48,8 +48,8 @@ impl Bool<RenderBoolToRange> {
 }
 
 impl<R: RenderToDmx<bool>> OscControl<bool> for Bool<R> {
-    fn val(&self) -> bool {
-        self.val
+    fn val(&self) -> &bool {
+        &self.val
     }
 
     fn control(

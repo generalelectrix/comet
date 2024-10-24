@@ -62,7 +62,7 @@ impl Color {
 
     pub fn render_without_animations(&self, dmx_buf: &mut [u8]) {
         self.model
-            .render(dmx_buf, self.hue.val(), self.sat.val(), self.val.val());
+            .render(dmx_buf, *self.hue.val(), *self.sat.val(), *self.val.val());
     }
 }
 
@@ -111,9 +111,9 @@ impl ControllableFixture for Color {
     }
 }
 
-impl OscControl<(Phase, UnipolarFloat, UnipolarFloat)> for Color {
-    fn val(&self) -> (Phase, UnipolarFloat, UnipolarFloat) {
-        (self.hue.val(), self.sat.val(), self.val.val())
+impl OscControl<()> for Color {
+    fn val(&self) -> &() {
+        &()
     }
 
     fn control(

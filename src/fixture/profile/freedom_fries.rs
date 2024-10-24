@@ -155,7 +155,7 @@ impl ProgramControl {
     fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
         dmx_buf[Self::DMX_BUF_OFFSET] = if !self.run_program.val() {
             0
-        } else if self.program_cycle_all.val() {
+        } else if *self.program_cycle_all.val() {
             227
         } else {
             ((self.selected * 8) + 11) as u8
@@ -164,7 +164,9 @@ impl ProgramControl {
 }
 
 impl OscControl<()> for ProgramControl {
-    fn val(&self) {}
+    fn val(&self) -> &() {
+        &()
+    }
 
     fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
         self.run_program.emit_state(emitter);
@@ -186,7 +188,7 @@ impl OscControl<()> for ProgramControl {
         }
         if self.select.control(msg, emitter)? {
             let new_val =
-                unipolar_to_range(0, Self::PROGRAM_COUNT as u8 - 1, self.select.val()) as usize;
+                unipolar_to_range(0, Self::PROGRAM_COUNT as u8 - 1, *self.select.val()) as usize;
             if new_val >= Self::PROGRAM_COUNT {
                 bail!(
                     "program select index {new_val} out of range (max {})",
@@ -194,7 +196,7 @@ impl OscControl<()> for ProgramControl {
                 );
             }
             self.selected =
-                unipolar_to_range(0, Self::PROGRAM_COUNT as u8 - 1, self.select.val()) as usize;
+                unipolar_to_range(0, Self::PROGRAM_COUNT as u8 - 1, *self.select.val()) as usize;
 
             self.select.emit_state(emitter);
             PROGRAM_SELECT_LABEL.set([self.selected.to_string()].into_iter(), emitter);

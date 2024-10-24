@@ -47,8 +47,8 @@ impl PhaseControl<RenderPhaseToRange> {
 }
 
 impl<R: RenderToDmx<Phase>> OscControl<Phase> for PhaseControl<R> {
-    fn val(&self) -> Phase {
-        self.val
+    fn val(&self) -> &Phase {
+        &self.val
     }
 
     fn control(

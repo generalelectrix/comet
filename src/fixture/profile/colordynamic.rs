@@ -88,7 +88,7 @@ impl AnimatedFixture for Colordynamic {
         dmx_buf: &mut [u8],
     ) {
         dmx_buf[0] = 0; // FIXME does this do anything?
-        if self.color_rotation_on.val() {
+        if *self.color_rotation_on.val() {
             self.color_rotation_speed.render(
                 animation_vals.filter(&AnimationTarget::ColorRotationSpeed),
                 dmx_buf,

@@ -52,8 +52,8 @@ impl Unipolar<RenderUnipolarToRange> {
 }
 
 impl<R: RenderToDmx<UnipolarFloat>> OscControl<UnipolarFloat> for Unipolar<R> {
-    fn val(&self) -> UnipolarFloat {
-        self.val
+    fn val(&self) -> &UnipolarFloat {
+        &self.val
     }
 
     fn control(

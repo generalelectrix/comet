@@ -7,20 +7,22 @@ use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 mod bipolar;
 mod bool;
 mod indexed_select;
+mod labeled_select;
 mod phase;
 mod unipolar;
 
 pub use bipolar::*;
 pub use bool::*;
 pub use indexed_select::*;
+pub use labeled_select::*;
 pub use phase::*;
 pub use unipolar::*;
 
 use super::FixtureGroupControls;
 
-pub trait OscControl<T> {
+pub trait OscControl<T: ?Sized> {
     /// Return the current state of this control.
-    fn val(&self) -> T;
+    fn val(&self) -> &T;
 
     /// Potentially handle an OSC control message.
     /// If we handle the message, return true.

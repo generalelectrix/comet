@@ -61,8 +61,8 @@ impl IndexedSelect<RenderIndexedSelectToFixedValues> {
 }
 
 impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
-    fn val(&self) -> usize {
-        self.val
+    fn val(&self) -> &usize {
+        &self.val
     }
 
     fn control(
