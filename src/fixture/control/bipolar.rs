@@ -41,8 +41,10 @@ impl<R: RenderToDmx<BipolarFloat>> Bipolar<R> {
     }
 
     /// Decorate this control with automatic mirroring.
-    pub fn with_mirroring(self) -> Mirrored<R> {
-        Mirrored::new(self)
+    ///
+    /// Use the provided bool to determine whether mirroring should be on or off by default.
+    pub fn with_mirroring(self, init: bool) -> Mirrored<R> {
+        Mirrored::new(self, init)
     }
 
     fn val_with_anim(&self, animations: impl Iterator<Item = f64>) -> BipolarFloat {
@@ -209,9 +211,14 @@ pub struct Mirrored<R: RenderToDmx<BipolarFloat>> {
 
 impl<R: RenderToDmx<BipolarFloat>> Mirrored<R> {
     /// Decorate a bipolar float control with auto-mirroring.
-    fn new(control: Bipolar<R>) -> Self {
+    fn new(control: Bipolar<R>, init: bool) -> Self {
+        let mirror_name = format!("Mirror{}", control.name);
         Self {
-            mirror: Bool::new_on(format!("Mirror{}", control.name), ()),
+            mirror: if init {
+                Bool::new_on(mirror_name, ())
+            } else {
+                Bool::new_off(mirror_name, ())
+            },
             control,
         }
     }

@@ -46,10 +46,10 @@ impl Default for WizardExtreme {
             // 14 gobos, including the open position
             gobo: IndexedSelect::multiple("Gobo", 4, false, 14, 12),
             drum_rotation: Bipolar::split_channel("DrumRotation", 7, 2, 63, 127, 66, 0)
-                .with_mirroring(),
-            drum_swivel: Bipolar::channel("DrumSwivel", 6, 0, 127).with_mirroring(),
+                .with_mirroring(true),
+            drum_swivel: Bipolar::channel("DrumSwivel", 6, 0, 127).with_mirroring(true),
             reflector_rotation: Bipolar::split_channel("ReflectorRotation", 1, 2, 63, 127, 66, 0)
-                .with_mirroring(),
+                .with_mirroring(true),
         }
     }
 }
