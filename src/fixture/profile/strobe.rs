@@ -6,9 +6,7 @@ use anyhow::bail;
 use number::UnipolarFloat;
 
 use crate::{
-    fixture::control::{
-        Bool, ChannelLevel, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar,
-    },
+    fixture::control::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar},
     util::unipolar_to_range,
 };
 

@@ -2,7 +2,7 @@
 //! This models simple things like color selection, where a choice directly corresponds
 //! to a DMX value.
 
-use anyhow::{anyhow, bail};
+use anyhow::bail;
 use itertools::Itertools;
 use rosc::OscType;
 

@@ -1,13 +1,12 @@
 //! Martin Wizard Extreme - the one that Goes Slow
 
-use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-use super::strobe::{RenderStrobeToRange, ShutterStrobe, Strobe, StrobeChannel};
+use super::strobe::{RenderStrobeToRange, ShutterStrobe, Strobe};
 
 #[derive(Debug)]
 pub struct WizardExtreme {

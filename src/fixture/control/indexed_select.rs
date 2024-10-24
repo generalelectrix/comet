@@ -1,7 +1,6 @@
 //! A radio button-style control that selects from a continuous integer range.
 
 use anyhow::{anyhow, ensure, Result};
-use log::error;
 use rosc::OscType;
 
 use crate::osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage};
