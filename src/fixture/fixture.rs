@@ -47,9 +47,15 @@ pub trait ControllableFixture {
     ) -> anyhow::Result<bool>;
 
     /// Process a channel control message, if the fixture uses it.
+    ///
     #[allow(unused)]
-    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
         // Ignore channel control messages by default.
+        Ok(())
     }
 
     fn update(&mut self, _: Duration) {}
@@ -146,8 +152,12 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
         self.fixture.control(msg, emitter)
     }
 
-    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
-        self.fixture.control_from_channel(msg, emitter);
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.fixture.control_from_channel(msg, emitter)
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {

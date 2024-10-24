@@ -11,7 +11,7 @@ use super::strobe::{RenderStrobeToRange, ShutterStrobe, Strobe, StrobeChannel};
 
 #[derive(Debug)]
 pub struct WizardExtreme {
-    shutter: ShutterStrobe<UnipolarChannel, RenderStrobeToRange, UnipolarFloat>,
+    shutter: ChannelLevel<ShutterStrobe<UnipolarChannel, RenderStrobeToRange, UnipolarFloat>>,
     color: LabeledSelect,
     twinkle: Bool<()>,
     twinkle_speed: UnipolarChannel,
@@ -24,10 +24,10 @@ pub struct WizardExtreme {
 impl Default for WizardExtreme {
     fn default() -> Self {
         Self {
-            shutter: ShutterStrobe::new(
+            shutter: ChannelLevel::wrap(ShutterStrobe::new(
                 Unipolar::channel("Dimmer", 0, 0, 129),
                 Strobe::channel("Strobe", 0, 189, 130, 0),
-            ),
+            )),
             color: LabeledSelect::new(
                 "Color",
                 2,
@@ -108,8 +108,13 @@ impl ControllableFixture for WizardExtreme {
         Ok(false)
     }
 
-    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
-        unimplemented!("implement channel controls!")
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.shutter.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }
 

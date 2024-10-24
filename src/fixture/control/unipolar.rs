@@ -8,7 +8,7 @@ use crate::{
     util::unipolar_to_range,
 };
 
-use super::{OscControl, RenderToDmx, RenderToDmxWithAnimations};
+use super::{ChannelLevel, OscControl, RenderToDmx, RenderToDmxWithAnimations};
 
 /// A unipolar value, with controls.
 #[derive(Debug)]
@@ -33,6 +33,10 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
 
     pub fn val(&self) -> UnipolarFloat {
         self.val
+    }
+
+    pub fn with_channel_level(self) -> ChannelLevel<Self> {
+        ChannelLevel { control: self }
     }
 }
 

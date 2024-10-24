@@ -6,6 +6,7 @@ use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 
 mod bipolar;
 mod bool;
+mod channel;
 mod indexed_select;
 mod labeled_select;
 mod phase;
@@ -13,6 +14,7 @@ mod unipolar;
 
 pub use bipolar::*;
 pub use bool::*;
+pub use channel::*;
 pub use indexed_select::*;
 pub use labeled_select::*;
 pub use phase::*;

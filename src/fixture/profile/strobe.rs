@@ -6,7 +6,9 @@ use anyhow::bail;
 use number::UnipolarFloat;
 
 use crate::{
-    fixture::control::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar},
+    fixture::control::{
+        Bool, ChannelLevel, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar,
+    },
     util::unipolar_to_range,
 };
 
@@ -130,18 +132,20 @@ impl RenderToDmx<Option<UnipolarFloat>> for RenderStrobeToRange {
 /// Renders strobe if active, otherwise renders other control.
 /// Animations are passed on to the shutter control.
 #[derive(Debug)]
-pub struct ShutterStrobe<
+pub struct ShutterStrobe<S, R, T>
+where
     S: OscControl<T> + RenderToDmxWithAnimations,
     R: RenderToDmx<Option<UnipolarFloat>>,
-    T,
-> {
+{
     shutter: S,
     strobe: Strobe<R>,
     phantom: PhantomData<T>,
 }
 
-impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<UnipolarFloat>>, T>
-    ShutterStrobe<S, R, T>
+impl<S, R, T> ShutterStrobe<S, R, T>
+where
+    S: OscControl<T> + RenderToDmxWithAnimations,
+    R: RenderToDmx<Option<UnipolarFloat>>,
 {
     pub fn new(shutter: S, strobe: Strobe<R>) -> Self {
         Self {
@@ -169,12 +173,38 @@ impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<Unipola
         self.strobe.emit_state(emitter);
     }
 
+    /// Callback state emission is delegated to the shutter control.
+    fn emit_state_with_callback(
+        &self,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+        callback: impl Fn(&T),
+    ) {
+        self.shutter.emit_state_with_callback(emitter, callback);
+        self.strobe.emit_state(emitter);
+    }
+
     fn control(
         &mut self,
         msg: &crate::osc::OscControlMessage,
         emitter: &dyn crate::osc::EmitScopedOscMessage,
     ) -> anyhow::Result<bool> {
         if self.shutter.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    /// Control with callback handling is delegated to the shutter control.
+    fn control_with_callback(
+        &mut self,
+        msg: &crate::osc::OscControlMessage,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+        callback: impl Fn(&T),
+    ) -> anyhow::Result<bool> {
+        if self.shutter.control_with_callback(msg, emitter, callback)? {
             return Ok(true);
         }
         if self.strobe.control(msg, emitter)? {

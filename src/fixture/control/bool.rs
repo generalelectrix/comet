@@ -106,7 +106,7 @@ impl<R: RenderToDmx<bool>> OscControl<bool> for Bool<R> {
     fn emit_state_with_callback(
         &self,
         emitter: &dyn EmitScopedOscMessage,
-        mut callback: impl FnMut(&bool),
+        callback: impl Fn(&bool),
     ) {
         self.emit_state(emitter);
         callback(&self.val);
