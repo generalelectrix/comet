@@ -2,6 +2,7 @@
 
 use std::marker::PhantomData;
 
+use anyhow::bail;
 use number::UnipolarFloat;
 
 use crate::{
@@ -35,10 +36,10 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
         let rate = if master.use_master_rate {
             master.state.rate
         } else {
-            *self.rate.val()
+            self.rate.val()
         };
 
-        (*self.on.val() && master.state.on).then_some(rate)
+        (self.on.val() && master.state.on).then_some(rate)
     }
 }
 
@@ -58,8 +59,12 @@ impl StrobeChannel {
 }
 
 impl<R: RenderToDmx<Option<UnipolarFloat>>> OscControl<()> for Strobe<R> {
-    fn val(&self) -> &() {
-        &()
+    fn control_direct(
+        &mut self,
+        _val: (),
+        _emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        bail!("direct control is not implemented for Strobe controls");
     }
 
     fn control(
@@ -85,8 +90,8 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> OscControl<()> for Strobe<R> {
 impl<R: RenderToDmx<Option<UnipolarFloat>>> RenderToDmxWithAnimations for Strobe<R> {
     fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
         // FIXME: need to tweak traits around to avoid the need for this
-        if *self.on.val() {
-            self.render.render(&Some(*self.rate.val()), dmx_buf);
+        if self.on.val() {
+            self.render.render(&Some(self.rate.val()), dmx_buf);
         } else {
             self.render.render(&None, dmx_buf);
         }
@@ -148,10 +153,15 @@ impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<Unipola
 }
 
 impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<UnipolarFloat>>, T>
-    OscControl<()> for ShutterStrobe<S, R, T>
+    OscControl<T> for ShutterStrobe<S, R, T>
 {
-    fn val(&self) -> &() {
-        &()
+    /// Direct control over ShutterStrobe is delegated to the shutter control.
+    fn control_direct(
+        &mut self,
+        val: T,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        self.shutter.control_direct(val, emitter)
     }
 
     fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
@@ -179,7 +189,7 @@ impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<Unipola
 {
     fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
         // FIXME: need to tweak traits around to avoid the need for this
-        if *self.strobe.on.val() {
+        if self.strobe.on.val() {
             self.strobe.render(std::iter::empty(), dmx_buf);
         } else {
             self.shutter.render(animations, dmx_buf);

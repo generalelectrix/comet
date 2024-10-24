@@ -30,6 +30,10 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
             render,
         }
     }
+
+    pub fn val(&self) -> UnipolarFloat {
+        self.val
+    }
 }
 
 impl Unipolar<RenderUnipolarToRange> {
@@ -52,8 +56,14 @@ impl Unipolar<RenderUnipolarToRange> {
 }
 
 impl<R: RenderToDmx<UnipolarFloat>> OscControl<UnipolarFloat> for Unipolar<R> {
-    fn val(&self) -> &UnipolarFloat {
-        &self.val
+    fn control_direct(
+        &mut self,
+        val: UnipolarFloat,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        self.val = val;
+        emitter.emit_float(&self.name, self.val.into());
+        Ok(())
     }
 
     fn control(
@@ -64,9 +74,10 @@ impl<R: RenderToDmx<UnipolarFloat>> OscControl<UnipolarFloat> for Unipolar<R> {
         if msg.control() != self.name {
             return Ok(false);
         }
-        let v = msg.get_unipolar().with_context(|| self.name.clone())?;
-        self.val = v;
-        emitter.emit_float(&self.name, self.val.into());
+        self.control_direct(
+            msg.get_unipolar().with_context(|| self.name.clone())?,
+            emitter,
+        )?;
         Ok(true)
     }
 

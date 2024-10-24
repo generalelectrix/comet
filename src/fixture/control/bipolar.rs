@@ -97,8 +97,14 @@ impl Bipolar<RenderBipolarToRange> {
 }
 
 impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Bipolar<R> {
-    fn val(&self) -> &BipolarFloat {
-        &self.val
+    fn control_direct(
+        &mut self,
+        val: BipolarFloat,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        self.val = val;
+        emitter.emit_float(&self.name, self.val.into());
+        Ok(())
     }
 
     fn control(
@@ -109,9 +115,10 @@ impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Bipolar<R> {
         if msg.control() != self.name {
             return Ok(false);
         }
-        let v = msg.get_bipolar().with_context(|| self.name.clone())?;
-        self.val = v;
-        emitter.emit_float(&self.name, self.val.into());
+        self.control_direct(
+            msg.get_bipolar().with_context(|| self.name.clone())?,
+            emitter,
+        )?;
         Ok(true)
     }
 
@@ -204,22 +211,24 @@ impl<R: RenderToDmx<BipolarFloat>> RenderToDmxWithAnimations for Mirrored<R> {
             &self
                 .control
                 .val_with_anim(animations)
-                .invert_if(group_controls.mirror && *self.mirror.val()),
+                .invert_if(group_controls.mirror && self.mirror.val()),
             dmx_buf,
         );
     }
 }
 
-// Since we can't know the mirroring state at this level, we don't expose the
-// current value of this control.
-impl<R: RenderToDmx<BipolarFloat>> OscControl<()> for Mirrored<R> {
-    fn val(&self) -> &() {
-        &()
-    }
-
+impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Mirrored<R> {
     fn emit_state(&self, emitter: &dyn EmitScopedOscMessage) {
         self.control.emit_state(emitter);
         self.mirror.emit_state(emitter);
+    }
+
+    fn control_direct(
+        &mut self,
+        val: BipolarFloat,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        self.control.control_direct(val, emitter)
     }
 
     fn control(

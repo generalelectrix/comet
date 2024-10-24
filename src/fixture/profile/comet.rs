@@ -44,7 +44,7 @@ impl NonAnimatedFixture for Comet {
     fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
         if !self.shutter_open.val() {
             self.shutter_open.render_no_anim(dmx_buf);
-        } else if *self.shutter_sound_active.val() {
+        } else if self.shutter_sound_active.val() {
             self.shutter_sound_active.render_no_anim(dmx_buf);
         } else {
             self.strobe.render_no_anim(dmx_buf);
@@ -195,10 +195,10 @@ impl TriggerState {
         self.prior_state = Stepping::Idle;
 
         // if we're not taking a step, easy sauce
-        if *self.music_trigger.val() {
+        if self.music_trigger.val() {
             Self::DMX_VAL_MUSIC_TRIG
-        } else if *self.auto_step.val() {
-            return unipolar_to_range(151, 255, *self.auto_step_rate.val());
+        } else if self.auto_step.val() {
+            return unipolar_to_range(151, 255, self.auto_step_rate.val());
         } else {
             return Self::DMX_VAL_STOP;
         }

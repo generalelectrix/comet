@@ -20,9 +20,9 @@ pub use unipolar::*;
 
 use super::FixtureGroupControls;
 
-pub trait OscControl<T: ?Sized> {
-    /// Return the current state of this control.
-    fn val(&self) -> &T;
+pub trait OscControl<T> {
+    /// Set this control directly with the provided value.
+    fn control_direct(&mut self, val: T, emitter: &dyn EmitScopedOscMessage) -> anyhow::Result<()>;
 
     /// Potentially handle an OSC control message.
     /// If we handle the message, return true.

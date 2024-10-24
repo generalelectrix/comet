@@ -43,9 +43,31 @@ impl LabeledSelect {
     }
 }
 
-impl OscControl<str> for LabeledSelect {
-    fn val(&self) -> &str {
-        &self.options[self.selected].0
+impl OscControl<&str> for LabeledSelect {
+    fn control_direct(
+        &mut self,
+        val: &str,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        let Some(i) = self
+            .labels()
+            .enumerate()
+            .filter_map(|(i, label)| (label == val).then_some(i))
+            .next()
+        else {
+            bail!(
+                "the label {val} did not match any valid option for {}:\n{}",
+                self.name,
+                self.labels().join(", ")
+            );
+        };
+        // If selected is same as current, do nothing.
+        if i == self.selected {
+            return Ok(());
+        }
+        self.selected = i;
+        self.emit_state(emitter);
+        Ok(())
     }
 
     fn control(

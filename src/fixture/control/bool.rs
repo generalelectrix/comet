@@ -37,6 +37,10 @@ impl<R: RenderToDmx<bool>> Bool<R> {
             render,
         }
     }
+
+    pub fn val(&self) -> bool {
+        self.val
+    }
 }
 
 impl Bool<RenderBoolToRange> {
@@ -59,8 +63,14 @@ impl Bool<RenderBoolToRange> {
 }
 
 impl<R: RenderToDmx<bool>> OscControl<bool> for Bool<R> {
-    fn val(&self) -> &bool {
-        &self.val
+    fn control_direct(
+        &mut self,
+        val: bool,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        self.val = val;
+        emitter.emit_float(&self.name, self.val.into());
+        Ok(())
     }
 
     fn control(
@@ -71,9 +81,7 @@ impl<R: RenderToDmx<bool>> OscControl<bool> for Bool<R> {
         if msg.control() != self.name {
             return Ok(false);
         }
-        let v = msg.get_bool().with_context(|| self.name.clone())?;
-        self.val = v;
-        emitter.emit_float(&self.name, self.val.into());
+        self.control_direct(msg.get_bool().with_context(|| self.name.clone())?, emitter)?;
         Ok(true)
     }
 

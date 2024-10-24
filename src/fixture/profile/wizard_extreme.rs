@@ -132,7 +132,7 @@ impl AnimatedFixture for WizardExtreme {
             animation_vals.filter(&AnimationTarget::ReflectorRotation),
             dmx_buf,
         );
-        if *self.twinkle.val() {
+        if self.twinkle.val() {
             self.twinkle_speed.render(
                 animation_vals.filter(&AnimationTarget::TwinkleSpeed),
                 dmx_buf,

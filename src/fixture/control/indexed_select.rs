@@ -1,6 +1,7 @@
 //! A radio button-style control that selects from a continuous integer range.
 
 use anyhow::{anyhow, ensure, Result};
+use log::error;
 use rosc::OscType;
 
 use crate::osc::{EmitScopedOscMessage, OscControlMessage, ScopedOscMessage};
@@ -85,8 +86,25 @@ impl IndexedSelect<RenderIndexedSelectToMultiple> {
 }
 
 impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
-    fn val(&self) -> &usize {
-        &self.val
+    fn control_direct(
+        &mut self,
+        val: usize,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        ensure!(
+            val < self.n,
+            "direct control value {val} for {} is out of range (max {})",
+            self.name,
+            self.n - 1
+        );
+        // No action needed if we pressed the select for the current value.
+        if val == self.val {
+            return Ok(());
+        }
+
+        self.val = val;
+        self.emit_state(emitter);
+        Ok(())
     }
 
     fn control(
@@ -119,13 +137,7 @@ impl<R: RenderToDmx<usize>> OscControl<usize> for IndexedSelect<R> {
             return Ok(true);
         }
 
-        // No action needed if we pressed the select for the current value.
-        if primary == self.val {
-            return Ok(true);
-        }
-
-        self.val = primary;
-        self.emit_state(emitter);
+        self.control_direct(primary, emitter)?;
         Ok(true)
     }
 

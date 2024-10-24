@@ -62,7 +62,7 @@ impl Color {
 
     pub fn render_without_animations(&self, dmx_buf: &mut [u8]) {
         self.model
-            .render(dmx_buf, *self.hue.val(), *self.sat.val(), *self.val.val());
+            .render(dmx_buf, self.hue.val(), self.sat.val(), self.val.val());
     }
 }
 
@@ -112,8 +112,12 @@ impl ControllableFixture for Color {
 }
 
 impl OscControl<()> for Color {
-    fn val(&self) -> &() {
-        &()
+    fn control_direct(
+        &mut self,
+        _val: (),
+        _emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        bail!("direct control is not implemented for Color controls");
     }
 
     fn control(

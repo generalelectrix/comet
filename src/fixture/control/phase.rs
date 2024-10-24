@@ -30,6 +30,10 @@ impl<R: RenderToDmx<Phase>> PhaseControl<R> {
             render,
         }
     }
+
+    pub fn val(&self) -> Phase {
+        self.val
+    }
 }
 
 impl PhaseControl<RenderPhaseToRange> {
@@ -47,10 +51,15 @@ impl PhaseControl<RenderPhaseToRange> {
 }
 
 impl<R: RenderToDmx<Phase>> OscControl<Phase> for PhaseControl<R> {
-    fn val(&self) -> &Phase {
-        &self.val
+    fn control_direct(
+        &mut self,
+        val: Phase,
+        emitter: &dyn EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        self.val = val;
+        emitter.emit_float(&self.name, self.val.into());
+        Ok(())
     }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,
@@ -59,9 +68,7 @@ impl<R: RenderToDmx<Phase>> OscControl<Phase> for PhaseControl<R> {
         if msg.control() != self.name {
             return Ok(false);
         }
-        let v = msg.get_phase().with_context(|| self.name.clone())?;
-        self.val = v;
-        emitter.emit_float(&self.name, self.val.into());
+        self.control_direct(msg.get_phase().with_context(|| self.name.clone())?, emitter)?;
         Ok(true)
     }
 
