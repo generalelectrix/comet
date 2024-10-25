@@ -110,6 +110,15 @@ impl ControllableFixture for Astroscan {
         }
         Ok(false)
     }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.shutter.control_from_channel(msg, emitter)?;
+        Ok(())
+    }
 }
 
 impl AnimatedFixture for Astroscan {

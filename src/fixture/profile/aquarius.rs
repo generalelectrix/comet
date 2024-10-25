@@ -64,6 +64,15 @@ impl ControllableFixture for Aquarius {
         }
         Ok(false)
     }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.lamp_on.control_from_channel(msg, emitter)?;
+        Ok(())
+    }
 }
 
 #[derive(
