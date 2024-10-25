@@ -8,13 +8,13 @@ use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct Dimmer {
-    level: Unipolar<RenderUnipolarToRange>,
+    level: UnipolarChannelLevel<UnipolarChannel>,
 }
 
 impl Default for Dimmer {
     fn default() -> Self {
         Self {
-            level: Unipolar::full_channel("Level", 0),
+            level: Unipolar::full_channel("Level", 0).with_channel_level(),
         }
     }
 }
@@ -55,6 +55,15 @@ impl ControllableFixture for Dimmer {
             return Ok(true);
         }
         Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.level.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }
 
