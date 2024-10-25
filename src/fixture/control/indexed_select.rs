@@ -63,15 +63,17 @@ impl IndexedSelect<RenderIndexedSelectToFixedValues> {
 
 impl IndexedSelect<RenderIndexedSelectToMultiple> {
     /// An IndexedSelect rendered to DMX using a fixed multiple of the index.
+    /// Also adds the provided fixed offset to all values.
     pub fn multiple<S: Into<String>>(
         name: S,
         dmx_buf_offset: usize,
         x_primary_coordinate: bool,
         n: usize,
         mult: usize,
+        offset: usize,
     ) -> Self {
         assert!(n > 0);
-        assert!((n - 1) * mult <= u8::MAX as usize);
+        assert!((n - 1) * mult + offset <= u8::MAX as usize);
         Self::new(
             name,
             n,
@@ -79,6 +81,7 @@ impl IndexedSelect<RenderIndexedSelectToMultiple> {
             RenderIndexedSelectToMultiple {
                 dmx_buf_offset,
                 mult,
+                offset,
             },
         )
     }
@@ -203,11 +206,12 @@ impl RenderToDmx<usize> for RenderIndexedSelectToFixedValues {
 pub struct RenderIndexedSelectToMultiple {
     pub dmx_buf_offset: usize,
     pub mult: usize,
+    pub offset: usize,
 }
 
 impl RenderToDmx<usize> for RenderIndexedSelectToMultiple {
     fn render(&self, val: &usize, dmx_buf: &mut [u8]) {
-        dmx_buf[self.dmx_buf_offset] = (*val * self.mult) as u8;
+        dmx_buf[self.dmx_buf_offset] = (*val * self.mult + self.offset) as u8;
     }
 }
 

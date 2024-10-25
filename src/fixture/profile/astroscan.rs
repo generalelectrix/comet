@@ -43,7 +43,7 @@ impl Default for Astroscan {
                     ("Pink", 115), // 127 back to white
                 ],
             ),
-            gobo: IndexedSelect::multiple("Gobo", 6, false, 5, 55),
+            gobo: IndexedSelect::multiple("Gobo", 6, false, 5, 55, 0),
             gobo_rotation: Bipolar::split_channel("GoboRotation", 7, 189, 128, 193, 255, 191)
                 .with_mirroring(true),
             mirror_rotation: Bipolar::split_channel("MirrorRotation", 8, 189, 128, 193, 255, 191)
