@@ -20,6 +20,7 @@ impl Default for Hypnotic {
             green_laser_on: Bool::new_off("GreenLaserOn", ()),
             blue_laser_on: Bool::new_off("BlueLaserOn", ()),
             rotation: Bipolar::split_channel("Rotation", 1, 135, 245, 120, 10, 0)
+                .with_detent()
                 .with_mirroring(true),
         }
     }

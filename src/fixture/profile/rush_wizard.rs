@@ -41,8 +41,11 @@ impl Default for RushWizard {
             // 16 gobos, including the open position
             gobo: IndexedSelect::multiple("Gobo", 3, false, 16, 2, 160),
             drum_rotation: Bipolar::split_channel("DrumRotation", 4, 190, 128, 193, 255, 191)
+                .with_detent()
                 .with_mirroring(true),
-            drum_swivel: Bipolar::channel("DrumSwivel", 5, 0, 120).with_mirroring(true),
+            drum_swivel: Bipolar::channel("DrumSwivel", 5, 0, 120)
+                .with_detent()
+                .with_mirroring(true),
             reflector_rotation: Bipolar::split_channel(
                 "ReflectorRotation",
                 6,
@@ -52,6 +55,7 @@ impl Default for RushWizard {
                 255,
                 191,
             )
+            .with_detent()
             .with_mirroring(true),
         }
     }

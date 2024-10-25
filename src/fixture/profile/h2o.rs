@@ -20,6 +20,7 @@ impl Default for H2O {
         Self {
             dimmer: Unipolar::full_channel("Dimmer", 0).with_channel_level(),
             rotation: Bipolar::split_channel("Rotation", 1, 120, 10, 135, 245, 0)
+                .with_detent()
                 .with_mirroring(true),
             fixed_color: LabeledSelect::new(
                 "FixedColor",
@@ -40,7 +41,8 @@ impl Default for H2O {
                 ],
             ),
             color_rotate: Bool::new_off("ColorRotate", ()),
-            color_rotation: Bipolar::split_channel("ColorRotation", 2, 186, 128, 197, 255, 187),
+            color_rotation: Bipolar::split_channel("ColorRotation", 2, 186, 128, 197, 255, 187)
+                .with_detent(),
         }
     }
 }

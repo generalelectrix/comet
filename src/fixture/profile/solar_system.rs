@@ -25,9 +25,11 @@ impl Default for SolarSystem {
             auto_shutter: Bool::new_off("AutoShutter", ()),
             front_gobo: IndexedSelect::multiple("FrontGobo", 0, false, GOBO_COUNT, 32, 16),
             front_rotation: Bipolar::new("FrontRotation", RenderRotation { dmx_buf_offset: 1 })
+                .with_detent()
                 .with_mirroring(true),
             rear_gobo: IndexedSelect::multiple("RearGobo", 0, false, GOBO_COUNT, 32, 16),
             rear_rotation: Bipolar::new("RearRotation", RenderRotation { dmx_buf_offset: 1 })
+                .with_detent()
                 .with_mirroring(true),
         }
     }

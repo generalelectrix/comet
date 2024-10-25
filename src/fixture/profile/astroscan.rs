@@ -44,11 +44,17 @@ impl Default for Astroscan {
             ),
             gobo: IndexedSelect::multiple("Gobo", 6, false, 5, 55, 0),
             gobo_rotation: Bipolar::split_channel("GoboRotation", 7, 189, 128, 193, 255, 191)
+                .with_detent()
                 .with_mirroring(true),
             mirror_rotation: Bipolar::split_channel("MirrorRotation", 8, 189, 128, 193, 255, 191)
+                .with_detent()
                 .with_mirroring(true),
-            pan: Bipolar::channel("Pan", 4, 0, 255).with_mirroring(true),
-            tilt: Bipolar::channel("Tilt", 5, 0, 255).with_mirroring(false),
+            pan: Bipolar::channel("Pan", 4, 0, 255)
+                .with_detent()
+                .with_mirroring(true),
+            tilt: Bipolar::channel("Tilt", 5, 0, 255)
+                .with_detent()
+                .with_mirroring(false),
         }
     }
 }

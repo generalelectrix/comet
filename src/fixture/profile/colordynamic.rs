@@ -26,7 +26,8 @@ impl Default for Colordynamic {
             color_rotation_on: Bool::new_off("ColorRotationOn", ()),
             color_rotation_speed: Unipolar::channel("ColorRotationSpeed", 1, 128, 255),
             color_position: Unipolar::channel("ColorPosition", 1, 0, 127),
-            fiber_rotation: Bipolar::split_channel("FiberRotation", 2, 113, 0, 142, 255, 128),
+            fiber_rotation: Bipolar::split_channel("FiberRotation", 2, 113, 0, 142, 255, 128)
+                .with_detent(),
         }
     }
 }

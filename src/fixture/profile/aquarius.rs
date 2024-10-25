@@ -16,7 +16,7 @@ impl Default for Aquarius {
     fn default() -> Self {
         Self {
             lamp_on: Bool::full_channel("LampOn", 1).with_channel_level(),
-            rotation: Bipolar::split_channel("Rotation", 0, 130, 8, 132, 255, 0),
+            rotation: Bipolar::split_channel("Rotation", 0, 130, 8, 132, 255, 0).with_detent(),
         }
     }
 }
