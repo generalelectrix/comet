@@ -6,8 +6,6 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-use super::strobe::{DimmerStrobe, RenderStrobeToRange, ShutterStrobe, Strobe};
-
 #[derive(Debug)]
 pub struct WizardExtreme {
     shutter: UnipolarChannelLevel<DimmerStrobe>,

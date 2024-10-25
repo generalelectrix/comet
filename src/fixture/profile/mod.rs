@@ -15,7 +15,6 @@ pub mod rotosphere_q3;
 pub mod rush_wizard;
 pub mod solar_system;
 pub mod starlight;
-mod strobe;
 pub mod swarmolon;
 pub mod uv_led_brick;
 pub mod venus;

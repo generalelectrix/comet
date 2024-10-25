@@ -3,7 +3,7 @@ use std::{collections::VecDeque, time::Duration};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-use super::strobe::{Strobe, StrobeChannel};
+
 
 #[derive(Debug)]
 pub struct Comet {

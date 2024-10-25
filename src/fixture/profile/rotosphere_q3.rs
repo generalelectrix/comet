@@ -4,7 +4,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::color::{AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel};
-use super::strobe::{Strobe, StrobeChannel};
+
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;

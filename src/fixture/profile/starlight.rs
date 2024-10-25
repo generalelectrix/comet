@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-use super::strobe::{Strobe, StrobeChannel};
+
 
 #[derive(Debug)]
 pub struct Starlight {

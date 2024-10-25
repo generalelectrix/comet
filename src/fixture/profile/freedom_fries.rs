@@ -7,7 +7,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::color::Color;
-use super::strobe::{Strobe, StrobeChannel};
+
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 

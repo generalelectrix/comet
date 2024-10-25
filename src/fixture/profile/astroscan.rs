@@ -7,17 +7,6 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-use super::strobe::{DimmerStrobe, RenderStrobeToRange, ShutterStrobe, Strobe};
-
-#[derive(Debug)]
-struct Active(bool);
-
-impl Default for Active {
-    fn default() -> Self {
-        Self(true)
-    }
-}
-
 #[derive(Debug)]
 pub struct Astroscan {
     lamp_on: BoolChannel,
