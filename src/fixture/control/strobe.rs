@@ -5,12 +5,11 @@ use std::marker::PhantomData;
 use anyhow::bail;
 use number::UnipolarFloat;
 
-use crate::{
-    fixture::control::{
-        Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations, RenderUnipolarToRange, Unipolar,
-        UnipolarChannel,
-    },
-    util::unipolar_to_range,
+use crate::util::unipolar_to_range;
+
+use super::{
+    Bool, BoolChannel, OscControl, RenderToDmx, RenderToDmxWithAnimations, RenderUnipolarToRange,
+    Unipolar, UnipolarChannel,
 };
 
 /// Generic strobe control, using unipolar rate.
@@ -144,6 +143,8 @@ where
 }
 
 pub type DimmerStrobe = ShutterStrobe<UnipolarChannel, RenderStrobeToRange, UnipolarFloat>;
+
+pub type FullShutterStrobe = ShutterStrobe<BoolChannel, RenderStrobeToRange, bool>;
 
 impl<S, R, T> ShutterStrobe<S, R, T>
 where

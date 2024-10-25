@@ -9,8 +9,7 @@ use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct Colordynamic {
-    shutter_open: Bool<()>,
-    strobe: StrobeChannel,
+    shutter: BoolChannelLevel<FullShutterStrobe>,
     color_rotation_on: Bool<()>,
     color_rotation_speed: UnipolarChannel,
     color_position: UnipolarChannel,
@@ -20,8 +19,10 @@ pub struct Colordynamic {
 impl Default for Colordynamic {
     fn default() -> Self {
         Colordynamic {
-            shutter_open: Bool::new_off("ShutterOpen", ()),
-            strobe: Strobe::channel("Strobe", 3, 16, 239, 255),
+            shutter: ChannelLevel::wrap(ShutterStrobe::new(
+                Bool::full_channel("ShutterOpen", 3),
+                Strobe::channel("Strobe", 3, 16, 239, 255),
+            )),
             color_rotation_on: Bool::new_off("ColorRotationOn", ()),
             color_rotation_speed: Unipolar::channel("ColorRotationSpeed", 1, 128, 255),
             color_position: Unipolar::channel("ColorPosition", 1, 0, 127),
@@ -41,8 +42,7 @@ impl ControllableFixture for Colordynamic {
     fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.shutter_open.emit_state(emitter);
-        self.strobe.emit_state(emitter);
+        self.shutter.emit_state(emitter);
         self.color_rotation_on.emit_state(emitter);
         self.color_rotation_speed.emit_state(emitter);
         self.color_position.emit_state(emitter);
@@ -54,10 +54,7 @@ impl ControllableFixture for Colordynamic {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        if self.shutter_open.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.strobe.control(msg, emitter)? {
+        if self.shutter.control(msg, emitter)? {
             return Ok(true);
         }
         if self.color_rotation_on.control(msg, emitter)? {
@@ -73,6 +70,15 @@ impl ControllableFixture for Colordynamic {
             return Ok(true);
         }
         Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.shutter.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }
 
@@ -101,12 +107,8 @@ impl AnimatedFixture for Colordynamic {
             animation_vals.filter(&AnimationTarget::FiberRotation),
             dmx_buf,
         );
-        if !self.shutter_open.val() {
-            dmx_buf[3] = 0;
-        } else {
-            self.strobe
-                .render_with_group(group_controls, std::iter::empty(), dmx_buf);
-        };
+        self.shutter
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
     }
 }
 
