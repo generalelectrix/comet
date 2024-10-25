@@ -13,7 +13,7 @@ use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct FreedomFries {
-    dimmer: UnipolarChannel,
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
     color: Color,
     speed: UnipolarChannel,
     strobe: StrobeChannel,
@@ -23,7 +23,7 @@ pub struct FreedomFries {
 impl Default for FreedomFries {
     fn default() -> Self {
         Self {
-            dimmer: Unipolar::full_channel("Dimmer", 0),
+            dimmer: Unipolar::full_channel("Dimmer", 0).with_channel_level(),
             color: Default::default(),
             speed: Unipolar::full_channel("Speed", 7),
             strobe: Strobe::channel("Strobe", 5, 0, 11, 255),
@@ -92,6 +92,15 @@ impl ControllableFixture for FreedomFries {
             return Ok(true);
         }
         Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.dimmer.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }
 
