@@ -170,7 +170,7 @@ impl Model {
         }
     }
 
-    fn render(&self, buf: &mut [u8], hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) {
+    pub fn render(&self, buf: &mut [u8], hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) {
         match self {
             Self::Rgb => {
                 let [r, g, b] = hsv_to_rgb(hue, sat, val);

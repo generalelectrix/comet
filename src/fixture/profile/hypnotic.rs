@@ -10,7 +10,7 @@ pub struct Hypnotic {
     red_laser_on: Bool<()>,
     green_laser_on: Bool<()>,
     blue_laser_on: Bool<()>,
-    rotation: BipolarSplitChannel,
+    rotation: BipolarSplitChannelMirror,
 }
 
 impl Default for Hypnotic {
@@ -19,7 +19,8 @@ impl Default for Hypnotic {
             red_laser_on: Bool::new_off("RedLaserOn", ()),
             green_laser_on: Bool::new_off("GreenLaserOn", ()),
             blue_laser_on: Bool::new_off("BlueLaserOn", ()),
-            rotation: Bipolar::split_channel("Rotation", 1, 135, 245, 120, 10, 0),
+            rotation: Bipolar::split_channel("Rotation", 1, 135, 245, 120, 10, 0)
+                .with_mirroring(true),
         }
     }
 }
@@ -36,7 +37,7 @@ impl AnimatedFixture for Hypnotic {
 
     fn render_with_animations(
         &self,
-        _group_controls: &FixtureGroupControls,
+        group_controls: &FixtureGroupControls,
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
@@ -54,7 +55,8 @@ impl AnimatedFixture for Hypnotic {
             (false, true, true) => 98,
             (true, true, true) => 188,
         };
-        self.rotation.render(animation_vals.all(), dmx_buf);
+        self.rotation
+            .render_with_group(group_controls, animation_vals.all(), dmx_buf);
     }
 }
 

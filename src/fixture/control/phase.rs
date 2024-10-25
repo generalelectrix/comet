@@ -34,6 +34,15 @@ impl<R: RenderToDmx<Phase>> PhaseControl<R> {
     pub fn val(&self) -> Phase {
         self.val
     }
+
+    pub fn val_with_anim(&self, animations: impl Iterator<Item = f64>) -> Phase {
+        let mut val = self.val.val();
+        for anim_val in animations {
+            // TODO: configurable blend modes
+            val += anim_val;
+        }
+        Phase::new(val)
+    }
 }
 
 impl PhaseControl<RenderPhaseToRange> {
@@ -103,12 +112,7 @@ impl<R: RenderToDmx<Phase>> OscControl<Phase> for PhaseControl<R> {
 
 impl<R: RenderToDmx<Phase>> RenderToDmxWithAnimations for PhaseControl<R> {
     fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
-        let mut val = self.val.val();
-        for anim_val in animations {
-            // TODO: configurable blend modes
-            val += anim_val;
-        }
-        self.render.render(&Phase::new(val), dmx_buf);
+        self.render.render(&self.val_with_anim(animations), dmx_buf);
     }
 }
 

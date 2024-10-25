@@ -3,15 +3,16 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::color::{AnimationTarget as ColorAnimationTarget, Color, Model as ColorModel};
-
+use super::color::Model::Rgbw;
 
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct RotosphereQ3 {
-    color: Color,
+    hue: PhaseControl<()>,
+    sat: Unipolar<()>,
+    val: UnipolarChannelLevel<Unipolar<()>>,
     strobe: StrobeChannel,
     rotation: BipolarSplitChannel,
 }
@@ -19,7 +20,9 @@ pub struct RotosphereQ3 {
 impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
-            color: Color::from_model(ColorModel::Rgbw),
+            hue: PhaseControl::new("Phase", ()),
+            sat: Unipolar::new("Sat", ()),
+            val: Unipolar::new("Val", ()).with_channel_level(),
             strobe: Strobe::channel("Strobe", 4, 1, 250, 0),
             rotation: Bipolar::split_channel("Rotation", 5, 1, 127, 129, 255, 0),
         }
@@ -42,22 +45,15 @@ impl AnimatedFixture for RotosphereQ3 {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut color_anim_vals = vec![];
-        for (val, target) in animation_vals.iter() {
-            use AnimationTarget::*;
-            match target {
-                // FIXME: would really like to avoid allocating here for nested
-                // animation target case.
-                Hue => color_anim_vals.push((*val, ColorAnimationTarget::Hue)),
-                Sat => color_anim_vals.push((*val, ColorAnimationTarget::Sat)),
-                Val => color_anim_vals.push((*val, ColorAnimationTarget::Val)),
-                _ => (),
-            }
-        }
-        self.color.render_with_animations(
-            group_controls,
-            TargetedAnimationValues(&color_anim_vals),
+        Rgbw.render(
             &mut dmx_buf[0..4],
+            self.hue
+                .val_with_anim(animation_vals.filter(&AnimationTarget::Hue)),
+            self.sat
+                .val_with_anim(animation_vals.filter(&AnimationTarget::Sat)),
+            self.val
+                .control
+                .val_with_anim(animation_vals.filter(&AnimationTarget::Val)),
         );
         self.strobe
             .render_with_group(group_controls, std::iter::empty(), dmx_buf);
@@ -73,7 +69,9 @@ impl ControllableFixture for RotosphereQ3 {
     fn populate_controls(&mut self) {}
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        OscControl::emit_state(&self.color, emitter);
+        self.hue.emit_state(emitter);
+        self.sat.emit_state(emitter);
+        self.val.emit_state(emitter);
         self.strobe.emit_state(emitter);
         self.rotation.emit_state(emitter);
     }
@@ -83,7 +81,13 @@ impl ControllableFixture for RotosphereQ3 {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        if OscControl::control(&mut self.color, msg, emitter)? {
+        if self.hue.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.sat.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.val.control(msg, emitter)? {
             return Ok(true);
         }
         if self.strobe.control(msg, emitter)? {
@@ -93,6 +97,15 @@ impl ControllableFixture for RotosphereQ3 {
             return Ok(true);
         }
         Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.val.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }
 

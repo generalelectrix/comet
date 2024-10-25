@@ -31,12 +31,22 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
         }
     }
 
+    pub fn with_channel_level(self) -> ChannelLevel<Self, UnipolarFloat> {
+        ChannelLevel::wrap(self)
+    }
+
     pub fn val(&self) -> UnipolarFloat {
         self.val
     }
 
-    pub fn with_channel_level(self) -> ChannelLevel<Self, UnipolarFloat> {
-        ChannelLevel::wrap(self)
+    pub fn val_with_anim(&self, animations: impl Iterator<Item = f64>) -> UnipolarFloat {
+        let mut val = self.val.val();
+        for anim_val in animations {
+            // TODO: configurable blend modes
+            val += anim_val;
+        }
+        // TODO: configurable coercing modes
+        UnipolarFloat::new(val)
     }
 }
 
@@ -115,13 +125,7 @@ impl<R: RenderToDmx<UnipolarFloat>> OscControl<UnipolarFloat> for Unipolar<R> {
 
 impl<R: RenderToDmx<UnipolarFloat>> RenderToDmxWithAnimations for Unipolar<R> {
     fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
-        let mut val = self.val.val();
-        for anim_val in animations {
-            // TODO: configurable blend modes
-            val += anim_val;
-        }
-        // TODO: configurable coercing modes
-        self.render.render(&UnipolarFloat::new(val), dmx_buf);
+        self.render.render(&self.val_with_anim(animations), dmx_buf);
     }
 }
 
