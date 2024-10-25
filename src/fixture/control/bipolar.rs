@@ -1,11 +1,11 @@
 //! A control for bipolar floats.
 
 use anyhow::Context;
-use number::BipolarFloat;
+use number::{BipolarFloat, UnipolarFloat};
 
 use crate::{
     osc::{EmitScopedOscMessage, OscControlMessage},
-    util::{bipolar_to_range, bipolar_to_split_range},
+    util::{bipolar_fader_with_detent, unipolar_to_range},
 };
 
 use super::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations};
@@ -14,6 +14,8 @@ use super::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations};
 #[derive(Debug)]
 pub struct Bipolar<R: RenderToDmx<BipolarFloat>> {
     val: BipolarFloat,
+    // If true, give the input a 5% central null "virtual detent".
+    virtual_detent: bool,
     name: String,
     render: R,
 }
@@ -35,9 +37,16 @@ impl<R: RenderToDmx<BipolarFloat>> Bipolar<R> {
     pub fn new<S: Into<String>>(name: S, render: R) -> Self {
         Self {
             val: BipolarFloat::ZERO,
+            virtual_detent: false,
             name: name.into(),
             render,
         }
+    }
+
+    /// Use virtual detent with this control.
+    pub fn with_detent(mut self) -> Self {
+        self.virtual_detent = true;
+        self
     }
 
     /// Decorate this control with automatic mirroring.
@@ -48,7 +57,12 @@ impl<R: RenderToDmx<BipolarFloat>> Bipolar<R> {
     }
 
     fn val_with_anim(&self, animations: impl Iterator<Item = f64>) -> BipolarFloat {
-        let mut val = self.val.val();
+        let mut val = if self.virtual_detent {
+            bipolar_fader_with_detent(self.val)
+        } else {
+            self.val
+        }
+        .val();
         for anim_val in animations {
             // TODO: configurable blend modes
             val += anim_val;
@@ -290,5 +304,32 @@ impl<R: RenderToDmx<BipolarFloat>> OscControl<BipolarFloat> for Mirrored<R> {
         callback: impl Fn(&BipolarFloat),
     ) -> anyhow::Result<bool> {
         self.control.control_with_callback(msg, emitter, callback)
+    }
+}
+
+/// Scale value into the provided integer range.
+/// The range is inclusive at both ends.
+#[inline(always)]
+fn bipolar_to_range(start: u8, end: u8, value: BipolarFloat) -> u8 {
+    let uni = UnipolarFloat::new((value.val() + 1.0) / 2.0);
+    unipolar_to_range(start, end, uni)
+}
+
+/// Scale a bipolar value into an American DJ-style split range.
+#[inline(always)]
+fn bipolar_to_split_range(
+    v: BipolarFloat,
+    cw_slow: u8,
+    cw_fast: u8,
+    ccw_slow: u8,
+    ccw_fast: u8,
+    stop: u8,
+) -> u8 {
+    if v == BipolarFloat::ZERO {
+        stop
+    } else if v.val() > 0.0 {
+        unipolar_to_range(cw_slow, cw_fast, v.abs())
+    } else {
+        unipolar_to_range(ccw_slow, ccw_fast, v.abs())
     }
 }

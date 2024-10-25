@@ -11,6 +11,7 @@ pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
 
 /// Scale value into the provided integer range.
 /// The range is inclusive at both ends.
+#[inline(always)]
 pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
     if end > start {
         ((end - start) as f64 * value.val()) as u8 + start
@@ -19,32 +20,8 @@ pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
     }
 }
 
-/// Scale value into the provided integer range.
-/// The range is inclusive at both ends.
-pub fn bipolar_to_range(start: u8, end: u8, value: BipolarFloat) -> u8 {
-    let uni = UnipolarFloat::new((value.val() + 1.0) / 2.0);
-    unipolar_to_range(start, end, uni)
-}
-
-/// Scale a bipolar value into an American DJ-style split range.
-pub fn bipolar_to_split_range(
-    v: BipolarFloat,
-    cw_slow: u8,
-    cw_fast: u8,
-    ccw_slow: u8,
-    ccw_fast: u8,
-    stop: u8,
-) -> u8 {
-    if v == BipolarFloat::ZERO {
-        stop
-    } else if v.val() > 0.0 {
-        unipolar_to_range(cw_slow, cw_fast, v.abs())
-    } else {
-        unipolar_to_range(ccw_slow, ccw_fast, v.abs())
-    }
-}
-
 /// Coerce the bottom 5% of the fader range to be a hard 0, and rescale the rest.
+#[inline(always)]
 pub fn unipolar_fader_with_detent(v: UnipolarFloat) -> UnipolarFloat {
     if v.val() < 0.05 {
         return UnipolarFloat::ZERO;
@@ -53,6 +30,7 @@ pub fn unipolar_fader_with_detent(v: UnipolarFloat) -> UnipolarFloat {
 }
 
 /// Coerce the center 5% of the fader range to be a hard 0, and rescale the rest.
+#[inline(always)]
 pub fn bipolar_fader_with_detent(v: BipolarFloat) -> BipolarFloat {
     let v = v.val();
     if v < 0.0 {
