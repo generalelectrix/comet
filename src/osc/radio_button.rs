@@ -1,9 +1,6 @@
 use log::error;
 use rosc::OscType;
 
-use std::{fmt::Display, str::FromStr};
-use strum::IntoEnumIterator;
-
 use super::{control_message::OscControlMessage, GroupControlMap, OscError, ScopedOscMessage};
 use anyhow::Result;
 
