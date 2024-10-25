@@ -21,7 +21,7 @@ impl Default for Active {
 #[derive(Debug)]
 pub struct Astroscan {
     lamp_on: BoolChannel,
-    shutter: ChannelLevel<DimmerStrobe, UnipolarFloat>,
+    shutter: UnipolarChannelLevel<DimmerStrobe>,
     iris: UnipolarChannel,
     color: LabeledSelect,
     gobo: IndexedSelectMult,

@@ -10,7 +10,7 @@ use super::strobe::{DimmerStrobe, RenderStrobeToRange, ShutterStrobe, Strobe};
 
 #[derive(Debug)]
 pub struct WizardExtreme {
-    shutter: ChannelLevel<DimmerStrobe, UnipolarFloat>,
+    shutter: UnipolarChannelLevel<DimmerStrobe>,
     color: LabeledSelect,
     twinkle: Bool<()>,
     twinkle_speed: UnipolarChannel,
