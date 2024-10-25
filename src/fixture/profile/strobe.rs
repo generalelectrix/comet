@@ -6,7 +6,10 @@ use anyhow::bail;
 use number::UnipolarFloat;
 
 use crate::{
-    fixture::control::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar},
+    fixture::control::{
+        Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations, RenderUnipolarToRange, Unipolar,
+        UnipolarChannel,
+    },
     util::unipolar_to_range,
 };
 
@@ -139,6 +142,8 @@ where
     strobe: Strobe<R>,
     phantom: PhantomData<T>,
 }
+
+pub type DimmerStrobe = ShutterStrobe<UnipolarChannel, RenderStrobeToRange, UnipolarFloat>;
 
 impl<S, R, T> ShutterStrobe<S, R, T>
 where
