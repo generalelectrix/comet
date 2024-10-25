@@ -40,8 +40,6 @@ impl PatchAnimatedFixture for SolarSystem {
     }
 }
 impl ControllableFixture for SolarSystem {
-    fn populate_controls(&mut self) {}
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.shutter_open.emit_state(emitter);
         self.auto_shutter.emit_state(emitter);

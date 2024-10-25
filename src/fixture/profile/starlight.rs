@@ -48,7 +48,6 @@ impl AnimatedFixture for Starlight {
 }
 
 impl ControllableFixture for Starlight {
-    fn populate_controls(&mut self) {}
     fn control(
         &mut self,
         msg: &OscControlMessage,

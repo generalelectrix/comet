@@ -66,7 +66,7 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn populate_controls(&mut self) {}
+    
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.hue.emit_state(emitter);

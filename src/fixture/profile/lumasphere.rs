@@ -52,7 +52,7 @@ impl PatchFixture for Lumasphere {
 impl Default for Lumasphere {
     fn default() -> Self {
         Self {
-            controls: Default::default(),
+            controls: map_controls(),
             lamp_1_intensity: UnipolarFloat::ZERO,
             lamp_2_intensity: UnipolarFloat::ZERO,
             // Ramp ball rotation no faster than unit range in one second.
@@ -118,10 +118,6 @@ impl NonAnimatedFixture for Lumasphere {
 }
 
 impl ControllableFixture for Lumasphere {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn update(&mut self, delta_t: Duration) {
         self.ball_rotation.update(delta_t);
     }
@@ -216,28 +212,29 @@ pub type ControlMessage = StateChange;
 const BALL_START: Button = button("ball_start");
 const COLOR_START: Button = button("color_start");
 
-impl Lumasphere {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        map.add_unipolar("lamp_1_intensity", |v| {
-            Lamp1Intensity(unipolar_fader_with_detent(v))
-        });
-        map.add_unipolar("lamp_2_intensity", |v| {
-            Lamp2Intensity(unipolar_fader_with_detent(v))
-        });
+fn map_controls() -> GroupControlMap<ControlMessage> {
+    let mut controls = GroupControlMap::default();
+    let map = &mut controls;
+    use StateChange::*;
+    map.add_unipolar("lamp_1_intensity", |v| {
+        Lamp1Intensity(unipolar_fader_with_detent(v))
+    });
+    map.add_unipolar("lamp_2_intensity", |v| {
+        Lamp2Intensity(unipolar_fader_with_detent(v))
+    });
 
-        map.add_bipolar("ball_rotation", |v| {
-            BallRotation(bipolar_fader_with_detent(v))
-        });
-        BALL_START.map_state(map, BallStart);
+    map.add_bipolar("ball_rotation", |v| {
+        BallRotation(bipolar_fader_with_detent(v))
+    });
+    BALL_START.map_state(map, BallStart);
 
-        map.add_unipolar("color_rotation", |v| {
-            ColorRotation(unipolar_fader_with_detent(v))
-        });
-        COLOR_START.map_state(map, ColorStart);
-        map_strobe(map, 1, Strobe1);
-        map_strobe(map, 2, Strobe2);
-    }
+    map.add_unipolar("color_rotation", |v| {
+        ColorRotation(unipolar_fader_with_detent(v))
+    });
+    COLOR_START.map_state(map, ColorStart);
+    map_strobe(map, 1, Strobe1);
+    map_strobe(map, 2, Strobe2);
+    controls
 }
 
 fn map_strobe<W>(map: &mut GroupControlMap<ControlMessage>, index: u8, wrap: W)

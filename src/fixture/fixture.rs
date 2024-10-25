@@ -31,9 +31,6 @@ impl Display for FixtureType {
 }
 
 pub trait ControllableFixture {
-    /// Populate fixture controls.
-    fn populate_controls(&mut self);
-
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &FixtureStateEmitter);
 
@@ -140,10 +137,6 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
 }
 
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
-    fn populate_controls(&mut self) {
-        self.fixture.populate_controls();
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

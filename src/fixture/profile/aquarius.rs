@@ -44,8 +44,6 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
-    fn populate_controls(&mut self) {}
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.lamp_on.emit_state(emitter);
         self.rotation.emit_state(emitter);

@@ -60,7 +60,7 @@ impl PatchAnimatedFixture for WizardExtreme {
 }
 
 impl ControllableFixture for WizardExtreme {
-    fn populate_controls(&mut self) {}
+    
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.shutter.emit_state(emitter);

@@ -84,7 +84,7 @@ impl AnimatedFixture for H2O {
 }
 
 impl ControllableFixture for H2O {
-    fn populate_controls(&mut self) {}
+    
 
     fn control(
         &mut self,

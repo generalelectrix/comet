@@ -6,18 +6,58 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct RushWizard {
-    controls: GroupControlMap<ControlMessage>,
-    dimmer: UnipolarFloat,
-    strobe: GenericStrobe,
-    color: Color,
-    twinkle: bool,
-    twinkle_speed: UnipolarFloat,
-    gobo: usize,
-    drum_rotation: BipolarFloat,
-    drum_swivel: BipolarFloat,
-    reflector_rotation: BipolarFloat,
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    strobe: StrobeChannel,
+    color: LabeledSelect,
+    twinkle: Bool<()>,
+    twinkle_speed: UnipolarChannel,
+    gobo: IndexedSelectMult,
+    drum_rotation: BipolarSplitChannelMirror,
+    drum_swivel: BipolarChannelMirror,
+    reflector_rotation: BipolarSplitChannelMirror,
+}
+
+impl Default for RushWizard {
+    fn default() -> Self {
+        Self {
+            dimmer: Unipolar::full_channel("Dimmer", 1).with_channel_level(),
+            strobe: Strobe::channel("Strobe", 0, 16, 131, 8),
+            color: LabeledSelect::new(
+                "Color",
+                2,
+                vec![
+                    ("Open", 159),
+                    ("Blue", 161),
+                    ("Magenta", 164),
+                    ("Yellow", 167),
+                    ("DarkBlue", 170),
+                    ("White", 173),
+                    ("Red", 176),
+                    ("Orange", 179),
+                    ("Green", 182),
+                ],
+            ),
+            twinkle: Bool::new_off("Twinkle", ()),
+            twinkle_speed: Unipolar::channel("TwinkleSpeed", 2, 221, 243),
+            // 16 gobos, including the open position
+            gobo: IndexedSelect::multiple("Gobo", 3, false, 16, 2, 160),
+            drum_rotation: Bipolar::split_channel("DrumRotation", 4, 190, 128, 193, 255, 191)
+                .with_mirroring(true),
+            drum_swivel: Bipolar::channel("DrumSwivel", 5, 0, 120).with_mirroring(true),
+            reflector_rotation: Bipolar::split_channel(
+                "ReflectorRotation",
+                6,
+                190,
+                128,
+                193,
+                255,
+                191,
+            )
+            .with_mirroring(true),
+        }
+    }
 }
 
 impl PatchFixture for RushWizard {
@@ -27,49 +67,23 @@ impl PatchFixture for RushWizard {
     }
 }
 
-impl RushWizard {
-    const GOBO_COUNT: usize = 16; // includes the open position
-
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Dimmer(v) => self.dimmer = v,
-            Strobe(sc) => self.strobe.handle_state_change(sc),
-            Color(c) => self.color = c,
-            Twinkle(v) => self.twinkle = v,
-            TwinkleSpeed(v) => self.twinkle_speed = v,
-            Gobo(v) => {
-                if v >= Self::GOBO_COUNT {
-                    error!("Gobo select index {} out of range.", v);
-                    return;
-                }
-                self.gobo = v;
-            }
-            DrumRotation(v) => self.drum_rotation = v,
-            DrumSwivel(v) => self.drum_swivel = v,
-            ReflectorRotation(v) => self.reflector_rotation = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl NonAnimatedFixture for RushWizard {
     fn render(&self, group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
-        dmx_buf[0] = self
-            .strobe
-            .render_range_with_master(group_controls.strobe(), 8, 16, 131);
-
-        dmx_buf[1] = unipolar_to_range(0, 255, self.dimmer);
-        dmx_buf[2] = if self.twinkle {
-            // WHY did you put twinkle on the color wheel...
-            unipolar_to_range(221, 243, self.twinkle_speed)
+        self.strobe
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
+        self.dimmer.render_no_anim(dmx_buf);
+        if self.twinkle.val() {
+            self.twinkle_speed.render_no_anim(dmx_buf);
         } else {
-            self.color.as_dmx()
-        };
-        dmx_buf[3] = (self.gobo as u8) * 2 + 160;
-        dmx_buf[4] = bipolar_to_split_range(self.drum_rotation, 190, 128, 193, 255, 191);
-        dmx_buf[5] = bipolar_to_range(0, 120, self.drum_swivel);
-        dmx_buf[6] = bipolar_to_split_range(self.reflector_rotation, 190, 128, 193, 255, 191);
+            self.color.render_no_anim(dmx_buf);
+        }
+        self.gobo.render_no_anim(dmx_buf);
+        self.drum_rotation
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
+        self.drum_swivel
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
+        self.reflector_rotation
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
         dmx_buf[7] = 0;
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
@@ -77,24 +91,16 @@ impl NonAnimatedFixture for RushWizard {
 }
 
 impl ControllableFixture for RushWizard {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(Dimmer(self.dimmer), emitter);
-        let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
-        };
-        self.strobe.emit_state(&mut emit_strobe);
-        Self::emit(Color(self.color), emitter);
-        Self::emit(Twinkle(self.twinkle), emitter);
-        Self::emit(TwinkleSpeed(self.twinkle_speed), emitter);
-        Self::emit(Gobo(self.gobo), emitter);
-        Self::emit(DrumRotation(self.drum_rotation), emitter);
-        Self::emit(DrumSwivel(self.drum_swivel), emitter);
-        Self::emit(ReflectorRotation(self.reflector_rotation), emitter);
+        self.dimmer.emit_state(emitter);
+        self.strobe.emit_state(emitter);
+        self.color.emit_state(emitter);
+        self.twinkle.emit_state(emitter);
+        self.twinkle_speed.emit_state(emitter);
+        self.gobo.emit_state(emitter);
+        self.drum_rotation.emit_state(emitter);
+        self.drum_swivel.emit_state(emitter);
+        self.reflector_rotation.emit_state(emitter);
     }
 
     fn control(
@@ -102,106 +108,42 @@ impl ControllableFixture for RushWizard {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
+        if self.dimmer.control(msg, emitter)? {
             return Ok(true);
-        };
-        self.handle_state_change(ctl, emitter);
-        Ok(true)
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Dimmer(UnipolarFloat),
-    Strobe(GenericStrobeStateChange),
-    Color(Color),
-    Twinkle(bool),
-    TwinkleSpeed(UnipolarFloat),
-    Gobo(usize),
-    DrumRotation(BipolarFloat),
-    DrumSwivel(BipolarFloat),
-    ReflectorRotation(BipolarFloat),
-}
-
-pub type ControlMessage = StateChange;
-
-#[derive(Copy, Clone, Debug, Default, PartialEq, EnumString, EnumIter, EnumDisplay)]
-pub enum Color {
-    #[default]
-    Open,
-    Blue,
-    Magenta,
-    Yellow,
-    DarkBlue,
-    White,
-    Red,
-    Orange,
-    Green,
-}
-
-impl Color {
-    fn as_dmx(self) -> u8 {
-        use Color::*;
-        match self {
-            Open => 159,
-            Blue => 161,
-            Magenta => 164,
-            Yellow => 167,
-            DarkBlue => 170,
-            White => 173,
-            Red => 176,
-            Orange => 179,
-            Green => 182,
         }
-    }
-}
-
-const COLOR: &str = "Color";
-
-const GOBO_SELECT: RadioButton = RadioButton {
-    control: "Gobo",
-    n: 16,
-    x_primary_coordinate: false,
-};
-
-const TWINKLE: Button = button("Twinkle");
-
-impl EnumRadioButton for Color {}
-
-impl RushWizard {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        map.add_unipolar("Dimmer", Dimmer);
-        map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_enum_handler(COLOR, ignore_payload, |c, _| Color(c));
-        TWINKLE.map_state(map, Twinkle);
-        map.add_unipolar("TwinkleSpeed", TwinkleSpeed);
-        GOBO_SELECT.map(map, Gobo);
-        map.add_bipolar("DrumRotation", |v| {
-            DrumRotation(bipolar_fader_with_detent(v))
-        });
-        map.add_bipolar("DrumSwivel", DrumSwivel);
-        map.add_bipolar("ReflectorRotation", |v| {
-            ReflectorRotation(bipolar_fader_with_detent(v))
-        });
-    }
-}
-
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    StateChange::Strobe(sc)
-}
-
-impl HandleOscStateChange<StateChange> for RushWizard {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
-    where
-        S: crate::osc::EmitScopedOscMessage + ?Sized,
-    {
-        match sc {
-            StateChange::Color(c) => {
-                c.set(COLOR, send);
-            }
-            StateChange::Gobo(v) => GOBO_SELECT.set(v, send),
-            _ => (),
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
         }
+        if self.color.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.twinkle.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.twinkle_speed.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.gobo.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.drum_rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.drum_swivel.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.reflector_rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.dimmer.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }

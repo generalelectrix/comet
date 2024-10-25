@@ -54,7 +54,7 @@ impl NonAnimatedFixture for Comet {
     }
 }
 impl ControllableFixture for Comet {
-    fn populate_controls(&mut self) {}
+    
 
     fn update(&mut self, delta_t: Duration) {
         self.trigger_state.update(delta_t);

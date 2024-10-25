@@ -23,8 +23,10 @@ const DEFAULT_CHANNEL_COUNT: usize = 16;
 
 impl Default for Faderboard {
     fn default() -> Self {
+        let mut controls = GroupControlMap::default();
+        CONTROLS.map(&mut controls, |index, val| Ok((index, val)));
         Self {
-            controls: Default::default(),
+            controls,
             vals: vec![UnipolarFloat::ZERO; DEFAULT_CHANNEL_COUNT],
             channel_count: DEFAULT_CHANNEL_COUNT,
         }
@@ -52,10 +54,6 @@ impl NonAnimatedFixture for Faderboard {
 }
 
 impl ControllableFixture for Faderboard {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         for (i, v) in self.vals.iter().enumerate() {
             Self::emit((i, *v), emitter);
@@ -80,11 +78,5 @@ pub type StateChange = (usize, UnipolarFloat);
 pub type ControlMessage = StateChange;
 
 const CONTROLS: FaderArray = FaderArray { control: "Fader" };
-
-impl Faderboard {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        CONTROLS.map(map, |index, val| Ok((index, val)))
-    }
-}
 
 impl HandleOscStateChange<StateChange> for Faderboard {}

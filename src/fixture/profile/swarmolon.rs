@@ -149,10 +149,6 @@ impl NonAnimatedFixture for Swarmolon {
 }
 
 impl ControllableFixture for Swarmolon {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         self.derby_color.emit_state(emitter);

@@ -61,7 +61,7 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
-    fn populate_controls(&mut self) {}
+    
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.dimmer.emit_state(emitter);

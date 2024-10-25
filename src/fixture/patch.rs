@@ -114,9 +114,6 @@ impl Patch {
         // No existing group; create a new one.
         cfg.channel.then(|| channels.add(key.clone()));
 
-        // Populate fixture controls.
-        candidate.fixture.populate_controls();
-
         let group = FixtureGroup::new(
             key.clone(),
             GroupFixtureConfig {
