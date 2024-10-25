@@ -35,8 +35,8 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
         self.val
     }
 
-    pub fn with_channel_level(self) -> ChannelLevel<Self> {
-        ChannelLevel { control: self }
+    pub fn with_channel_level(self) -> ChannelLevel<Self, UnipolarFloat> {
+        ChannelLevel::wrap(self)
     }
 }
 

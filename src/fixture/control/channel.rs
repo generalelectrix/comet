@@ -1,5 +1,7 @@
 //! Control decorators to bind OSC controls to channel-level controls.
 
+use std::marker::PhantomData;
+
 use number::UnipolarFloat;
 
 use crate::{
@@ -10,21 +12,30 @@ use crate::{
 use super::{OscControl, RenderToDmxWithAnimations};
 
 #[derive(Debug)]
-pub struct ChannelLevel<C>
+pub struct ChannelLevel<C, T>
 where
-    C: OscControl<UnipolarFloat> + RenderToDmxWithAnimations,
+    C: OscControl<T> + RenderToDmxWithAnimations,
 {
     pub control: C,
+    phanton: PhantomData<T>,
 }
 
-impl<C> ChannelLevel<C>
+impl<C, T> ChannelLevel<C, T>
+where
+    C: OscControl<T> + RenderToDmxWithAnimations,
+{
+    pub fn wrap(control: C) -> Self {
+        Self {
+            control,
+            phanton: PhantomData,
+        }
+    }
+}
+
+impl<C> ChannelLevel<C, UnipolarFloat>
 where
     C: OscControl<UnipolarFloat> + RenderToDmxWithAnimations,
 {
-    pub fn wrap(control: C) -> Self {
-        Self { control }
-    }
-
     /// Control this channel-control-wrapped control from OSC.
     pub fn control(
         &mut self,
@@ -60,9 +71,9 @@ where
     }
 }
 
-impl<C> RenderToDmxWithAnimations for ChannelLevel<C>
+impl<C, T> RenderToDmxWithAnimations for ChannelLevel<C, T>
 where
-    C: OscControl<UnipolarFloat> + RenderToDmxWithAnimations,
+    C: OscControl<T> + RenderToDmxWithAnimations,
 {
     fn render(&self, animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
         self.control.render(animations, dmx_buf);
