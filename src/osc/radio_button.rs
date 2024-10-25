@@ -120,34 +120,3 @@ fn parse_radio_button_indices(addr_payload: &str) -> Result<(usize, usize), Stri
     }
     Ok((x - 1, y - 1))
 }
-
-pub trait EnumRadioButton: FromStr + IntoEnumIterator + Display + PartialEq
-where
-    <Self as FromStr>::Err: std::fmt::Display,
-{
-    /// Parse a enum variant of the specified type from the third argument of the address.
-    fn parse(m: &OscControlMessage) -> Result<Self, OscError> {
-        let name = match m.addr_payload().split('/').nth(1) {
-            Some(c) => c,
-            None => {
-                return Err(m.err("command is missing variant specifier"));
-            }
-        };
-        Self::from_str(name).map_err(|err| m.err(err.to_string()))
-    }
-
-    /// Update the state of a "radio select enum".
-    /// Each enum variant is mapped to a button with the name of the address as the
-    /// last piece of the address.
-    fn set<S>(&self, control: &str, emitter: &S)
-    where
-        S: crate::osc::EmitScopedOscMessage + ?Sized,
-    {
-        for choice in Self::iter() {
-            emitter.emit_osc(ScopedOscMessage {
-                control: &format!("{}/{}", control, choice),
-                arg: OscType::Float(if choice == *self { 1.0 } else { 0.0 }),
-            });
-        }
-    }
-}

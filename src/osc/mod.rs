@@ -16,7 +16,7 @@ use std::thread;
 use std::time::Duration;
 use thiserror::Error;
 
-use self::radio_button::{EnumRadioButton, RadioButton};
+use self::radio_button::RadioButton;
 
 pub mod animation;
 mod basic_controls;
@@ -311,25 +311,6 @@ impl<C> GroupControlMap<C> {
             Some(process(v))
         })
     }
-
-    /// Add a collection of control actions for each variant of the specified enum type.
-    pub fn add_enum_handler<EnumType, Parse, Process, ParseResult>(
-        &mut self,
-        control: &str,
-        parse: Parse,
-        process: Process,
-    ) where
-        EnumType: EnumRadioButton,
-        <EnumType as FromStr>::Err: std::fmt::Display,
-        Parse: Fn(&OscControlMessage) -> Result<ParseResult, OscError> + 'static,
-        Process: Fn(EnumType, ParseResult) -> C + 'static,
-    {
-        self.add(control, move |m| {
-            let variant: EnumType = EnumType::parse(m)?;
-            let val = parse(m)?;
-            Ok(Some(process(variant, val)))
-        })
-    }
 }
 
 /// Forward OSC messages to the provided sender.
@@ -488,20 +469,10 @@ impl OscControlMessage {
     }
 }
 
-pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
-    UnipolarFloat::new(v.val().powi(2))
-}
-
-/// A OSC message processor that ignores the message payload, returning unit.
-pub fn ignore_payload(_: &OscControlMessage) -> Result<(), OscError> {
-    Ok(())
-}
-
 pub mod prelude {
     pub use super::basic_controls::{button, Button};
     pub use super::fader_array::FaderArray;
     pub use super::label_array::LabelArray;
-    pub use super::radio_button::{EnumRadioButton, RadioButton};
     pub use super::FixtureStateEmitter;
     pub use super::{GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage};
     pub use crate::util::*;

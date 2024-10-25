@@ -5,6 +5,10 @@ use std::{
 
 use number::{BipolarFloat, UnipolarFloat};
 
+pub fn quadratic(v: UnipolarFloat) -> UnipolarFloat {
+    UnipolarFloat::new(v.val().powi(2))
+}
+
 /// Scale value into the provided integer range.
 /// The range is inclusive at both ends.
 pub fn unipolar_to_range(start: u8, end: u8, value: UnipolarFloat) -> u8 {
