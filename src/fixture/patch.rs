@@ -26,7 +26,6 @@ use super::profile::rotosphere_q3::RotosphereQ3;
 use super::profile::rush_wizard::RushWizard;
 use super::profile::solar_system::SolarSystem;
 use super::profile::starlight::Starlight;
-use super::profile::swarmolon::Swarmolon;
 use super::profile::uv_led_brick::UvLedBrick;
 use super::profile::venus::Venus;
 use super::profile::wizard_extreme::WizardExtreme;
@@ -61,7 +60,6 @@ lazy_static! {
         RotosphereQ3::patcher(),
         RushWizard::patcher(),
         SolarSystem::patcher(),
-        Swarmolon::patcher(),
         Starlight::patcher(),
         UvLedBrick::patcher(),
         Venus::patcher(),
