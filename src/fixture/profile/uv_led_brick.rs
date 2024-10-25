@@ -43,8 +43,6 @@ impl AnimatedFixture for UvLedBrick {
 }
 
 impl ControllableFixture for UvLedBrick {
-    
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.dimmer.emit_state(emitter);
     }

@@ -61,8 +61,6 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {
-    
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.red_laser_on.emit_state(emitter);
         self.green_laser_on.emit_state(emitter);

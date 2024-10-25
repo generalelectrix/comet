@@ -96,8 +96,6 @@ impl AnimatedFixture for Color {
 }
 
 impl ControllableFixture for Color {
-    
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         OscControl::emit_state(self, emitter);
     }

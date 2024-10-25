@@ -84,8 +84,6 @@ impl AnimatedFixture for H2O {
 }
 
 impl ControllableFixture for H2O {
-    
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

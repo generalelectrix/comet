@@ -53,8 +53,6 @@ impl NonAnimatedFixture for Radiance {
 }
 
 impl ControllableFixture for Radiance {
-    
-
     fn update(&mut self, delta_t: Duration) {
         if let Some(timer) = self.timer.as_mut() {
             timer.update(delta_t);

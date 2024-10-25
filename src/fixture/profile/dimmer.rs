@@ -40,8 +40,6 @@ impl AnimatedFixture for Dimmer {
 }
 
 impl ControllableFixture for Dimmer {
-    
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.level.emit_state(emitter);
     }

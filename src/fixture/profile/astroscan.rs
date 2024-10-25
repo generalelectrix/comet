@@ -61,8 +61,6 @@ impl PatchAnimatedFixture for Astroscan {
 }
 
 impl ControllableFixture for Astroscan {
-    
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.lamp_on.emit_state(emitter);
         self.shutter.emit_state(emitter);

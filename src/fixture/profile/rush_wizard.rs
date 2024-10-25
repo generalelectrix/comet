@@ -1,8 +1,5 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
-use log::error;
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 

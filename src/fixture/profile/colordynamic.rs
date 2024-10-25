@@ -39,8 +39,6 @@ impl PatchAnimatedFixture for Colordynamic {
 }
 
 impl ControllableFixture for Colordynamic {
-    
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         self.shutter.emit_state(emitter);
         self.color_rotation_on.emit_state(emitter);
