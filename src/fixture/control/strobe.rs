@@ -8,8 +8,8 @@ use number::UnipolarFloat;
 use crate::util::unipolar_to_range;
 
 use super::{
-    Bool, BoolChannel, OscControl, RenderToDmx, RenderToDmxWithAnimations, RenderUnipolarToRange,
-    Unipolar, UnipolarChannel,
+    Bool, BoolChannel, OscControl, RenderToDmx, RenderToDmxWithAnimations, Unipolar,
+    UnipolarChannel,
 };
 
 /// Generic strobe control, using unipolar rate.

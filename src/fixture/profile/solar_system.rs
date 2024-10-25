@@ -1,6 +1,5 @@
 //! Optikinetics Solar System - the grand champion gobo rotator
 
-use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 

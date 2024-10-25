@@ -9,7 +9,7 @@ use crate::{
     osc::{FixtureStateEmitter, OscControlMessage},
 };
 
-use super::{Bool, OscControl, RenderToDmxWithAnimations};
+use super::{OscControl, RenderToDmxWithAnimations};
 
 #[derive(Debug)]
 pub struct ChannelLevel<C, T>
