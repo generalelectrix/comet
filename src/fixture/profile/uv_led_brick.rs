@@ -8,13 +8,13 @@ use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct UvLedBrick {
-    dimmer: UnipolarChannel,
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
 }
 
 impl Default for UvLedBrick {
     fn default() -> Self {
         Self {
-            dimmer: Unipolar::full_channel("Level", 0),
+            dimmer: Unipolar::full_channel("Level", 0).with_channel_level(),
         }
     }
 }
@@ -55,6 +55,15 @@ impl ControllableFixture for UvLedBrick {
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool> {
         self.dimmer.control(msg, emitter)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.dimmer.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 }
 

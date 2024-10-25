@@ -6,18 +6,16 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::fixture::prelude::*;
 use crate::osc::prelude::*;
 
-
-
 #[derive(Debug)]
 pub struct Starlight {
-    dimmer: UnipolarChannel,
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
     rotation: BipolarSplitChannel,
 }
 impl Default for Starlight {
     fn default() -> Self {
         Self {
-            dimmer: Unipolar::full_channel("Dimmer", 1),
+            dimmer: Unipolar::full_channel("Dimmer", 1).with_channel_level(),
             strobe: Strobe::channel("Strobe", 2, 10, 255, 0),
             rotation: Bipolar::split_channel("Rotation", 3, 127, 1, 128, 255, 0),
         }
@@ -66,6 +64,15 @@ impl ControllableFixture for Starlight {
             return Ok(true);
         }
         Ok(true)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.dimmer.control_from_channel(msg, emitter)?;
+        Ok(())
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
