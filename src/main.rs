@@ -19,6 +19,7 @@ mod config;
 mod dmx;
 mod fixture;
 mod master;
+mod midi;
 mod osc;
 mod show;
 mod util;

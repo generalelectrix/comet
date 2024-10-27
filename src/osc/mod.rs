@@ -1,5 +1,6 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
 use crate::fixture::FixtureGroupKey;
+use crate::show::ControlMessage;
 use anyhow::bail;
 use anyhow::Result;
 use log::{error, info};
@@ -82,29 +83,21 @@ pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
 impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 
 pub struct OscController {
-    recv: Receiver<OscControlMessage>,
     send: Sender<OscControlResponse>,
 }
 
 impl OscController {
-    pub fn new(receive_port: u16, send_addrs: Vec<OscClientId>) -> Result<Self> {
+    pub fn new(
+        receive_port: u16,
+        send_addrs: Vec<OscClientId>,
+        send: Sender<ControlMessage>,
+    ) -> Result<Self> {
         let recv_addr = SocketAddr::from_str(&format!("0.0.0.0:{}", receive_port))?;
-        let control_recv = start_listener(recv_addr)?;
+        start_listener(recv_addr, send)?;
         let response_send = start_sender(send_addrs)?;
         Ok(Self {
-            recv: control_recv,
             send: response_send,
         })
-    }
-
-    pub fn recv(&self, timeout: Duration) -> Result<Option<OscControlMessage>> {
-        match self.recv.recv_timeout(timeout) {
-            Ok(msg) => Ok(Some(msg)),
-            Err(RecvTimeoutError::Timeout) => Ok(None),
-            Err(RecvTimeoutError::Disconnected) => {
-                bail!("OSC receiver disconnected");
-            }
-        }
     }
 
     /// Return a decorated version of self that will include the provided
@@ -315,8 +308,7 @@ impl<C> GroupControlMap<C> {
 
 /// Forward OSC messages to the provided sender.
 /// Spawns a new thread to handle listening for messages.
-fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
-    let (send, recv) = channel();
+fn start_listener(addr: SocketAddr, send: Sender<ControlMessage>) -> Result<()> {
     let socket = UdpSocket::bind(addr)?;
 
     let mut buf = [0u8; rosc::decoder::MTU];
@@ -339,7 +331,7 @@ fn start_listener(addr: SocketAddr) -> Result<Receiver<OscControlMessage>> {
             error!("Error unpacking/forwarding OSC packet: {}", e);
         }
     });
-    Ok(recv)
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -394,7 +386,7 @@ fn start_sender(clients: Vec<OscClientId>) -> Result<Sender<OscControlResponse>>
 fn forward_packet(
     packet: OscPacket,
     client_id: OscClientId,
-    send: &Sender<OscControlMessage>,
+    send: &Sender<ControlMessage>,
 ) -> Result<(), OscError> {
     match packet {
         OscPacket::Message(m) => {
@@ -404,7 +396,7 @@ fn forward_packet(
                 return Ok(());
             }
             let cm = OscControlMessage::new(m, client_id)?;
-            send.send(cm).unwrap();
+            send.send(ControlMessage::Osc(cm)).unwrap();
         }
         OscPacket::Bundle(msgs) => {
             for subpacket in msgs.content {

@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    sync::mpsc::{channel, Receiver, RecvTimeoutError},
+    time::{Duration, Instant},
+};
 
 use crate::{
     animation::AnimationUIState,
@@ -6,9 +9,13 @@ use crate::{
     clock_service::ClockService,
     config::Config,
     dmx::DmxBuffer,
-    fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
+    fixture::{prelude::OscControl, FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
-    osc::{ControlMessageType, OscController, ScopedControlEmitter},
+    midi::{init_midi_controller, Device, MidiControlMessage, MidiController},
+    osc::{
+        ControlMessageType, OscClientId, OscControlMessage, OscController,
+        OscMessageWithMetadataSender, ScopedControlEmitter,
+    },
 };
 
 pub use crate::channel::ChannelId;
@@ -16,9 +23,10 @@ use anyhow::{bail, Result};
 use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
+use tunnels::midi::CreateControlEvent;
 
 pub struct Show {
-    osc_controller: OscController,
+    controller: Controller,
     patch: Patch,
     channels: Channels,
     master_controls: MasterControls,
@@ -34,7 +42,7 @@ impl Show {
         let mut channels = Channels::new();
         let mut patch = Patch::default();
 
-        let osc_controller = OscController::new(cfg.receive_port, cfg.controllers)?;
+        let controller = Controller::from_config(&cfg)?;
 
         for fixture in cfg.fixtures.into_iter() {
             patch.patch(&mut channels, fixture)?;
@@ -43,19 +51,19 @@ impl Show {
         for group in patch.iter() {
             group.emit_state(ChannelStateEmitter::new(
                 channels.channel_for_fixture(group.key()),
-                &osc_controller.sender_with_metadata(None),
+                &controller.sender_with_metadata(None),
             ));
         }
 
         let master_controls = MasterControls::new();
         master_controls.emit_state(&ScopedControlEmitter {
             entity: crate::master::GROUP,
-            emitter: &osc_controller.sender_with_metadata(None),
+            emitter: &controller.sender_with_metadata(None),
         });
 
         let initial_channel = channels.current_channel();
 
-        channels.emit_state(false, &patch, &osc_controller.sender_with_metadata(None));
+        channels.emit_state(false, &patch, &controller.sender_with_metadata(None));
 
         let animation_ui_state = AnimationUIState::new(initial_channel);
 
@@ -67,13 +75,13 @@ impl Show {
                 &patch,
                 &ScopedControlEmitter {
                     entity: crate::osc::animation::GROUP,
-                    emitter: &osc_controller.sender_with_metadata(None),
+                    emitter: &controller.sender_with_metadata(None),
                 },
             )?;
         };
 
         Ok(Self {
-            osc_controller,
+            controller,
             patch,
             channels,
             master_controls,
@@ -124,16 +132,18 @@ impl Show {
     }
 
     fn control(&mut self, timeout: Duration) -> anyhow::Result<()> {
-        let msg = match self.osc_controller.recv(timeout)? {
+        let msg = match self.controller.recv(timeout)? {
             Some(m) => m,
             None => {
                 return Ok(());
             }
         };
 
-        let sender = self
-            .osc_controller
-            .sender_with_metadata(Some(&msg.client_id));
+        let ControlMessage::Osc(msg) = msg else {
+            unimplemented!()
+        };
+
+        let sender = self.controller.sender_with_metadata(Some(&msg.client_id));
 
         match ControlMessageType::parse(msg.entity_type()) {
             ControlMessageType::Master => self.master_controls.control(
@@ -199,5 +209,53 @@ impl Show {
         for group in self.patch.iter() {
             group.render(&self.master_controls, dmx_buffers);
         }
+    }
+}
+
+/// Handle receiving and responding to show control messages.
+struct Controller {
+    osc: OscController,
+    midi: MidiController,
+    recv: Receiver<ControlMessage>,
+}
+
+impl Controller {
+    pub fn from_config(cfg: &Config) -> Result<Self> {
+        let (send, recv) = channel();
+        Ok(Self {
+            osc: OscController::new(cfg.receive_port, cfg.controllers.clone(), send.clone())?,
+            midi: init_midi_controller(&cfg.midi_devices, send)?,
+            recv,
+        })
+    }
+
+    pub fn recv(&self, timeout: Duration) -> Result<Option<ControlMessage>> {
+        match self.recv.recv_timeout(timeout) {
+            Ok(msg) => Ok(Some(msg)),
+            Err(RecvTimeoutError::Timeout) => Ok(None),
+            Err(RecvTimeoutError::Disconnected) => {
+                bail!("control receiver disconnected");
+            }
+        }
+    }
+
+    /// Return a decorated version of self that will include the provided
+    /// metadata when sending OSC response messages.
+    pub fn sender_with_metadata<'a>(
+        &'a self,
+        sender_id: Option<&'a OscClientId>,
+    ) -> OscMessageWithMetadataSender<'_> {
+        self.osc.sender_with_metadata(sender_id)
+    }
+}
+
+pub enum ControlMessage {
+    Osc(OscControlMessage),
+    Midi(MidiControlMessage),
+}
+
+impl CreateControlEvent<Device> for ControlMessage {
+    fn from_event(event: tunnels::midi::Event, device: Device) -> Self {
+        Self::Midi(MidiControlMessage { device, event })
     }
 }

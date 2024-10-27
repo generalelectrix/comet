@@ -19,6 +19,7 @@ pub struct PhaseControl<R: RenderToDmx<Phase>> {
 }
 
 /// A phase control that renders into a single DMX channel over a range.
+#[allow(unused)]
 pub type PhaseChannel = PhaseControl<RenderPhaseToRange>;
 
 impl<R: RenderToDmx<Phase>> PhaseControl<R> {
@@ -47,6 +48,7 @@ impl<R: RenderToDmx<Phase>> PhaseControl<R> {
 
 impl PhaseControl<RenderPhaseToRange> {
     /// Initialize a phase control that renders to a full DMX channel.
+    #[allow(unused)]
     pub fn full_channel<S: Into<String>>(name: S, dmx_buf_offset: usize) -> Self {
         Self::new(
             name,

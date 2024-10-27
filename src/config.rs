@@ -1,10 +1,12 @@
 use crate::dmx::DmxAddr;
 use crate::fixture::GroupName;
+use crate::midi::Device;
 use crate::osc::OscClientId;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
+use tunnels::midi::DeviceSpec;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -12,6 +14,8 @@ pub struct Config {
     pub receive_port: u16,
     #[serde(default)]
     pub controllers: Vec<OscClientId>,
+    #[serde(skip)]
+    pub midi_devices: Vec<DeviceSpec<Device>>,
     #[serde(default)]
     pub debug: bool,
     pub fixtures: Vec<FixtureConfig>,

@@ -27,6 +27,7 @@ pub type BipolarSplitChannel = Bipolar<RenderBipolarToSplitRange>;
 pub type BipolarSplitChannelMirror = Mirrored<RenderBipolarToSplitRange>;
 
 /// A bipolar control that renders into a single DMX channel over a continuous range.
+#[allow(unused)]
 pub type BipolarChannel = Bipolar<RenderBipolarToRange>;
 
 /// Bipolar continuous channel with mirroring.
