@@ -6,8 +6,8 @@ use anyhow::{bail, Result};
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::fixture::prelude::*;
 use crate::control::prelude::*;
+use crate::fixture::prelude::*;
 
 #[derive(Debug)]
 pub struct Color {

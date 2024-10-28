@@ -1,7 +1,4 @@
-use std::{
-    sync::mpsc::{channel, Receiver, RecvTimeoutError},
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crate::{
     animation::AnimationUIState,
@@ -12,10 +9,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{prelude::OscControl, FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
-    midi::{Device, MidiControlMessage, MidiController},
-    osc::{
-        ControlMessageType, OscClientId, OscControlMessage, OscController, ScopedControlEmitter,
-    },
+    osc::{ControlMessageType, ScopedControlEmitter},
 };
 
 pub use crate::channel::ChannelId;
@@ -23,7 +17,6 @@ use anyhow::{bail, Result};
 use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
-use tunnels::midi::CreateControlEvent;
 
 pub struct Show {
     controller: Controller,

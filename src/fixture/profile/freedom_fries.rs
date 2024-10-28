@@ -8,8 +8,8 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::color::Color;
 
-use crate::fixture::prelude::*;
 use crate::control::prelude::*;
+use crate::fixture::prelude::*;
 
 #[derive(Debug)]
 pub struct FreedomFries {

@@ -96,26 +96,23 @@ fn handle_apc20(event: &Event) -> Option<ChannelControlMessage> {
 }
 
 fn update_apc20(msg: &ChannelStateChange, output: &mut Output<Device>) {
-    match msg {
-        ChannelStateChange::SelectChannel(channel) => {
-            let channel = channel.inner();
-            if channel >= 8 {
-                return;
-            }
-            for c in 0..8 {
-                if let Err(err) = output.send(Event {
-                    mapping: Mapping {
-                        event_type: EventType::NoteOn,
-                        channel: c as u8,
-                        control: APC20_CHAN_SELECT,
-                    },
-                    value: if c == channel { 127 } else { 0 },
-                }) {
-                    error!("midi send error for APC20: {err}");
-                }
+    if let ChannelStateChange::SelectChannel(channel) = msg {
+        let channel = channel.inner();
+        if channel >= 8 {
+            return;
+        }
+        for c in 0..8 {
+            if let Err(err) = output.send(Event {
+                mapping: Mapping {
+                    event_type: EventType::NoteOn,
+                    channel: c as u8,
+                    control: APC20_CHAN_SELECT,
+                },
+                value: if c == channel { 127 } else { 0 },
+            }) {
+                error!("midi send error for APC20: {err}");
             }
         }
-        _ => (),
     }
 }
 
