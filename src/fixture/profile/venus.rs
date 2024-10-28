@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
+use crate::control::prelude::*;
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus

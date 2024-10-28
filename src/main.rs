@@ -19,6 +19,7 @@ mod animation;
 mod channel;
 mod clock_service;
 mod config;
+mod control;
 mod dmx;
 mod fixture;
 mod master;

@@ -10,7 +10,7 @@ pub fn fixture(input: TokenStream) -> TokenStream {
 
     quote! {
         use crate::fixture::prelude::*;
-        use crate::osc::prelude::*;
+        use crate::control::prelude::*;
 
         #[derive(Default, Debug)]
         struct #name {}

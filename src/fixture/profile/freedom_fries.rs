@@ -9,7 +9,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use super::color::Color;
 
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
+use crate::control::prelude::*;
 
 #[derive(Debug)]
 pub struct FreedomFries {

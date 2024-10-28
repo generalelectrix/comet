@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, time::Duration};
 
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
+use crate::control::prelude::*;
 
 #[derive(Debug)]
 pub struct Comet {

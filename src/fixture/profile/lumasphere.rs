@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
+use crate::control::prelude::*;
 
 /// DMX 255 is too fast; restrict to a reasonable value.
 const MAX_ROTATION_SPEED: u8 = 100;

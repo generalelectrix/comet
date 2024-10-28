@@ -1,7 +1,7 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
+use crate::control::prelude::*;
 
 #[derive(Debug)]
 pub struct RushWizard {

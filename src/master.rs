@@ -7,9 +7,10 @@ use tunnels::clock_server::StaticClockBank;
 
 use crate::animation::AnimationUIState;
 use crate::channel::{ChannelStateEmitter, Channels};
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 use crate::fixture::Patch;
-use crate::osc::{prelude::*, EmitControlMessage, EmitScopedControlMessage, ScopedControlEmitter};
+use crate::osc::ScopedControlEmitter;
 
 pub struct MasterControls {
     strobe: Strobe,

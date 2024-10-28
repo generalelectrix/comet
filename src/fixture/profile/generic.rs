@@ -5,7 +5,7 @@ use std::time::Duration;
 use number::UnipolarFloat;
 
 use crate::config::Options;
-use crate::osc::prelude::*;
+use crate::control::prelude::*;
 
 /// Most basic strobe control - active/not, plus rate.
 #[derive(Default, Clone, Debug)]

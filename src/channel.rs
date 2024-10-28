@@ -8,11 +8,10 @@ use number::UnipolarFloat;
 use serde::Deserialize;
 
 use crate::{
+    control::EmitControlMessage,
+    control::HandleStateChange,
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
-    osc::{
-        EmitControlMessage, EmitOscMessage, GroupControlMap, HandleStateChange, OscControlMessage,
-        ScopedControlEmitter,
-    },
+    osc::{EmitOscMessage, GroupControlMap, OscControlMessage, ScopedControlEmitter},
 };
 
 /// The index of a channel.
@@ -227,7 +226,7 @@ impl Channels {
                 };
                 self.group_by_channel_mut(patch, channel_id)?
                     .control_from_channel(
-                        &msg,
+                        msg,
                         ChannelStateEmitter {
                             channel_id: Some(channel_id),
                             emitter,

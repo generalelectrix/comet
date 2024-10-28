@@ -1,4 +1,5 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
+use crate::control::EmitControlMessage;
 use crate::fixture::FixtureGroupKey;
 use crate::show::ControlMessage;
 use anyhow::bail;
@@ -43,21 +44,9 @@ pub trait EmitScopedOscMessage {
     }
 }
 
-/// Emit scoped control messages.
-/// Will be extended in the future to potentially cover more cases.
-pub trait EmitScopedControlMessage: EmitScopedOscMessage {}
-
-impl<T> EmitScopedControlMessage for T where T: EmitScopedOscMessage {}
-
-/// Emit control messages.
-/// Will be extended in the future to potentially cover more cases.
-pub trait EmitControlMessage: EmitOscMessage {}
-
 pub trait EmitOscMessage {
     fn emit_osc(&self, msg: OscMessage);
 }
-
-impl<T> EmitControlMessage for T where T: EmitOscMessage {}
 
 /// Process a state change message into OSC messages.
 pub trait HandleOscStateChange<SC> {
@@ -68,18 +57,6 @@ pub trait HandleOscStateChange<SC> {
     {
     }
 }
-
-/// Process a state change message into control state changes.
-pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
-    fn emit<S>(sc: SC, send: &S)
-    where
-        S: EmitScopedControlMessage + ?Sized,
-    {
-        Self::emit_osc_state_change(sc, send);
-    }
-}
-
-impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 
 pub struct OscController {
     send: Sender<OscControlResponse>,
@@ -465,6 +442,6 @@ pub mod prelude {
     pub use super::fader_array::FaderArray;
     pub use super::label_array::LabelArray;
     pub use super::FixtureStateEmitter;
-    pub use super::{GroupControlMap, HandleOscStateChange, HandleStateChange, OscControlMessage};
+    pub use super::{GroupControlMap, HandleOscStateChange, OscControlMessage};
     pub use crate::util::*;
 }

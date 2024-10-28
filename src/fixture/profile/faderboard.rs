@@ -2,8 +2,8 @@
 
 use log::error;
 
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
 
 #[derive(Debug)]
 pub struct Faderboard {
