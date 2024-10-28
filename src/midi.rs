@@ -1,7 +1,7 @@
 //! Define midi devices and handle midi controls.
 
 use anyhow::{anyhow, bail, Result};
-use std::sync::mpsc::Sender;
+use std::{fmt::Display, sync::mpsc::Sender};
 
 use crate::channel::{
     ChannelControlMessage as ScopedChannelControlMessage, ControlMessage as ChannelControlMessage,
@@ -18,6 +18,12 @@ pub enum Device {
     AkaiApc20,
 }
 
+impl Display for Device {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.device_name())
+    }
+}
+
 impl MidiDevice for Device {
     fn device_name(&self) -> &str {
         match self {
@@ -27,6 +33,11 @@ impl MidiDevice for Device {
 }
 
 impl Device {
+    /// Return all known midi device types.
+    pub fn all() -> Vec<Self> {
+        vec![Self::AkaiApc20]
+    }
+
     pub fn interpret(&self, event: &Event) -> Option<ChannelControlMessage> {
         match self {
             Self::AkaiApc20 => handle_apc20(event),
