@@ -7,14 +7,15 @@ use std::{
 
 use anyhow::{bail, Result};
 use prelude::OscControlMessage;
+use rosc::OscMessage;
 use tunnels::midi::CreateControlEvent;
 
 use crate::{
     config::Config,
-    midi::{Device, MidiControlMessage, MidiController},
+    midi::{Device, EmitMidiChannelMessage, MidiControlMessage, MidiController},
     osc::{
-        EmitOscMessage, EmitScopedOscMessage, OscClientId, OscController,
-        OscMessageWithMetadataSender,
+        EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlResponse, OscController,
+        TalkbackMode,
     },
 };
 
@@ -26,9 +27,9 @@ impl<T> EmitScopedControlMessage for T where T: EmitScopedOscMessage {}
 
 /// Emit control messages.
 /// Will be extended in the future to potentially cover more cases.
-pub trait EmitControlMessage: EmitOscMessage {}
+pub trait EmitControlMessage: EmitOscMessage + EmitMidiChannelMessage {}
 
-impl<T> EmitControlMessage for T where T: EmitOscMessage {}
+impl<T> EmitControlMessage for T where T: EmitOscMessage + EmitMidiChannelMessage {}
 
 /// Handle receiving and responding to show control messages.
 pub struct Controller {
@@ -60,10 +61,35 @@ impl Controller {
     /// Return a decorated version of self that will include the provided
     /// metadata when sending OSC response messages.
     pub fn sender_with_metadata<'a>(
-        &'a self,
+        &'a mut self,
         sender_id: Option<&'a OscClientId>,
-    ) -> OscMessageWithMetadataSender<'_> {
-        self.osc.sender_with_metadata(sender_id)
+    ) -> ControlMessageWithMetadataSender<'_> {
+        ControlMessageWithMetadataSender {
+            sender_id,
+            controller: self,
+        }
+    }
+}
+
+/// Decorate the Controller to add message metedata to control responses.
+pub struct ControlMessageWithMetadataSender<'a> {
+    pub sender_id: Option<&'a OscClientId>,
+    pub controller: &'a mut Controller,
+}
+
+impl<'a> EmitOscMessage for ControlMessageWithMetadataSender<'a> {
+    fn emit_osc(&self, msg: OscMessage) {
+        self.controller.osc.send(OscControlResponse {
+            sender_id: self.sender_id.cloned(),
+            talkback: TalkbackMode::All, // FIXME: hardcoded talkback
+            msg,
+        });
+    }
+}
+
+impl<'a> EmitMidiChannelMessage for ControlMessageWithMetadataSender<'a> {
+    fn emit_midi_channel_message(&self, msg: &crate::channel::StateChange) {
+        self.controller.midi.update(msg);
     }
 }
 

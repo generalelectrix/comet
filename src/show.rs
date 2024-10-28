@@ -14,8 +14,7 @@ use crate::{
     master::MasterControls,
     midi::{Device, MidiControlMessage, MidiController},
     osc::{
-        ControlMessageType, OscClientId, OscControlMessage, OscController,
-        OscMessageWithMetadataSender, ScopedControlEmitter,
+        ControlMessageType, OscClientId, OscControlMessage, OscController, ScopedControlEmitter,
     },
 };
 
@@ -43,7 +42,7 @@ impl Show {
         let mut channels = Channels::new();
         let mut patch = Patch::default();
 
-        let controller = Controller::from_config(&cfg)?;
+        let mut controller = Controller::from_config(&cfg)?;
 
         for fixture in cfg.fixtures.into_iter() {
             patch.patch(&mut channels, fixture)?;

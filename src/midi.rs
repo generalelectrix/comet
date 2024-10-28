@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use log::error;
-use std::{fmt::Display, sync::mpsc::Sender};
+use std::{cell::RefCell, fmt::Display, sync::mpsc::Sender};
 
 use crate::channel::{
     ChannelControlMessage as ScopedChannelControlMessage, ControlMessage as ChannelControlMessage,
@@ -106,7 +106,7 @@ fn update_apc20(msg: &ChannelStateChange, output: &mut Output<Device>) {
                 if let Err(err) = output.send(Event {
                     mapping: Mapping {
                         event_type: EventType::NoteOn,
-                        channel: channel as u8,
+                        channel: c as u8,
                         control: APC20_CHAN_SELECT,
                     },
                     value: if c == channel { 127 } else { 0 },
@@ -124,7 +124,11 @@ pub struct MidiControlMessage {
     pub event: Event,
 }
 
-pub struct MidiController(Manager<Device>);
+/// Immutable-compatible wrapper around the midi manager.
+/// Writing to a midi ouput requires a unique reference; we can safely wrap
+/// this using RefCell since we only need a reference to the outputs to write,
+/// and we can only be making one write call at a time.
+pub struct MidiController(RefCell<Manager<Device>>);
 
 impl MidiController {
     pub fn new(devices: Vec<DeviceSpec<Device>>, send: Sender<ControlMessage>) -> Result<Self> {
@@ -132,14 +136,24 @@ impl MidiController {
         for d in devices {
             controller.add_device(d, send.clone())?;
         }
-        Ok(Self(controller))
+        Ok(Self(RefCell::new(controller)))
     }
 
     /// Handle a channel state change message.
-    pub fn update(&mut self, msg: &ChannelStateChange) {
-        for output in self.0.outputs() {
+    pub fn update(&self, msg: &ChannelStateChange) {
+        for output in self.0.borrow_mut().outputs() {
             let device = *output.device();
             device.update(msg, output);
         }
     }
+}
+
+impl EmitMidiChannelMessage for MidiController {
+    fn emit_midi_channel_message(&self, msg: &ChannelStateChange) {
+        self.update(msg);
+    }
+}
+
+pub trait EmitMidiChannelMessage {
+    fn emit_midi_channel_message(&self, msg: &ChannelStateChange);
 }

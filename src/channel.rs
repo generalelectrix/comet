@@ -155,7 +155,9 @@ impl Channels {
             emitter,
         };
         if let Some(channel) = self.current_channel {
-            Self::emit_osc_state_change(StateChange::SelectChannel(channel), &scoped_emitter);
+            let sc = StateChange::SelectChannel(channel);
+            emitter.emit_midi_channel_message(&sc);
+            Self::emit_osc_state_change(sc, &scoped_emitter);
         }
         Self::emit_osc_state_change(
             StateChange::ChannelLabels(self.channel_labels(patch).collect()),
@@ -239,7 +241,6 @@ impl Channels {
 
 /// Provide methods to emit channel control state changes for a specific channel.
 /// If no channel is set, no state change events will be emitted.
-#[derive(Clone, Copy)]
 pub struct ChannelStateEmitter<'a> {
     channel_id: Option<ChannelId>,
     emitter: &'a dyn EmitControlMessage,
@@ -259,8 +260,10 @@ impl<'a> ChannelStateEmitter<'a> {
         let Some(channel_id) = self.channel_id else {
             return;
         };
+        let sc = StateChange::State { channel_id, msg };
+        self.emitter.emit_midi_channel_message(&sc);
         Channels::emit_osc_state_change(
-            StateChange::State { channel_id, msg },
+            sc,
             &ScopedControlEmitter {
                 entity: crate::osc::channels::GROUP,
                 emitter: self.emitter,

@@ -66,44 +66,14 @@ impl OscController {
         })
     }
 
-    /// Return a decorated version of self that will include the provided
-    /// metadata when sending OSC response messages.
-    pub fn sender_with_metadata<'a>(
-        &'a self,
-        sender_id: Option<&'a OscClientId>,
-    ) -> OscMessageWithMetadataSender<'_> {
-        OscMessageWithMetadataSender {
-            sender_id,
-            controller: self,
-        }
-    }
-}
-
-/// Decorate the OscController to add message metedata to control responses.
-pub struct OscMessageWithMetadataSender<'a> {
-    pub sender_id: Option<&'a OscClientId>,
-    pub controller: &'a OscController,
-}
-
-impl<'a> EmitOscMessage for OscMessageWithMetadataSender<'a> {
-    fn emit_osc(&self, msg: OscMessage) {
-        if self
-            .controller
-            .send
-            .send(OscControlResponse {
-                sender_id: self.sender_id.cloned(),
-                talkback: TalkbackMode::All, // FIXME: hardcoded talkback
-                msg,
-            })
-            .is_err()
-        {
+    pub fn send(&self, msg: OscControlResponse) {
+        if self.send.send(msg).is_err() {
             error!("OSC send channel is disconnected.");
         }
     }
 }
 
 /// Decorate a control message emitter to inject a group into the address.
-#[derive(Clone, Copy)]
 pub struct FixtureStateEmitter<'a> {
     key: &'a FixtureGroupKey,
     channel_emitter: ChannelStateEmitter<'a>,
@@ -309,9 +279,9 @@ pub enum TalkbackMode {
 }
 
 pub struct OscControlResponse {
-    sender_id: Option<OscClientId>,
-    talkback: TalkbackMode,
-    msg: OscMessage,
+    pub sender_id: Option<OscClientId>,
+    pub talkback: TalkbackMode,
+    pub msg: OscMessage,
 }
 
 /// Drain a control channel of OSC messages and send them.
