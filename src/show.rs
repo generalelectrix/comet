@@ -7,7 +7,7 @@ use crate::{
     config::Config,
     control::{ControlMessage, Controller},
     dmx::DmxBuffer,
-    fixture::{prelude::OscControl, FixtureGroup, FixtureGroupKey, GroupName, Patch},
+    fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
     osc::{ControlMessageType, ScopedControlEmitter},
 };
