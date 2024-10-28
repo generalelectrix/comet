@@ -11,7 +11,7 @@ use tunnels::midi::CreateControlEvent;
 
 use crate::{
     config::Config,
-    midi::{init_midi_controller, Device, MidiControlMessage, MidiController},
+    midi::{Device, MidiControlMessage, MidiController},
     osc::{
         EmitOscMessage, EmitScopedOscMessage, HandleOscStateChange, OscClientId, OscController,
         OscMessageWithMetadataSender,
@@ -54,7 +54,7 @@ impl Controller {
         let (send, recv) = channel();
         Ok(Self {
             osc: OscController::new(cfg.receive_port, cfg.controllers.clone(), send.clone())?,
-            midi: init_midi_controller(&cfg.midi_devices, send)?,
+            midi: MidiController::new(cfg.midi_devices.clone(), send)?,
             recv,
         })
     }

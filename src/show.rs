@@ -12,7 +12,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{prelude::OscControl, FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
-    midi::{init_midi_controller, Device, MidiControlMessage, MidiController},
+    midi::{Device, MidiControlMessage, MidiController},
     osc::{
         ControlMessageType, OscClientId, OscControlMessage, OscController,
         OscMessageWithMetadataSender, ScopedControlEmitter,

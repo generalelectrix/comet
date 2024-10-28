@@ -1,6 +1,7 @@
 //! Define midi devices and handle midi controls.
 
 use anyhow::Result;
+use log::error;
 use std::{fmt::Display, sync::mpsc::Sender};
 
 use crate::channel::{
@@ -14,7 +15,7 @@ use tunnels::{
 
 use crate::control::ControlMessage;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Device {
     AkaiApc20,
 }
@@ -102,14 +103,16 @@ fn update_apc20(msg: &ChannelStateChange, output: &mut Output<Device>) {
                 return;
             }
             for c in 0..8 {
-                output.send(Event {
+                if let Err(err) = output.send(Event {
                     mapping: Mapping {
                         event_type: EventType::NoteOn,
                         channel: channel as u8,
                         control: APC20_CHAN_SELECT,
                     },
                     value: if c == channel { 127 } else { 0 },
-                });
+                }) {
+                    error!("midi send error for APC20: {err}");
+                }
             }
         }
         _ => (),
@@ -121,15 +124,22 @@ pub struct MidiControlMessage {
     pub event: Event,
 }
 
-pub type MidiController = Manager<Device>;
+pub struct MidiController(Manager<Device>);
 
-pub fn init_midi_controller(
-    devices: &[DeviceSpec<Device>],
-    send: Sender<ControlMessage>,
-) -> Result<MidiController> {
-    let mut controller = MidiController::default();
-    for d in devices {
-        controller.add_device(d.clone(), send.clone())?;
+impl MidiController {
+    pub fn new(devices: Vec<DeviceSpec<Device>>, send: Sender<ControlMessage>) -> Result<Self> {
+        let mut controller = Manager::default();
+        for d in devices {
+            controller.add_device(d, send.clone())?;
+        }
+        Ok(Self(controller))
     }
-    Ok(controller)
+
+    /// Handle a channel state change message.
+    pub fn update(&mut self, msg: &ChannelStateChange) {
+        for output in self.0.outputs() {
+            let device = *output.device();
+            device.update(msg, output);
+        }
+    }
 }
