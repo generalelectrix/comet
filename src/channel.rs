@@ -8,15 +8,20 @@ use number::UnipolarFloat;
 use serde::Deserialize;
 
 use crate::{
+    control::EmitControlMessage,
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
-    osc::{
-        EmitControlMessage, EmitOscMessage, GroupControlMap, HandleStateChange, OscControlMessage,
-    },
+    osc::{EmitOscMessage, GroupControlMap, OscControlMessage, ScopedControlEmitter},
 };
 
 /// The index of a channel.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
 pub struct ChannelId(usize);
+
+impl ChannelId {
+    pub fn inner(&self) -> usize {
+        self.0
+    }
+}
 
 impl From<ChannelId> for usize {
     fn from(value: ChannelId) -> Self {
@@ -57,6 +62,10 @@ impl Channels {
         let id = ChannelId(self.channel_index.len());
         self.channel_index.push(group.clone());
         self.fixture_channel_index.insert(group, id);
+        // If this is the first channel we're configuring, set it as selected.
+        if self.current_channel.is_none() {
+            self.current_channel = Some(id);
+        }
         id
     }
 
@@ -141,12 +150,18 @@ impl Channels {
         patch: &Patch,
         emitter: &dyn EmitControlMessage,
     ) {
-        if let Some(channel) = self.current_channel {
-            Self::emit(StateChange::SelectChannel(channel), emitter);
-        }
-        Self::emit(
-            StateChange::ChannelLabels(self.channel_labels(patch).collect()),
+        let scoped_emitter = ScopedControlEmitter {
+            entity: crate::osc::channels::GROUP,
             emitter,
+        };
+        if let Some(channel) = self.current_channel {
+            let sc = StateChange::SelectChannel(channel);
+            emitter.emit_midi_channel_message(&sc);
+            Self::emit_osc_state_change(sc, &scoped_emitter);
+        }
+        Self::emit_osc_state_change(
+            StateChange::ChannelLabels(self.channel_labels(patch).collect()),
+            &scoped_emitter,
         );
         if selected_fixture_only {
             if let Some(channel_id) = self.current_channel {
@@ -171,8 +186,8 @@ impl Channels {
         }
     }
 
-    /// Handle a control message.
-    pub fn control(
+    /// Handle a OSC control message.
+    pub fn control_osc(
         &mut self,
         msg: &OscControlMessage,
         patch: &mut Patch,
@@ -181,10 +196,20 @@ impl Channels {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
             return Ok(());
         };
+        self.control(&ctl, patch, emitter)
+    }
+
+    /// Handle a typed control message.
+    pub fn control(
+        &mut self,
+        ctl: &ControlMessage,
+        patch: &mut Patch,
+        emitter: &dyn EmitControlMessage,
+    ) -> anyhow::Result<()> {
         match ctl {
             ControlMessage::SelectChannel(g) => {
                 // Validate the channel.
-                let channel = self.validate_channel(g)?;
+                let channel = self.validate_channel(*g)?;
                 if self.current_channel == Some(channel) {
                     // Channel is not changed, ignore.
                     return Ok(());
@@ -194,20 +219,20 @@ impl Channels {
             }
             ControlMessage::Control { channel_id, msg } => {
                 let channel_id = if let Some(id) = channel_id {
-                    self.validate_channel(id)?
+                    self.validate_channel(*id)?
                 } else {
                     self.current_channel.ok_or_else(||
-                        anyhow!("no channel ID provided or selected for channel control message {msg:?}")
-                    )?
+                            anyhow!("no channel ID provided or selected for channel control message {msg:?}")
+                        )?
                 };
                 self.group_by_channel_mut(patch, channel_id)?
                     .control_from_channel(
-                        &msg,
+                        msg,
                         ChannelStateEmitter {
                             channel_id: Some(channel_id),
                             emitter,
                         },
-                    );
+                    )?;
             }
         }
         Ok(())
@@ -216,7 +241,6 @@ impl Channels {
 
 /// Provide methods to emit channel control state changes for a specific channel.
 /// If no channel is set, no state change events will be emitted.
-#[derive(Clone, Copy)]
 pub struct ChannelStateEmitter<'a> {
     channel_id: Option<ChannelId>,
     emitter: &'a dyn EmitControlMessage,
@@ -236,7 +260,15 @@ impl<'a> ChannelStateEmitter<'a> {
         let Some(channel_id) = self.channel_id else {
             return;
         };
-        Channels::emit(StateChange::State { channel_id, msg }, self.emitter);
+        let sc = StateChange::State { channel_id, msg };
+        self.emitter.emit_midi_channel_message(&sc);
+        Channels::emit_osc_state_change(
+            sc,
+            &ScopedControlEmitter {
+                entity: crate::osc::channels::GROUP,
+                emitter: self.emitter,
+            },
+        );
     }
 }
 

@@ -1,6 +1,6 @@
 //! Define groups of fixtures, sharing a common fixture
 
-use anyhow::Context;
+use anyhow::{ensure, Context};
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 use std::sync::Arc;
@@ -85,7 +85,7 @@ impl FixtureGroup {
     /// Emit the current state of all controls.
     pub fn emit_state(&self, emitter: ChannelStateEmitter) {
         self.fixture
-            .emit_state(&FixtureStateEmitter::new(self.key.group.as_ref(), emitter));
+            .emit_state(&FixtureStateEmitter::new(&self.key, emitter));
     }
 
     /// Process the provided control message.
@@ -94,12 +94,16 @@ impl FixtureGroup {
         msg: &OscControlMessage,
         emitter: ChannelStateEmitter,
     ) -> anyhow::Result<()> {
-        self.fixture
-            .control(
-                msg,
-                &FixtureStateEmitter::new(self.key.group.as_ref(), emitter),
-            )
-            .with_context(|| self.key.clone())
+        let handled = self
+            .fixture
+            .control(msg, &FixtureStateEmitter::new(&self.key, emitter))
+            .with_context(|| self.key.clone())?;
+        ensure!(
+            handled,
+            "{} unexpectedly did not handle OSC message: {msg:?}",
+            self.key
+        );
+        Ok(())
     }
 
     /// Process the provided channel control message.
@@ -107,11 +111,9 @@ impl FixtureGroup {
         &mut self,
         msg: &ChannelControlMessage,
         channel_emitter: ChannelStateEmitter,
-    ) {
-        self.fixture.control_from_channel(
-            msg,
-            &FixtureStateEmitter::new(self.key.group.as_ref(), channel_emitter),
-        );
+    ) -> anyhow::Result<()> {
+        self.fixture
+            .control_from_channel(msg, &FixtureStateEmitter::new(&self.key, channel_emitter))
     }
 
     pub fn update(&mut self, delta_t: Duration, _audio_envelope: UnipolarFloat) {

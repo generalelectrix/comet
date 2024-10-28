@@ -1,10 +1,7 @@
 use log::error;
-use rosc::{OscMessage, OscType};
+use rosc::OscType;
 
-use std::{fmt::Display, str::FromStr};
-use strum::IntoEnumIterator;
-
-use super::{control_message::OscControlMessage, GroupControlMap, OscError};
+use super::{control_message::OscControlMessage, GroupControlMap, OscError, ScopedOscMessage};
 use anyhow::Result;
 
 /// Model a 1D button grid with radio-select behavior.
@@ -12,7 +9,6 @@ use anyhow::Result;
 /// Special-cased to handle only 1D grids.
 #[derive(Clone)]
 pub struct RadioButton {
-    pub group: &'static str,
     pub control: &'static str,
     pub n: usize,
     /// If true, use the 0th coordinate as the index.  If false, use the 1st coordinate.
@@ -77,13 +73,10 @@ impl RadioButton {
     /// Error conditions are logged.
     pub fn set<S>(&self, n: usize, emitter: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         if n >= self.n {
-            error!(
-                "radio button index {} out of range for {}/{}",
-                n, self.group, self.control
-            );
+            error!("radio button index {} out of range for {}", n, self.control);
             return;
         }
         for i in 0..self.n {
@@ -93,9 +86,9 @@ impl RadioButton {
             } else {
                 (1, i + 1)
             };
-            emitter.emit_osc(OscMessage {
-                addr: format!("/{}/{}/{}/{}", self.group, self.control, x, y),
-                args: vec![OscType::Float(val)],
+            emitter.emit_osc(ScopedOscMessage {
+                control: &format!("{}/{}/{}", self.control, x, y),
+                arg: OscType::Float(val),
             })
         }
     }
@@ -123,35 +116,4 @@ fn parse_radio_button_indices(addr_payload: &str) -> Result<(usize, usize), Stri
         return Err("y index is unexpectedly 0".to_string());
     }
     Ok((x - 1, y - 1))
-}
-
-pub trait EnumRadioButton: FromStr + IntoEnumIterator + Display + PartialEq
-where
-    <Self as FromStr>::Err: std::fmt::Display,
-{
-    /// Parse a enum variant of the specified type from the third argument of the address.
-    fn parse(m: &OscControlMessage) -> Result<Self, OscError> {
-        let name = match m.addr_payload().split('/').nth(1) {
-            Some(c) => c,
-            None => {
-                return Err(m.err("command is missing variant specifier"));
-            }
-        };
-        Self::from_str(name).map_err(|err| m.err(err.to_string()))
-    }
-
-    /// Update the state of a "radio select enum".
-    /// Each enum variant is mapped to a button with the name of the address as the
-    /// last piece of the address.
-    fn set<S>(&self, group: &str, control: &str, emitter: &S)
-    where
-        S: crate::osc::EmitOscMessage + ?Sized,
-    {
-        for choice in Self::iter() {
-            emitter.emit_osc(OscMessage {
-                addr: format!("/{}/{}/{}", group, control, choice),
-                args: vec![OscType::Float(if choice == *self { 1.0 } else { 0.0 })],
-            });
-        }
-    }
 }

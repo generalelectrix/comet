@@ -7,9 +7,10 @@ use tunnels::clock_server::StaticClockBank;
 
 use crate::animation::AnimationUIState;
 use crate::channel::{ChannelStateEmitter, Channels};
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 use crate::fixture::Patch;
-use crate::osc::{prelude::*, EmitControlMessage};
+use crate::osc::ScopedControlEmitter;
 
 pub struct MasterControls {
     strobe: Strobe,
@@ -36,7 +37,7 @@ impl MasterControls {
 
     pub fn update(&mut self, _delta_t: Duration) {}
 
-    pub fn emit_state(&self, emitter: &dyn EmitControlMessage) {
+    pub fn emit_state(&self, emitter: &dyn EmitScopedControlMessage) {
         use StateChange::*;
         let mut emit_strobe = |ssc| {
             Self::emit(Strobe(ssc), emitter);
@@ -44,13 +45,17 @@ impl MasterControls {
         self.strobe.state.emit_state(&mut emit_strobe);
     }
 
-    pub fn handle_state_change(&mut self, sc: StateChange, emitter: &dyn EmitControlMessage) {
+    pub fn handle_state_change(&mut self, sc: StateChange, emitter: &dyn EmitScopedControlMessage) {
         use StateChange::*;
         match sc {
             Strobe(sc) => self.strobe.state.handle_state_change(sc),
             UseMasterStrobeRate(v) => self.strobe.use_master_rate = v,
         }
         Self::emit(sc, emitter);
+    }
+
+    fn emit(_sc: StateChange, _emitter: &dyn EmitScopedControlMessage) {
+        // FIXME: no talkback
     }
 
     // FIXME: we should lift UI refresh up and out of here
@@ -67,10 +72,19 @@ impl MasterControls {
         };
         match ctl {
             ControlMessage::State(sc) => {
-                self.handle_state_change(sc, emitter);
+                self.handle_state_change(
+                    sc,
+                    &ScopedControlEmitter {
+                        entity: GROUP,
+                        emitter,
+                    },
+                );
             }
             ControlMessage::RefreshUI => {
-                self.emit_state(emitter);
+                self.emit_state(&ScopedControlEmitter {
+                    entity: GROUP,
+                    emitter,
+                });
                 channels.emit_state(false, patch, emitter);
                 for group in patch.iter() {
                     group.emit_state(ChannelStateEmitter::new(
@@ -79,7 +93,15 @@ impl MasterControls {
                     ));
                 }
                 if let Some(channel) = channels.current_channel() {
-                    animation_ui_state.emit_state(channel, channels, patch, emitter)?;
+                    animation_ui_state.emit_state(
+                        channel,
+                        channels,
+                        patch,
+                        &ScopedControlEmitter {
+                            entity: crate::osc::animation::GROUP,
+                            emitter,
+                        },
+                    )?;
                 }
             }
         }
@@ -107,8 +129,8 @@ pub struct Strobe {
 
 pub(crate) const GROUP: &str = "Master";
 
-const USE_MASTER_STROBE_RATE: Button = button(GROUP, "UseMasterStrobeRate");
-const REFRESH_UI: Button = button(GROUP, "RefreshUI");
+const USE_MASTER_STROBE_RATE: Button = button("UseMasterStrobeRate");
+const REFRESH_UI: Button = button("RefreshUI");
 
 impl MasterControls {
     pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
@@ -123,5 +145,3 @@ impl MasterControls {
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
     ControlMessage::State(StateChange::Strobe(sc))
 }
-
-impl HandleOscStateChange<StateChange> for MasterControls {}

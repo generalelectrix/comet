@@ -3,25 +3,34 @@
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
 
-use log::error;
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use super::color::{Color, StateChange as ColorStateChange};
-use crate::fixture::color::map_color;
-use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
+use super::color::Color;
 
-#[derive(Default, Debug)]
+use crate::control::prelude::*;
+use crate::fixture::prelude::*;
+
+#[derive(Debug)]
 pub struct FreedomFries {
-    controls: GroupControlMap<ControlMessage>,
-    dimmer: UnipolarFloat,
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
     color: Color,
-    speed: UnipolarFloat,
-    strobe: GenericStrobe,
-    run_program: bool,
-    program: usize,
-    program_cycle_all: bool,
+    speed: UnipolarChannel,
+    strobe: StrobeChannel,
+    program: ProgramControl,
+}
+
+impl Default for FreedomFries {
+    fn default() -> Self {
+        Self {
+            dimmer: Unipolar::full_channel("Dimmer", 0).with_channel_level(),
+            color: Default::default(),
+            speed: Unipolar::full_channel("Speed", 7),
+            strobe: Strobe::channel("Strobe", 5, 0, 11, 255),
+
+            program: ProgramControl::default(),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for FreedomFries {
@@ -31,105 +40,67 @@ impl PatchAnimatedFixture for FreedomFries {
     }
 }
 
-impl FreedomFries {
-    pub const PROGRAM_COUNT: usize = 27;
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Dimmer(v) => self.dimmer = v,
-            Color(v) => self.color.update_state(v),
-            Strobe(sc) => self.strobe.handle_state_change(sc),
-            Speed(v) => self.speed = v,
-            RunProgram(v) => self.run_program = v,
-            Program(v) => {
-                if v >= Self::PROGRAM_COUNT {
-                    error!("Program select index {} out of range.", v);
-                    return;
-                }
-                self.program = v;
-            }
-            ProgramCycleAll(v) => self.program_cycle_all = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl AnimatedFixture for FreedomFries {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut dimmer = self.dimmer.val();
-        let mut speed = self.speed.val();
-        for (val, target) in animation_vals {
-            use AnimationTarget::*;
-            match target {
-                // FIXME: might want to do something nicer for unipolar values
-                Dimmer => dimmer += val,
-                Speed => speed += val,
-            }
-        }
-        dmx_buf[0] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
-        self.color
-            .render_with_animations(group_controls, &[], &mut dmx_buf[1..4]);
+        self.dimmer
+            .render(animation_vals.filter(&AnimationTarget::Dimmer), dmx_buf);
+        self.speed
+            .render(animation_vals.filter(&AnimationTarget::Speed), dmx_buf);
+        self.color.render_without_animations(&mut dmx_buf[1..4]);
         dmx_buf[4] = 0;
-        dmx_buf[5] = self
-            .strobe
-            .render_range_with_master(group_controls.strobe(), 0, 11, 255);
-        dmx_buf[6] = {
-            if !self.run_program {
-                0
-            } else if self.program_cycle_all {
-                227
-            } else {
-                ((self.program * 8) + 11) as u8
-            }
-        };
-        dmx_buf[7] = unipolar_to_range(0, 255, UnipolarFloat::new(speed));
+        self.strobe
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
+        self.program.render(std::iter::empty(), dmx_buf);
     }
 }
 
 impl ControllableFixture for FreedomFries {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(Dimmer(self.dimmer), emitter);
-        Self::emit(Speed(self.speed), emitter);
-        Self::emit(Program(self.program), emitter);
-        Self::emit(ProgramCycleAll(self.program_cycle_all), emitter);
+        self.dimmer.emit_state(emitter);
+        OscControl::emit_state(&self.color, emitter);
+        self.speed.emit_state(emitter);
+        self.strobe.emit_state(emitter);
+        self.program.emit_state(emitter);
     }
 
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<bool> {
+        if self.dimmer.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if OscControl::control(&mut self.color, msg, emitter)? {
+            return Ok(true);
+        }
+        if self.speed.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.program.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        self.handle_state_change(ctl, emitter);
+        self.dimmer.control_from_channel(msg, emitter)?;
         Ok(())
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Dimmer(UnipolarFloat),
-    Color(ColorStateChange),
-    Strobe(GenericStrobeStateChange),
-    RunProgram(bool),
-    Speed(UnipolarFloat),
-    Program(usize),
-    ProgramCycleAll(bool),
-}
-
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -157,50 +128,92 @@ impl AnimationTarget {
     }
 }
 
-const GROUP: &str = FreedomFries::NAME.0;
-
-const RUN_PROGRAM: Button = button(GROUP, "RunProgram");
-const PROGRAM_CYCLE_ALL: Button = button(GROUP, "ProgramCycleAll");
-
 const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
-    group: GROUP,
     control: "ProgramLabel",
     n: 1,
     empty_label: "",
 };
 
-impl FreedomFries {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
+/// Control for indexed program select via a unipolar fader, with
+/// value label read-out.
+#[derive(Debug)]
+struct ProgramControl {
+    run_program: Bool<()>,
+    select: Unipolar<()>,
+    program_cycle_all: Bool<()>,
+    selected: usize,
+}
 
-        map.add_unipolar("Dimmer", Dimmer);
-        map_color(map, &wrap_color);
-        map_strobe(map, "Strobe", &wrap_strobe);
-        map.add_unipolar("Speed", Speed);
-        RUN_PROGRAM.map_state(map, RunProgram);
-        map.add_unipolar("Program", |v| {
-            Program(unipolar_to_range(0, FreedomFries::PROGRAM_COUNT as u8 - 1, v) as usize)
-        });
-        PROGRAM_CYCLE_ALL.map_state(map, ProgramCycleAll);
+impl Default for ProgramControl {
+    fn default() -> Self {
+        Self {
+            run_program: Bool::new_off("RunProgram", ()),
+            select: Unipolar::new("Program", ()),
+            program_cycle_all: Bool::new_off("ProgramCycleAll", ()),
+            selected: 0,
+        }
     }
 }
 
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    StateChange::Strobe(sc)
+impl ProgramControl {
+    const PROGRAM_COUNT: usize = 27;
+    const DMX_BUF_OFFSET: usize = 6;
+
+    fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
+        dmx_buf[Self::DMX_BUF_OFFSET] = if !self.run_program.val() {
+            0
+        } else if self.program_cycle_all.val() {
+            227
+        } else {
+            ((self.selected * 8) + 11) as u8
+        };
+    }
 }
 
-fn wrap_color(sc: ColorStateChange) -> ControlMessage {
-    StateChange::Color(sc)
-}
+impl OscControl<()> for ProgramControl {
+    fn control_direct(
+        &mut self,
+        _val: (),
+        _emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<()> {
+        bail!("direct control is not implemented for ProgramControl");
+    }
 
-impl HandleOscStateChange<StateChange> for FreedomFries {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
-    where
-        S: crate::osc::EmitOscMessage + ?Sized,
-    {
-        if let StateChange::Program(v) = sc {
-            let label = v.to_string();
-            PROGRAM_SELECT_LABEL.set([label].into_iter(), send);
+    fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
+        self.run_program.emit_state(emitter);
+        self.select.emit_state(emitter);
+        self.program_cycle_all.emit_state(emitter);
+        PROGRAM_SELECT_LABEL.set([self.selected.to_string()].into_iter(), emitter);
+    }
+
+    fn control(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &dyn crate::osc::EmitScopedOscMessage,
+    ) -> anyhow::Result<bool> {
+        if self.run_program.control(msg, emitter)? {
+            return Ok(true);
         }
+        if self.program_cycle_all.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.select.control(msg, emitter)? {
+            let new_val =
+                unipolar_to_range(0, Self::PROGRAM_COUNT as u8 - 1, self.select.val()) as usize;
+            if new_val >= Self::PROGRAM_COUNT {
+                bail!(
+                    "program select index {new_val} out of range (max {})",
+                    Self::PROGRAM_COUNT
+                );
+            }
+            self.selected =
+                unipolar_to_range(0, Self::PROGRAM_COUNT as u8 - 1, self.select.val()) as usize;
+
+            self.select.emit_state(emitter);
+            PROGRAM_SELECT_LABEL.set([self.selected.to_string()].into_iter(), emitter);
+
+            return Ok(true);
+        }
+        Ok(false)
     }
 }

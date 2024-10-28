@@ -1,7 +1,7 @@
 use std::time::Duration;
 
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
 
 /// DMX 255 is too fast; restrict to a reasonable value.
 const MAX_ROTATION_SPEED: u8 = 100;
@@ -52,7 +52,7 @@ impl PatchFixture for Lumasphere {
 impl Default for Lumasphere {
     fn default() -> Self {
         Self {
-            controls: Default::default(),
+            controls: map_controls(),
             lamp_1_intensity: UnipolarFloat::ZERO,
             lamp_2_intensity: UnipolarFloat::ZERO,
             // Ramp ball rotation no faster than unit range in one second.
@@ -104,6 +104,10 @@ impl Lumasphere {
         };
         Self::emit(sc, emitter);
     }
+
+    fn emit(_sc: StateChange, _emitter: &FixtureStateEmitter) {
+        // FIXME: no talkback
+    }
 }
 
 impl NonAnimatedFixture for Lumasphere {
@@ -118,10 +122,6 @@ impl NonAnimatedFixture for Lumasphere {
 }
 
 impl ControllableFixture for Lumasphere {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn update(&mut self, delta_t: Duration) {
         self.ball_rotation.update(delta_t);
     }
@@ -142,12 +142,12 @@ impl ControllableFixture for Lumasphere {
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
+            return Ok(true);
         };
         self.handle_state_change(ctl, emitter);
-        Ok(())
+        Ok(true)
     }
 }
 
@@ -213,33 +213,32 @@ pub enum StateChange {
 // Lumasphere has no controls that are not represented as state changes.
 pub type ControlMessage = StateChange;
 
-const GROUP: &str = Lumasphere::NAME.0;
+const BALL_START: Button = button("ball_start");
+const COLOR_START: Button = button("color_start");
 
-const BALL_START: Button = button(GROUP, "ball_start");
-const COLOR_START: Button = button(GROUP, "color_start");
+fn map_controls() -> GroupControlMap<ControlMessage> {
+    let mut controls = GroupControlMap::default();
+    let map = &mut controls;
+    use StateChange::*;
+    map.add_unipolar("lamp_1_intensity", |v| {
+        Lamp1Intensity(unipolar_fader_with_detent(v))
+    });
+    map.add_unipolar("lamp_2_intensity", |v| {
+        Lamp2Intensity(unipolar_fader_with_detent(v))
+    });
 
-impl Lumasphere {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        map.add_unipolar("lamp_1_intensity", |v| {
-            Lamp1Intensity(unipolar_fader_with_detent(v))
-        });
-        map.add_unipolar("lamp_2_intensity", |v| {
-            Lamp2Intensity(unipolar_fader_with_detent(v))
-        });
+    map.add_bipolar("ball_rotation", |v| {
+        BallRotation(bipolar_fader_with_detent(v))
+    });
+    BALL_START.map_state(map, BallStart);
 
-        map.add_bipolar("ball_rotation", |v| {
-            BallRotation(bipolar_fader_with_detent(v))
-        });
-        BALL_START.map_state(map, BallStart);
-
-        map.add_unipolar("color_rotation", |v| {
-            ColorRotation(unipolar_fader_with_detent(v))
-        });
-        COLOR_START.map_state(map, ColorStart);
-        map_strobe(map, 1, Strobe1);
-        map_strobe(map, 2, Strobe2);
-    }
+    map.add_unipolar("color_rotation", |v| {
+        ColorRotation(unipolar_fader_with_detent(v))
+    });
+    COLOR_START.map_state(map, ColorStart);
+    map_strobe(map, 1, Strobe1);
+    map_strobe(map, 2, Strobe2);
+    controls
 }
 
 fn map_strobe<W>(map: &mut GroupControlMap<ControlMessage>, index: u8, wrap: W)
@@ -258,5 +257,3 @@ where
         wrap(Intensity(v))
     });
 }
-
-impl HandleOscStateChange<StateChange> for Lumasphere {}

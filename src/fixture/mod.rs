@@ -1,6 +1,7 @@
 use crate::master::{MasterControls, Strobe};
 
 pub mod animation_target;
+mod control;
 #[allow(clippy::module_inception)]
 mod fixture;
 mod group;
@@ -32,8 +33,10 @@ pub mod prelude {
     };
     pub use super::patch::{PatchAnimatedFixture, PatchFixture};
     pub use super::FixtureGroupControls;
-    pub use crate::channel::{ChannelControlMessage, ChannelStateChange, ChannelStateEmitter};
+    pub use crate::channel::{ChannelControlMessage, ChannelStateEmitter};
     pub use crate::fixture::animation_target::TargetedAnimationValues;
+    pub use crate::fixture::control::*;
     pub use crate::fixture::generic::*;
+    pub use anyhow::bail;
     pub use number::{BipolarFloat, Phase, UnipolarFloat};
 }

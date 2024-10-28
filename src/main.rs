@@ -3,10 +3,13 @@ use clock_service::prompt_start_clock_service;
 use local_ip_address::local_ip;
 use log::info;
 use log::LevelFilter;
+use midi::Device;
 use osc::prompt_osc_config;
 use rust_dmx::select_port;
 use simplelog::{Config as LogConfig, SimpleLogger};
 use std::env;
+use tunnels::midi::list_ports;
+use tunnels::midi::prompt_midi;
 use zmq::Context;
 
 use crate::config::Config;
@@ -16,9 +19,11 @@ mod animation;
 mod channel;
 mod clock_service;
 mod config;
+mod control;
 mod dmx;
 mod fixture;
 mod master;
+mod midi;
 mod osc;
 mod show;
 mod util;
@@ -44,6 +49,8 @@ fn main() -> anyhow::Result<()> {
     if let Some(clients) = prompt_osc_config(cfg.receive_port)? {
         cfg.controllers = clients;
     }
+    let (midi_inputs, midi_outputs) = list_ports()?;
+    cfg.midi_devices = prompt_midi(&midi_inputs, &midi_outputs, Device::all())?;
     if cfg.controllers.is_empty() {
         bail!("No OSC clients were registered or manually configured.");
     }

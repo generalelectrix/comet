@@ -1,13 +1,12 @@
-use super::{get_bool, send_float};
+use super::OscControlMessage;
 
 #[derive(Clone)]
 pub struct Button {
-    pub group: &'static str,
     pub control: &'static str,
 }
 
-pub const fn button(group: &'static str, control: &'static str) -> Button {
-    Button { group, control }
+pub const fn button(control: &'static str) -> Button {
+    Button { control }
 }
 
 impl Button {
@@ -15,7 +14,9 @@ impl Button {
     where
         F: Fn(bool) -> T + 'static + Copy,
     {
-        map.add_fetch_process(self.control, get_bool, move |v| Some(process(v)))
+        map.add_fetch_process(self.control, OscControlMessage::get_bool, move |v| {
+            Some(process(v))
+        })
     }
 
     pub fn map_trigger<T>(
@@ -23,7 +24,7 @@ impl Button {
         map: &mut super::GroupControlMap<T>,
         event_factory: impl Fn() -> T + 'static,
     ) {
-        map.add_fetch_process(self.control, get_bool, move |v| {
+        map.add_fetch_process(self.control, OscControlMessage::get_bool, move |v| {
             if v {
                 Some(event_factory())
             } else {
@@ -32,10 +33,10 @@ impl Button {
         })
     }
 
-    pub fn send<S>(&self, val: bool, send: &S)
+    pub fn send<E>(&self, val: bool, emitter: &E)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        E: crate::osc::EmitScopedOscMessage + ?Sized,
     {
-        send_float(self.group, self.control, if val { 1.0 } else { 0.0 }, send);
+        emitter.emit_float(self.control, if val { 1.0 } else { 0.0 });
     }
 }

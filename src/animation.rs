@@ -5,11 +5,12 @@ use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
     channel::Channels,
+    control::EmitScopedControlMessage,
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
         Patch,
     },
-    osc::{EmitControlMessage, GroupControlMap, HandleStateChange, OscControlMessage},
+    osc::{GroupControlMap, OscControlMessage},
     show::ChannelId,
 };
 
@@ -38,13 +39,13 @@ impl AnimationUIState {
         channel: ChannelId,
         channels: &Channels,
         patch: &Patch,
-        emitter: &dyn EmitControlMessage,
+        emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
         let (ta, index) = self.current_animation_with_index(channel, channels, patch)?;
         ta.anim().emit_state(&mut InnerAnimationEmitter(emitter));
-        Self::emit(StateChange::Target(ta.target()), emitter);
-        Self::emit(StateChange::SelectAnimation(index), emitter);
-        Self::emit(StateChange::TargetLabels(ta.target_labels()), emitter);
+        Self::emit_osc_state_change(StateChange::Target(ta.target()), emitter);
+        Self::emit_osc_state_change(StateChange::SelectAnimation(index), emitter);
+        Self::emit_osc_state_change(StateChange::TargetLabels(ta.target_labels()), emitter);
         Ok(())
     }
 
@@ -55,7 +56,7 @@ impl AnimationUIState {
         channel: ChannelId,
         channels: &Channels,
         patch: &mut Patch,
-        emitter: &dyn EmitControlMessage,
+        emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
             return Ok(());
@@ -72,7 +73,7 @@ impl AnimationUIState {
                     return Ok(());
                 }
                 anim.set_target(msg)?;
-                Self::emit(StateChange::Target(msg), emitter);
+                Self::emit_osc_state_change(StateChange::Target(msg), emitter);
             }
             ControlMessage::SelectAnimation(n) => {
                 if self.animation_index_for_channel(channel) == n {
@@ -142,11 +143,11 @@ impl AnimationUIState {
     }
 }
 
-struct InnerAnimationEmitter<'a>(&'a dyn EmitControlMessage);
+struct InnerAnimationEmitter<'a>(&'a dyn EmitScopedControlMessage);
 
 impl<'a> EmitAnimationStateChange for InnerAnimationEmitter<'a> {
     fn emit_animation_state_change(&mut self, sc: tunnels::animation::StateChange) {
-        AnimationUIState::emit(StateChange::Animation(sc), self.0);
+        AnimationUIState::emit_osc_state_change(StateChange::Animation(sc), self.0);
     }
 }
 

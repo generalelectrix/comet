@@ -31,23 +31,28 @@ impl Display for FixtureType {
 }
 
 pub trait ControllableFixture {
-    /// Populate fixture controls.
-    fn populate_controls(&mut self);
-
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &FixtureStateEmitter);
 
     /// Process the provided OSC control message.
+    ///
+    /// Return true if the control message was handled.
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()>;
+    ) -> anyhow::Result<bool>;
 
     /// Process a channel control message, if the fixture uses it.
+    ///
     #[allow(unused)]
-    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
         // Ignore channel control messages by default.
+        Ok(())
     }
 
     fn update(&mut self, _: Duration) {}
@@ -67,7 +72,7 @@ pub trait AnimatedFixture: ControllableFixture + Debug {
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     );
 }
@@ -132,20 +137,20 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
 }
 
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
-    fn populate_controls(&mut self) {
-        self.fixture.populate_controls();
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         self.fixture.control(msg, emitter)
     }
 
-    fn control_from_channel(&mut self, msg: &ChannelControlMessage, emitter: &FixtureStateEmitter) {
-        self.fixture.control_from_channel(msg, emitter);
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<()> {
+        self.fixture.control_from_channel(msg, emitter)
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
@@ -179,8 +184,11 @@ impl<F: AnimatedFixture> Fixture for FixtureWithAnimations<F> {
                 ta.target,
             );
         }
-        self.fixture
-            .render_with_animations(group_controls, &animation_vals, dmx_buffer);
+        self.fixture.render_with_animations(
+            group_controls,
+            TargetedAnimationValues(&animation_vals),
+            dmx_buffer,
+        );
     }
 
     fn is_animated(&self) -> bool {

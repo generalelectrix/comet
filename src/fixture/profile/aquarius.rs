@@ -3,14 +3,22 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Aquarius {
-    controls: GroupControlMap<ControlMessage>,
-    lamp_on: bool,
-    rotation: BipolarFloat,
+    lamp_on: BoolChannelLevel<BoolChannel>,
+    rotation: BipolarSplitChannel,
+}
+
+impl Default for Aquarius {
+    fn default() -> Self {
+        Self {
+            lamp_on: Bool::full_channel("LampOn", 1).with_channel_level(),
+            rotation: Bipolar::split_channel("Rotation", 0, 130, 8, 132, 255, 0).with_detent(),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for Aquarius {
@@ -20,81 +28,50 @@ impl PatchAnimatedFixture for Aquarius {
     }
 }
 
-impl Aquarius {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            LampOn(v) => self.lamp_on = v,
-            Rotation(v) => self.rotation = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl AnimatedFixture for Aquarius {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
-        _group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        group_controls: &FixtureGroupControls,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut rotation = self.rotation.val();
-        for (val, target) in animation_vals {
-            use AnimationTarget::*;
-            match target {
-                Rotation => rotation += val,
-            }
-        }
-        dmx_buf[0] = bipolar_to_split_range(BipolarFloat::new(rotation), 130, 8, 132, 255, 0);
-        dmx_buf[1] = if self.lamp_on { 255 } else { 0 };
+        self.rotation
+            .render_with_group(group_controls, animation_vals.all(), dmx_buf);
+        self.lamp_on
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
     }
 }
 
 impl ControllableFixture for Aquarius {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(LampOn(self.lamp_on), emitter);
-        Self::emit(Rotation(self.rotation), emitter);
+        self.lamp_on.emit_state(emitter);
+        self.rotation.emit_state(emitter);
     }
 
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<bool> {
+        if self.lamp_on.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        self.handle_state_change(ctl, emitter);
+        self.lamp_on.control_from_channel(msg, emitter)?;
         Ok(())
     }
 }
-
-const LAMP_ON: Button = button(Aquarius::NAME.0, "LampOn");
-
-impl Aquarius {
-    fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        LAMP_ON.map_state(map, LampOn);
-        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
-    }
-}
-
-impl HandleOscStateChange<StateChange> for Aquarius {}
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    LampOn(bool),
-    Rotation(BipolarFloat),
-}
-
-// Aquarius has no controls that are not represented as state changes.
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,

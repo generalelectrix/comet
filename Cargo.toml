@@ -26,3 +26,4 @@ thiserror = "1"
 num-derive = "0.4"
 num-traits = "0.2"
 itertools = "0.13"
+fixture_macros = { path = "fixture_macros" }

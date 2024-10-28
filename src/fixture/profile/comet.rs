@@ -1,20 +1,35 @@
-use log::error;
 use std::{collections::VecDeque, time::Duration};
 
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Comet {
-    controls: GroupControlMap<ControlMessage>,
-    shutter_open: bool,
-    strobe: GenericStrobe,
-    shutter_sound_active: bool,
-    macro_pattern: usize,
-    mirror_speed: UnipolarFloat,
+    shutter_open: BoolChannel,
     trigger_state: TriggerState,
-    reset: bool,
+    strobe: StrobeChannel,
+    shutter_sound_active: BoolChannel,
+    macro_pattern: IndexedSelectMenu,
+    mirror_speed: UnipolarChannel,
+    reset: BoolChannel,
 }
+
+impl Default for Comet {
+    fn default() -> Self {
+        Self {
+            shutter_open: Bool::full_channel("Shutter", 0),
+            trigger_state: TriggerState::default(),
+            // FIXME: need to make strobe rate a quadratic fader
+            strobe: Strobe::channel("Strobe", 0, 151, 255, 75),
+            shutter_sound_active: Bool::channel("ShutterSoundActive", 0, 0, 125),
+            macro_pattern: IndexedSelect::fixed_values("SelectMacro", 1, true, &PATTERN_DMX_VALS),
+            mirror_speed: Unipolar::full_channel("Mspeed", 2),
+            reset: Bool::full_channel("Reset", 4),
+        }
+    }
+}
+
+const PATTERN_DMX_VALS: [u8; 10] = [12, 35, 65, 85, 112, 140, 165, 190, 212, 240];
 
 impl PatchFixture for Comet {
     const NAME: FixtureType = FixtureType("Comet");
@@ -23,109 +38,72 @@ impl PatchFixture for Comet {
     }
 }
 
-impl Comet {
-    const GAME_DMX_VALS: [u8; 10] = [12, 35, 65, 85, 112, 140, 165, 190, 212, 240];
-
-    fn render_shutter(&self) -> u8 {
-        if !self.shutter_open {
-            0
-        } else if self.shutter_sound_active {
-            125
-        } else if self.strobe.on() {
-            unipolar_to_range(151, 255, self.strobe.rate())
-        } else {
-            75
-        }
-    }
-
-    fn render_mspeed(&self) -> u8 {
-        unipolar_to_range(0, 255, self.mirror_speed)
-    }
-
-    fn control(&mut self, msg: ControlMessage, emitter: &FixtureStateEmitter) {
-        use ControlMessage::*;
-        match msg {
-            Set(sc) => self.handle_state_change(sc, emitter),
-            TakeStep(direction) => self.trigger_state.enqueue_step(direction),
-        }
-    }
-
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Shutter(v) => self.shutter_open = v,
-            Strobe(v) => self.strobe.handle_state_change(v),
-            ShutterSoundActive(v) => self.shutter_sound_active = v,
-            SelectMacro(v) => {
-                if v >= Self::GAME_DMX_VALS.len() {
-                    error!("Macro index {} out of range.", v);
-                    return;
-                }
-                self.macro_pattern = v;
-            }
-            MirrorSpeed(v) => self.mirror_speed = v,
-            TrigSoundActive(v) => self.trigger_state.music_trigger = v,
-            AutoStep(v) => self.trigger_state.auto_step = v,
-            AutoStepRate(v) => self.trigger_state.auto_step_rate = v,
-            Reset(v) => self.reset = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl NonAnimatedFixture for Comet {
-    fn render(&self, _group_controls: &FixtureGroupControls, dmx_univ: &mut [u8]) {
-        dmx_univ[0] = self.render_shutter();
-        dmx_univ[1] = Self::GAME_DMX_VALS[self.macro_pattern];
-        dmx_univ[2] = self.render_mspeed();
-        dmx_univ[3] = self.trigger_state.render();
-        dmx_univ[4] = if self.reset { 255 } else { 0 };
+    fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
+        if !self.shutter_open.val() {
+            self.shutter_open.render_no_anim(dmx_buf);
+        } else if self.shutter_sound_active.val() {
+            self.shutter_sound_active.render_no_anim(dmx_buf);
+        } else {
+            self.strobe.render_no_anim(dmx_buf);
+        }
+        self.macro_pattern.render_no_anim(dmx_buf);
+        self.mirror_speed.render_no_anim(dmx_buf);
+        dmx_buf[3] = self.trigger_state.render();
+        self.reset.render_no_anim(dmx_buf);
     }
 }
 impl ControllableFixture for Comet {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn update(&mut self, delta_t: Duration) {
         self.trigger_state.update(delta_t);
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(Shutter(self.shutter_open), emitter);
-        let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
-        };
-        self.strobe.emit_state(&mut emit_strobe);
-        Self::emit(ShutterSoundActive(self.shutter_sound_active), emitter);
-        Self::emit(SelectMacro(self.macro_pattern), emitter);
-        Self::emit(MirrorSpeed(self.mirror_speed), emitter);
-        Self::emit(TrigSoundActive(self.trigger_state.music_trigger), emitter);
-        Self::emit(AutoStep(self.trigger_state.auto_step), emitter);
-        Self::emit(AutoStepRate(self.trigger_state.auto_step_rate), emitter);
-        Self::emit(Reset(self.reset), emitter);
+        self.shutter_open.emit_state(emitter);
+        self.trigger_state.emit_state(emitter);
+        self.strobe.emit_state(emitter);
+        self.shutter_sound_active.emit_state(emitter);
+        self.macro_pattern.emit_state(emitter);
+        self.mirror_speed.emit_state(emitter);
+        self.reset.emit_state(emitter);
     }
 
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        self.control(ctl, emitter);
-        Ok(())
+    ) -> anyhow::Result<bool> {
+        if self.shutter_open.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.trigger_state.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.shutter_sound_active.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.macro_pattern.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.mirror_speed.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.reset.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
 
 /// Manage Comet trigger state.
 #[derive(Debug)]
 struct TriggerState {
-    music_trigger: bool,
-    auto_step_rate: UnipolarFloat,
-    auto_step: bool,
+    music_trigger: Bool<()>,
+    auto_step_rate: Unipolar<()>,
+    auto_step: Bool<()>,
     /// queue of step actions to process
     steps_to_take: std::collections::VecDeque<Step>,
     /// what state was this machine in on the last update?
@@ -138,9 +116,9 @@ struct TriggerState {
 impl Default for TriggerState {
     fn default() -> Self {
         Self {
-            music_trigger: false,
-            auto_step_rate: UnipolarFloat::ZERO,
-            auto_step: false,
+            music_trigger: Bool::new_off("TrigSoundActive", ()),
+            auto_step_rate: Unipolar::new("AutoStepRate", ()),
+            auto_step: Bool::new_off("AutoStep", ()),
             steps_to_take: VecDeque::new(),
             prior_state: Stepping::Idle,
             updates_to_hold: 0,
@@ -213,13 +191,44 @@ impl TriggerState {
         self.prior_state = Stepping::Idle;
 
         // if we're not taking a step, easy sauce
-        if self.music_trigger {
+        if self.music_trigger.val() {
             Self::DMX_VAL_MUSIC_TRIG
-        } else if self.auto_step {
-            return unipolar_to_range(151, 255, self.auto_step_rate);
+        } else if self.auto_step.val() {
+            return unipolar_to_range(151, 255, self.auto_step_rate.val());
         } else {
             return Self::DMX_VAL_STOP;
         }
+    }
+
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
+        self.music_trigger.emit_state(emitter);
+        self.auto_step_rate.emit_state(emitter);
+        self.auto_step.emit_state(emitter);
+    }
+
+    fn control(
+        &mut self,
+        msg: &OscControlMessage,
+        emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<bool> {
+        if msg.control() == "StepForwards" {
+            self.enqueue_step(Step::Forward);
+            return Ok(true);
+        }
+        if msg.control() == "StepBackwards" {
+            self.enqueue_step(Step::Backward);
+            return Ok(true);
+        }
+        if self.music_trigger.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.auto_step_rate.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.auto_step.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
 
@@ -234,84 +243,4 @@ enum Stepping {
 pub enum Step {
     Forward,
     Backward,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum ControlMessage {
-    Set(StateChange),
-    TakeStep(Step),
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Shutter(bool),
-    Strobe(GenericStrobeStateChange),
-    ShutterSoundActive(bool),
-    SelectMacro(usize),
-    MirrorSpeed(UnipolarFloat),
-    TrigSoundActive(bool),
-    AutoStep(bool),
-    AutoStepRate(UnipolarFloat),
-    Reset(bool),
-}
-
-// Control group names.
-const GROUP: &str = Comet::NAME.0;
-
-// Buttons.
-const SHUTTER: Button = button(GROUP, "Shutter");
-const STROBE_ON: Button = button(GROUP, "StrobeOn");
-const AUTO_STEP: Button = button(GROUP, "AutoStep");
-const STEP_BACKWARDS: Button = button(GROUP, "StepBackwards");
-const STEP_FORWARDS: Button = button(GROUP, "StepForwards");
-const SHUTTER_SOUND_ACTIVE: Button = button(GROUP, "ShutterSoundActive");
-const TRIG_SOUND_ACTIVE: Button = button(GROUP, "TrigSoundActive");
-const RESET: Button = button(GROUP, "Reset");
-
-const MACRO_SELECT_RADIO_BUTTON: RadioButton = RadioButton {
-    group: GROUP,
-    control: "SelectMacro",
-    n: 10,
-    x_primary_coordinate: true,
-};
-
-impl Comet {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use ControlMessage::*;
-        use StateChange::*;
-        SHUTTER.map_state(map, |v| Set(Shutter(v)));
-        STROBE_ON.map_state(map, |v| Set(Strobe(GenericStrobeStateChange::On(v))));
-        map.add_unipolar("StrobeRate", |v| {
-            Set(Strobe(GenericStrobeStateChange::Rate(quadratic(v))))
-        });
-        map.add_unipolar("Mspeed", |v| Set(MirrorSpeed(v)));
-        AUTO_STEP.map_state(map, |v| Set(AutoStep(v)));
-        map.add_unipolar("AutoStepRate", |v| Set(AutoStepRate(v)));
-
-        STEP_BACKWARDS.map_trigger(map, || TakeStep(Step::Backward));
-        STEP_FORWARDS.map_trigger(map, || TakeStep(Step::Forward));
-
-        MACRO_SELECT_RADIO_BUTTON.map(map, |v| Set(SelectMacro(v)));
-
-        SHUTTER_SOUND_ACTIVE.map_state(map, |v| Set(ShutterSoundActive(v)));
-        TRIG_SOUND_ACTIVE.map_state(map, |v| Set(TrigSoundActive(v)));
-
-        RESET.map_state(map, |v| Set(Reset(v)));
-    }
-}
-
-impl HandleOscStateChange<StateChange> for Comet {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
-    where
-        S: crate::osc::EmitOscMessage + ?Sized,
-    {
-        use StateChange::*;
-        #[allow(clippy::single_match)]
-        match sc {
-            // Most controls do not have talkback due to network latency issues.
-            // Consider changing this.
-            SelectMacro(v) => MACRO_SELECT_RADIO_BUTTON.set(v, send),
-            _ => (),
-        }
-    }
 }

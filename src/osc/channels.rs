@@ -1,7 +1,6 @@
 use crate::channel::{ChannelControlMessage, ChannelStateChange, Channels};
 use crate::channel::{ControlMessage, StateChange};
 
-use crate::osc::HandleOscStateChange;
 use crate::osc::{GroupControlMap, RadioButton};
 
 use super::fader_array::FaderArray;
@@ -21,31 +20,10 @@ impl Channels {
             })
         });
     }
-}
 
-const CHANNEL_SELECT: RadioButton = RadioButton {
-    group: GROUP,
-    control: "Channel",
-    n: N_CHANNELS,
-    x_primary_coordinate: false,
-};
-
-const CHANNEL_LABELS: LabelArray = LabelArray {
-    group: GROUP,
-    control: "ChannelLabel",
-    n: N_CHANNELS,
-    empty_label: "",
-};
-
-const CHANNEL_FADERS: FaderArray = FaderArray {
-    group: GROUP,
-    control: "ChannelLevel",
-};
-
-impl HandleOscStateChange<StateChange> for Channels {
-    fn emit_osc_state_change<S>(sc: StateChange, send: &S)
+    pub fn emit_osc_state_change<S>(sc: StateChange, send: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
             StateChange::SelectChannel(channel_id) => CHANNEL_SELECT.set(channel_id.into(), send),
@@ -56,3 +34,19 @@ impl HandleOscStateChange<StateChange> for Channels {
         }
     }
 }
+
+const CHANNEL_SELECT: RadioButton = RadioButton {
+    control: "Channel",
+    n: N_CHANNELS,
+    x_primary_coordinate: false,
+};
+
+const CHANNEL_LABELS: LabelArray = LabelArray {
+    control: "ChannelLabel",
+    n: N_CHANNELS,
+    empty_label: "",
+};
+
+const CHANNEL_FADERS: FaderArray = FaderArray {
+    control: "ChannelLevel",
+};

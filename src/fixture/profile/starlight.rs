@@ -3,15 +3,25 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Starlight {
-    controls: GroupControlMap<ControlMessage>,
-    dimmer: UnipolarFloat,
-    strobe: GenericStrobe,
-    rotation: BipolarFloat,
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    strobe: StrobeChannel,
+    rotation: BipolarSplitChannelMirror,
+}
+impl Default for Starlight {
+    fn default() -> Self {
+        Self {
+            dimmer: Unipolar::full_channel("Dimmer", 1).with_channel_level(),
+            strobe: Strobe::channel("Strobe", 2, 10, 255, 0),
+            rotation: Bipolar::split_channel("Rotation", 3, 127, 1, 128, 255, 0)
+                .with_detent()
+                .with_mirroring(true),
+        }
+    }
 }
 
 impl PatchAnimatedFixture for Starlight {
@@ -21,81 +31,60 @@ impl PatchAnimatedFixture for Starlight {
     }
 }
 
-impl Starlight {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            Dimmer(v) => self.dimmer = v,
-            Rotation(v) => self.rotation = v,
-            Strobe(v) => self.strobe.handle_state_change(v),
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl AnimatedFixture for Starlight {
     type Target = AnimationTarget;
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
         dmx_buf[0] = 255; // DMX mode
-        let mut dimmer = self.dimmer.val();
-        let mut rotation = self.rotation.val();
-        for (val, target) in animation_vals {
-            use AnimationTarget::*;
-            match target {
-                // FIXME: might want to do something nicer for unipolar values
-                Rotation => rotation += val,
-                Dimmer => dimmer += val,
-            }
-        }
-        dmx_buf[1] = unipolar_to_range(0, 255, UnipolarFloat::new(dimmer));
-        dmx_buf[2] = self
-            .strobe
-            .render_range_with_master(group_controls.strobe(), 0, 10, 255);
-        dmx_buf[3] = bipolar_to_split_range(BipolarFloat::new(rotation), 127, 1, 128, 255, 0);
+        self.dimmer
+            .render(animation_vals.filter(&AnimationTarget::Dimmer), dmx_buf);
+        self.strobe
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
+        self.rotation.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::Rotation),
+            dmx_buf,
+        );
     }
 }
 
 impl ControllableFixture for Starlight {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<bool> {
+        if self.dimmer.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.strobe.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(true)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        self.handle_state_change(ctl, emitter);
+        self.dimmer.control_from_channel(msg, emitter)?;
         Ok(())
     }
 
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(Dimmer(self.dimmer), emitter);
-        Self::emit(Rotation(self.rotation), emitter);
-        let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
-        };
-        self.strobe.emit_state(&mut emit_strobe);
+        self.dimmer.emit_state(emitter);
+        self.strobe.emit_state(emitter);
+        self.rotation.emit_state(emitter);
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    Dimmer(UnipolarFloat),
-    Strobe(GenericStrobeStateChange),
-    Rotation(BipolarFloat),
-}
-
-// Starlight has no controls that are not represented as state changes.
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -120,27 +109,5 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::Dimmer)
-    }
-}
-
-impl Starlight {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        map.add_unipolar("Dimmer", Dimmer);
-        map.add_bipolar("Rotation", |v| Rotation(bipolar_fader_with_detent(v)));
-        map_strobe(map, "Strobe", &wrap_strobe);
-    }
-}
-
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    StateChange::Strobe(sc)
-}
-
-impl HandleOscStateChange<StateChange> for Starlight {
-    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
-    where
-        S: crate::osc::EmitOscMessage + ?Sized,
-    {
-        // FIXME: implement talkback
     }
 }

@@ -4,32 +4,33 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
+use crate::control::prelude::*;
 use crate::fixture::prelude::*;
-use crate::osc::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Colordynamic {
-    controls: GroupControlMap<ControlMessage>,
-    shutter_open: bool,
-    strobe: GenericStrobe,
-    color_rotation_on: bool,
-    color_rotation_speed: UnipolarFloat,
-    color_position: UnipolarFloat,
-    fiber_rotation: BipolarFloat,
+    shutter: BoolChannelLevel<FullShutterStrobe>,
+    color_rotation_on: Bool<()>,
+    color_rotation_speed: UnipolarChannel,
+    color_position: UnipolarChannel,
+    fiber_rotation: BipolarSplitChannel,
 }
 
-// impl Default for Colordynamic {
-//     fn default() -> Self {
-//         Colordynamic {
-//             shutter_open: true,
-//             strobe: GenericStrobe::default(),
-//             color_rotation_on: true,
-//             color_rotation_speed: UnipolarFloat::new(0.1),
-//             color_position: UnipolarFloat::ZERO,
-//             fiber_rotation: BipolarFloat::new(0.1),
-//         }
-//     }
-// }
+impl Default for Colordynamic {
+    fn default() -> Self {
+        Colordynamic {
+            shutter: ChannelLevel::wrap(ShutterStrobe::new(
+                Bool::full_channel("ShutterOpen", 3),
+                Strobe::channel("Strobe", 3, 16, 239, 255),
+            )),
+            color_rotation_on: Bool::new_off("ColorRotationOn", ()),
+            color_rotation_speed: Unipolar::channel("ColorRotationSpeed", 1, 128, 255),
+            color_position: Unipolar::channel("ColorPosition", 1, 0, 127),
+            fiber_rotation: Bipolar::split_channel("FiberRotation", 2, 113, 0, 142, 255, 128)
+                .with_detent(),
+        }
+    }
+}
 
 impl PatchAnimatedFixture for Colordynamic {
     const NAME: FixtureType = FixtureType("Colordynamic");
@@ -38,48 +39,44 @@ impl PatchAnimatedFixture for Colordynamic {
     }
 }
 
-impl Colordynamic {
-    fn handle_state_change(&mut self, sc: StateChange, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        match sc {
-            ShutterOpen(v) => self.shutter_open = v,
-            Strobe(sc) => self.strobe.handle_state_change(sc),
-            ColorRotationSpeed(v) => self.color_rotation_speed = v,
-            ColorPosition(v) => self.color_position = v,
-            FiberRotation(v) => self.fiber_rotation = v,
-            ColorRotationOn(v) => self.color_rotation_on = v,
-        };
-        Self::emit(sc, emitter);
-    }
-}
-
 impl ControllableFixture for Colordynamic {
-    fn populate_controls(&mut self) {
-        Self::map_controls(&mut self.controls);
-    }
-
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        use StateChange::*;
-        Self::emit(ShutterOpen(self.shutter_open), emitter);
-        let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
-        };
-        self.strobe.emit_state(&mut emit_strobe);
-        Self::emit(ColorRotationOn(self.color_rotation_on), emitter);
-        Self::emit(ColorRotationSpeed(self.color_rotation_speed), emitter);
-        Self::emit(ColorPosition(self.color_position), emitter);
-        Self::emit(FiberRotation(self.fiber_rotation), emitter);
+        self.shutter.emit_state(emitter);
+        self.color_rotation_on.emit_state(emitter);
+        self.color_rotation_speed.emit_state(emitter);
+        self.color_position.emit_state(emitter);
+        self.fiber_rotation.emit_state(emitter);
     }
 
     fn control(
         &mut self,
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
+    ) -> anyhow::Result<bool> {
+        if self.shutter.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.color_rotation_on.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.color_rotation_speed.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.color_position.control(msg, emitter)? {
+            return Ok(true);
+        }
+        if self.fiber_rotation.control(msg, emitter)? {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn control_from_channel(
+        &mut self,
+        msg: &ChannelControlMessage,
+        emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        self.handle_state_change(ctl, emitter);
+        self.shutter.control_from_channel(msg, emitter)?;
         Ok(())
     }
 }
@@ -90,56 +87,29 @@ impl AnimatedFixture for Colordynamic {
     fn render_with_animations(
         &self,
         group_controls: &FixtureGroupControls,
-        animation_vals: &TargetedAnimationValues<Self::Target>,
+        animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut color_rotation_speed = self.color_rotation_speed.val();
-        let mut color_position = self.color_position.val();
-        let mut fiber_rotation = self.fiber_rotation.val();
-        for (val, target) in animation_vals {
-            use AnimationTarget::*;
-            match target {
-                // FIXME: might want to do something nicer for unipolar values
-                ColorRotationSpeed => color_rotation_speed += val,
-                ColorPosition => color_position += val,
-                FiberRotation => fiber_rotation += val,
-            }
-        }
         dmx_buf[0] = 0; // FIXME does this do anything?
-        dmx_buf[1] = if self.color_rotation_on {
-            unipolar_to_range(128, 255, UnipolarFloat::new(color_rotation_speed))
+        if self.color_rotation_on.val() {
+            self.color_rotation_speed.render(
+                animation_vals.filter(&AnimationTarget::ColorRotationSpeed),
+                dmx_buf,
+            );
         } else {
-            unipolar_to_range(0, 127, UnipolarFloat::new(color_position))
-        };
-        dmx_buf[2] =
-            bipolar_to_split_range(BipolarFloat::new(fiber_rotation), 113, 0, 142, 255, 128);
-        dmx_buf[3] = if !self.shutter_open {
-            0
-        } else {
-            let strobe_off = 0;
-            let strobe =
-                self.strobe
-                    .render_range_with_master(group_controls.strobe(), strobe_off, 16, 239);
-            if strobe == strobe_off {
-                255
-            } else {
-                strobe
-            }
-        };
+            self.color_position.render(
+                animation_vals.filter(&AnimationTarget::ColorPosition),
+                dmx_buf,
+            );
+        }
+        self.fiber_rotation.render(
+            animation_vals.filter(&AnimationTarget::FiberRotation),
+            dmx_buf,
+        );
+        self.shutter
+            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum StateChange {
-    ShutterOpen(bool),
-    Strobe(GenericStrobeStateChange),
-    ColorRotationSpeed(UnipolarFloat),
-    ColorPosition(UnipolarFloat),
-    FiberRotation(BipolarFloat),
-    ColorRotationOn(bool),
-}
-
-pub type ControlMessage = StateChange;
 
 #[derive(
     Clone,
@@ -165,38 +135,5 @@ impl AnimationTarget {
     #[allow(unused)]
     pub fn is_unipolar(&self) -> bool {
         matches!(self, Self::ColorPosition | Self::ColorRotationSpeed)
-    }
-}
-
-const GROUP: &str = Colordynamic::NAME.0;
-
-const SHUTTER_OPEN: Button = button(GROUP, "ShutterOpen");
-const COLOR_ROTATION_ON: Button = button(GROUP, "ColorRotationOn");
-
-impl Colordynamic {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        use StateChange::*;
-        SHUTTER_OPEN.map_state(map, ShutterOpen);
-        map_strobe(map, "Strobe", &wrap_strobe);
-
-        COLOR_ROTATION_ON.map_state(map, ColorRotationOn);
-        map.add_unipolar("ColorRotationSpeed", ColorRotationSpeed);
-        map.add_unipolar("ColorPosition", ColorPosition);
-        map.add_bipolar("FiberRotation", |v| {
-            FiberRotation(bipolar_fader_with_detent(v))
-        });
-    }
-}
-
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    StateChange::Strobe(sc)
-}
-
-impl HandleOscStateChange<StateChange> for Colordynamic {
-    fn emit_osc_state_change<S>(_sc: StateChange, _send: &S)
-    where
-        S: crate::osc::EmitOscMessage + ?Sized,
-    {
-        // FIXME no talkback
     }
 }

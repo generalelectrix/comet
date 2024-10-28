@@ -1,18 +1,15 @@
 //! TouchOSC array of unipolar fader.
 use number::UnipolarFloat;
-use rosc::{OscMessage, OscType};
+use rosc::OscType;
 
-use super::GroupControlMap;
+use super::{GroupControlMap, ScopedOscMessage};
 use anyhow::{bail, Result};
 
 use anyhow::{anyhow, Context};
 
-use crate::osc::get_unipolar;
-
 /// Model a fader array.
 #[derive(Clone)]
 pub struct FaderArray {
-    pub group: &'static str,
     pub control: &'static str,
 }
 
@@ -35,7 +32,7 @@ impl FaderArray {
             if index == 0 {
                 bail!("fader array index is 0: {msg:?}");
             }
-            let val = get_unipolar(msg)?;
+            let val = msg.get_unipolar()?;
             process(index - 1, val).map(Some)
         })
     }
@@ -43,11 +40,11 @@ impl FaderArray {
     /// Emit state for a particular fader index.
     pub fn set<S>(&self, n: usize, val: UnipolarFloat, emitter: &S)
     where
-        S: crate::osc::EmitOscMessage + ?Sized,
+        S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
-        emitter.emit_osc(OscMessage {
-            addr: format!("/{}/{}/{}", self.group, self.control, n + 1),
-            args: vec![OscType::Float(val.val() as f32)],
+        emitter.emit_osc(ScopedOscMessage {
+            control: &format!("{}/{}", self.control, n + 1),
+            arg: OscType::Float(val.val() as f32),
         });
     }
 }

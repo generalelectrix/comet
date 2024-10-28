@@ -26,7 +26,6 @@ use super::profile::rotosphere_q3::RotosphereQ3;
 use super::profile::rush_wizard::RushWizard;
 use super::profile::solar_system::SolarSystem;
 use super::profile::starlight::Starlight;
-use super::profile::swarmolon::Swarmolon;
 use super::profile::uv_led_brick::UvLedBrick;
 use super::profile::venus::Venus;
 use super::profile::wizard_extreme::WizardExtreme;
@@ -61,7 +60,6 @@ lazy_static! {
         RotosphereQ3::patcher(),
         RushWizard::patcher(),
         SolarSystem::patcher(),
-        Swarmolon::patcher(),
         Starlight::patcher(),
         UvLedBrick::patcher(),
         Venus::patcher(),
@@ -75,7 +73,7 @@ impl Patch {
             .iter()
             .flat_map(|p| p(&cfg))
             .collect::<Result<Vec<_>>>()?;
-        let mut candidate = match candidates.len() {
+        let candidate = match candidates.len() {
             0 => bail!("unable to patch {cfg:?}"),
             1 => candidates.pop().unwrap(),
             _ => bail!(
@@ -113,9 +111,6 @@ impl Patch {
         }
         // No existing group; create a new one.
         cfg.channel.then(|| channels.add(key.clone()));
-
-        // Populate fixture controls.
-        candidate.fixture.populate_controls();
 
         let group = FixtureGroup::new(
             key.clone(),
