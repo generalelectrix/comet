@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use crate::fixture::prelude::*;
 use crate::control::prelude::*;
+use crate::fixture::prelude::*;
 
 /// DMX 255 is too fast; restrict to a reasonable value.
 const MAX_ROTATION_SPEED: u8 = 100;
@@ -103,6 +103,10 @@ impl Lumasphere {
             Strobe2(sc) => self.strobe_2.handle_state_change(sc),
         };
         Self::emit(sc, emitter);
+    }
+
+    fn emit(_sc: StateChange, _emitter: &FixtureStateEmitter) {
+        // FIXME: no talkback
     }
 }
 
@@ -253,5 +257,3 @@ where
         wrap(Intensity(v))
     });
 }
-
-impl HandleOscStateChange<StateChange> for Lumasphere {}

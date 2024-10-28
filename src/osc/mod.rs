@@ -48,16 +48,6 @@ pub trait EmitOscMessage {
     fn emit_osc(&self, msg: OscMessage);
 }
 
-/// Process a state change message into OSC messages.
-pub trait HandleOscStateChange<SC> {
-    /// Convert the provided state change into OSC messages and send them.
-    fn emit_osc_state_change<S>(_sc: SC, _send: &S)
-    where
-        S: EmitScopedOscMessage + ?Sized,
-    {
-    }
-}
-
 pub struct OscController {
     send: Sender<OscControlResponse>,
 }
@@ -442,6 +432,6 @@ pub mod prelude {
     pub use super::fader_array::FaderArray;
     pub use super::label_array::LabelArray;
     pub use super::FixtureStateEmitter;
-    pub use super::{GroupControlMap, HandleOscStateChange, OscControlMessage};
+    pub use super::{GroupControlMap, OscControlMessage};
     pub use crate::util::*;
 }

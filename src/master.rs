@@ -54,6 +54,10 @@ impl MasterControls {
         Self::emit(sc, emitter);
     }
 
+    fn emit(_sc: StateChange, _emitter: &dyn EmitScopedControlMessage) {
+        // FIXME: no talkback
+    }
+
     // FIXME: we should lift UI refresh up and out of here
     pub fn control(
         &mut self,
@@ -141,5 +145,3 @@ impl MasterControls {
 fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
     ControlMessage::State(StateChange::Strobe(sc))
 }
-
-impl HandleOscStateChange<StateChange> for MasterControls {}

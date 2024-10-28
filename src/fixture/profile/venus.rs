@@ -2,8 +2,8 @@
 
 use std::time::Duration;
 
-use crate::fixture::prelude::*;
 use crate::control::prelude::*;
+use crate::fixture::prelude::*;
 
 /// Control abstraction for the RA venus.
 /// DMX profile Venus
@@ -65,6 +65,10 @@ impl Venus {
             LampOn(v) => self.lamp_on = v,
         };
         Self::emit(sc, emitter);
+    }
+
+    fn emit(_sc: StateChange, _emitter: &FixtureStateEmitter) {
+        // FIXME: no talkback
     }
 }
 
@@ -151,5 +155,3 @@ fn map_controls() -> GroupControlMap<ControlMessage> {
     LAMP_ON.map_state(map, LampOn);
     controls
 }
-
-impl HandleOscStateChange<StateChange> for Venus {}

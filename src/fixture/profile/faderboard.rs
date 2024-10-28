@@ -43,6 +43,10 @@ impl Faderboard {
         self.vals[chan] = val;
         Self::emit(sc, emitter);
     }
+
+    fn emit(_sc: StateChange, _emitter: &FixtureStateEmitter) {
+        // FIXME: no talkback
+    }
 }
 
 impl NonAnimatedFixture for Faderboard {
@@ -78,5 +82,3 @@ pub type StateChange = (usize, UnipolarFloat);
 pub type ControlMessage = StateChange;
 
 const CONTROLS: FaderArray = FaderArray { control: "Fader" };
-
-impl HandleOscStateChange<StateChange> for Faderboard {}

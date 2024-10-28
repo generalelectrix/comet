@@ -5,7 +5,6 @@ use crate::animation::AnimationUIState;
 use crate::animation::ControlMessage as AnimationControlMessage;
 
 use crate::fixture::animation_target::N_ANIM;
-use crate::osc::HandleOscStateChange;
 use crate::osc::RadioButton;
 
 use tunnels::animation::{ControlMessage, StateChange, Waveform::*};
@@ -113,13 +112,15 @@ const ANIMATION_TARGET_LABELS: LabelArray = LabelArray {
     empty_label: "",
 };
 
-impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
-    fn emit_osc_state_change<S>(sc: crate::animation::StateChange, send: &S)
+impl AnimationUIState {
+    pub fn emit_osc_state_change<S>(sc: crate::animation::StateChange, send: &S)
     where
         S: crate::osc::EmitScopedOscMessage + ?Sized,
     {
         match sc {
-            crate::animation::StateChange::Animation(msg) => Self::emit_osc_state_change(msg, send),
+            crate::animation::StateChange::Animation(msg) => {
+                Self::emit_nested_osc_state_change(msg, send)
+            }
             crate::animation::StateChange::SelectAnimation(msg) => ANIMATION_SELECT.set(msg, send),
             crate::animation::StateChange::Target(msg) => ANIMATION_TARGET_SELECT.set(msg, send),
             crate::animation::StateChange::TargetLabels(labels) => {
@@ -127,10 +128,8 @@ impl HandleOscStateChange<crate::animation::StateChange> for AnimationUIState {
             }
         }
     }
-}
 
-impl HandleOscStateChange<StateChange> for AnimationUIState {
-    fn emit_osc_state_change<S>(sc: StateChange, emitter: &S)
+    fn emit_nested_osc_state_change<S>(sc: StateChange, emitter: &S)
     where
         S: crate::osc::EmitScopedOscMessage + ?Sized,
     {

@@ -13,7 +13,7 @@ use crate::{
     config::Config,
     midi::{Device, MidiControlMessage, MidiController},
     osc::{
-        EmitOscMessage, EmitScopedOscMessage, HandleOscStateChange, OscClientId, OscController,
+        EmitOscMessage, EmitScopedOscMessage, OscClientId, OscController,
         OscMessageWithMetadataSender,
     },
 };
@@ -29,18 +29,6 @@ impl<T> EmitScopedControlMessage for T where T: EmitScopedOscMessage {}
 pub trait EmitControlMessage: EmitOscMessage {}
 
 impl<T> EmitControlMessage for T where T: EmitOscMessage {}
-
-/// Process a state change message into control state changes.
-pub trait HandleStateChange<SC>: HandleOscStateChange<SC> {
-    fn emit<S>(sc: SC, send: &S)
-    where
-        S: EmitScopedControlMessage + ?Sized,
-    {
-        Self::emit_osc_state_change(sc, send);
-    }
-}
-
-impl<T, SC> HandleStateChange<SC> for T where T: HandleOscStateChange<SC> {}
 
 /// Handle receiving and responding to show control messages.
 pub struct Controller {
