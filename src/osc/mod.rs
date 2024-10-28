@@ -1,7 +1,7 @@
 use crate::channel::{ChannelStateChange, ChannelStateEmitter};
+use crate::control::ControlMessage;
 use crate::control::EmitControlMessage;
 use crate::fixture::FixtureGroupKey;
-use crate::show::ControlMessage;
 use anyhow::bail;
 use anyhow::Result;
 use log::{error, info};

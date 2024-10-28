@@ -12,7 +12,7 @@ use tunnels::{
     midi_controls::{init_apc_20, unipolar_from_midi, MidiDevice},
 };
 
-use crate::show::ControlMessage;
+use crate::control::ControlMessage;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Device {
