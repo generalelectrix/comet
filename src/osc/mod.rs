@@ -12,9 +12,8 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
-use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
+use std::sync::mpsc::{channel, Sender};
 use std::thread;
-use std::time::Duration;
 use thiserror::Error;
 
 use self::radio_button::RadioButton;

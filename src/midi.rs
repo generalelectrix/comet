@@ -5,9 +5,10 @@ use std::{fmt::Display, sync::mpsc::Sender};
 
 use crate::channel::{
     ChannelControlMessage as ScopedChannelControlMessage, ControlMessage as ChannelControlMessage,
+    StateChange as ChannelStateChange,
 };
 use tunnels::{
-    midi::{DeviceSpec, Event, EventType, Manager},
+    midi::{DeviceSpec, Event, EventType, Manager, Mapping, Output},
     midi_controls::{init_apc_20, unipolar_from_midi, MidiDevice},
 };
 
@@ -44,12 +45,23 @@ impl Device {
         vec![Self::AkaiApc20]
     }
 
+    /// Interpet an incoming MIDI event as a channel control message.
     pub fn interpret(&self, event: &Event) -> Option<ChannelControlMessage> {
         match self {
             Self::AkaiApc20 => handle_apc20(event),
         }
     }
+
+    /// Send MIDI state to handle the provided ChannelControlMessage.
+    pub fn update(&self, msg: &ChannelStateChange, output: &mut Output<Self>) {
+        match self {
+            Self::AkaiApc20 => update_apc20(msg, output),
+        }
+    }
 }
+
+const APC20_FADER: u8 = 0x7;
+const APC20_CHAN_SELECT: u8 = 0x33;
 
 fn handle_apc20(event: &Event) -> Option<ChannelControlMessage> {
     // So far we only use upfaders and track select.
@@ -57,7 +69,7 @@ fn handle_apc20(event: &Event) -> Option<ChannelControlMessage> {
     match event.mapping.event_type {
         EventType::ControlChange => {
             match event.mapping.control {
-                0x7 => {
+                APC20_FADER => {
                     // Upfader.
                     Some(ChannelControlMessage::Control {
                         channel_id: Some(event.mapping.channel as usize),
@@ -69,7 +81,7 @@ fn handle_apc20(event: &Event) -> Option<ChannelControlMessage> {
         }
         EventType::NoteOn => {
             match event.mapping.control {
-                0x33 => {
+                APC20_CHAN_SELECT => {
                     // Channel select button.
                     Some(ChannelControlMessage::SelectChannel(
                         event.mapping.channel as usize,
@@ -79,6 +91,28 @@ fn handle_apc20(event: &Event) -> Option<ChannelControlMessage> {
             }
         }
         _ => None,
+    }
+}
+
+fn update_apc20(msg: &ChannelStateChange, output: &mut Output<Device>) {
+    match msg {
+        ChannelStateChange::SelectChannel(channel) => {
+            let channel = channel.inner();
+            if channel >= 8 {
+                return;
+            }
+            for c in 0..8 {
+                output.send(Event {
+                    mapping: Mapping {
+                        event_type: EventType::NoteOn,
+                        channel: channel as u8,
+                        control: APC20_CHAN_SELECT,
+                    },
+                    value: if c == channel { 127 } else { 0 },
+                });
+            }
+        }
+        _ => (),
     }
 }
 

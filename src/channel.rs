@@ -19,6 +19,12 @@ use crate::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
 pub struct ChannelId(usize);
 
+impl ChannelId {
+    pub fn inner(&self) -> usize {
+        self.0
+    }
+}
+
 impl From<ChannelId> for usize {
     fn from(value: ChannelId) -> Self {
         value.0
