@@ -180,8 +180,8 @@ impl Channels {
         }
     }
 
-    /// Handle a control message.
-    pub fn control(
+    /// Handle a OSC control message.
+    pub fn control_osc(
         &mut self,
         msg: &OscControlMessage,
         patch: &mut Patch,
@@ -190,10 +190,20 @@ impl Channels {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
             return Ok(());
         };
+        self.control(&ctl, patch, emitter)
+    }
+
+    /// Handle a typed control message.
+    pub fn control(
+        &mut self,
+        ctl: &ControlMessage,
+        patch: &mut Patch,
+        emitter: &dyn EmitControlMessage,
+    ) -> anyhow::Result<()> {
         match ctl {
             ControlMessage::SelectChannel(g) => {
                 // Validate the channel.
-                let channel = self.validate_channel(g)?;
+                let channel = self.validate_channel(*g)?;
                 if self.current_channel == Some(channel) {
                     // Channel is not changed, ignore.
                     return Ok(());
@@ -203,11 +213,11 @@ impl Channels {
             }
             ControlMessage::Control { channel_id, msg } => {
                 let channel_id = if let Some(id) = channel_id {
-                    self.validate_channel(id)?
+                    self.validate_channel(*id)?
                 } else {
                     self.current_channel.ok_or_else(||
-                        anyhow!("no channel ID provided or selected for channel control message {msg:?}")
-                    )?
+                            anyhow!("no channel ID provided or selected for channel control message {msg:?}")
+                        )?
                 };
                 self.group_by_channel_mut(patch, channel_id)?
                     .control_from_channel(

@@ -139,54 +139,67 @@ impl Show {
             }
         };
 
-        let ControlMessage::Osc(msg) = msg else {
-            unimplemented!()
-        };
-
-        let sender = self.controller.sender_with_metadata(Some(&msg.client_id));
-
-        match ControlMessageType::parse(msg.entity_type()) {
-            ControlMessageType::Master => self.master_controls.control(
-                &msg,
-                &self.channels,
-                &self.patch,
-                &self.animation_ui_state,
-                &sender,
-            ),
-            ControlMessageType::Channel => self.channels.control(&msg, &mut self.patch, &sender),
-            ControlMessageType::Animation => {
-                let Some(channel) = self.channels.current_channel() else {
-                    bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
+        match msg {
+            ControlMessage::Midi(msg) => {
+                let Some(channel_ctrl_msg) = msg.device.interpret(&msg.event) else {
+                    return Ok(());
                 };
-                self.animation_ui_state.control(
-                    &msg,
-                    channel,
-                    &self.channels,
+                self.channels.control(
+                    &channel_ctrl_msg,
                     &mut self.patch,
-                    &ScopedControlEmitter {
-                        entity: crate::osc::animation::GROUP,
-                        emitter: &sender,
-                    },
+                    &self.controller.sender_with_metadata(None),
                 )
             }
-            ControlMessageType::Fixture => {
-                let Some(fixture_type) = self.patch.lookup_fixture_type(msg.entity_type()) else {
-                    bail!(
-                        "entity type \"{}\" not registered with patch, from OSC message {msg:?}",
-                        msg.entity_type()
-                    );
-                };
-                let group_key = FixtureGroupKey {
-                    fixture: fixture_type,
-                    group: msg.group().map(GroupName::new),
-                };
-                self.patch.get_mut(&group_key)?.control(
-                    &msg,
-                    ChannelStateEmitter::new(
-                        self.channels.channel_for_fixture(&group_key),
+            ControlMessage::Osc(msg) => {
+                let sender = self.controller.sender_with_metadata(Some(&msg.client_id));
+
+                match ControlMessageType::parse(msg.entity_type()) {
+                    ControlMessageType::Master => self.master_controls.control(
+                        &msg,
+                        &self.channels,
+                        &self.patch,
+                        &self.animation_ui_state,
                         &sender,
                     ),
-                )
+                    ControlMessageType::Channel => {
+                        self.channels.control_osc(&msg, &mut self.patch, &sender)
+                    }
+                    ControlMessageType::Animation => {
+                        let Some(channel) = self.channels.current_channel() else {
+                            bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
+                        };
+                        self.animation_ui_state.control(
+                            &msg,
+                            channel,
+                            &self.channels,
+                            &mut self.patch,
+                            &ScopedControlEmitter {
+                                entity: crate::osc::animation::GROUP,
+                                emitter: &sender,
+                            },
+                        )
+                    }
+                    ControlMessageType::Fixture => {
+                        let Some(fixture_type) = self.patch.lookup_fixture_type(msg.entity_type())
+                        else {
+                            bail!(
+                                "entity type \"{}\" not registered with patch, from OSC message {msg:?}",
+                                msg.entity_type()
+                            );
+                        };
+                        let group_key = FixtureGroupKey {
+                            fixture: fixture_type,
+                            group: msg.group().map(GroupName::new),
+                        };
+                        self.patch.get_mut(&group_key)?.control(
+                            &msg,
+                            ChannelStateEmitter::new(
+                                self.channels.channel_for_fixture(&group_key),
+                                &sender,
+                            ),
+                        )
+                    }
+                }
             }
         }
     }
