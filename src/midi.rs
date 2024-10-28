@@ -1,6 +1,6 @@
 //! Define midi devices and handle midi controls.
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::Result;
 use std::{fmt::Display, sync::mpsc::Sender};
 
 use crate::channel::{
@@ -8,7 +8,7 @@ use crate::channel::{
 };
 use tunnels::{
     midi::{DeviceSpec, Event, EventType, Manager},
-    midi_controls::{unipolar_from_midi, MidiDevice},
+    midi_controls::{init_apc_20, unipolar_from_midi, MidiDevice},
 };
 
 use crate::show::ControlMessage;
@@ -28,6 +28,12 @@ impl MidiDevice for Device {
     fn device_name(&self) -> &str {
         match self {
             Self::AkaiApc20 => "Akai APC20",
+        }
+    }
+
+    fn init_midi(&self, out: &mut tunnels::midi::Output<Self>) -> Result<()> {
+        match self {
+            Self::AkaiApc20 => init_apc_20(out),
         }
     }
 }
