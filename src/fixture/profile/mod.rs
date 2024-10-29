@@ -18,3 +18,4 @@ pub mod starlight;
 pub mod uv_led_brick;
 pub mod venus;
 pub mod wizard_extreme;
+pub mod wizlet;

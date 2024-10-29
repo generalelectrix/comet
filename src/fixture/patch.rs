@@ -33,6 +33,7 @@ use crate::channel::Channels;
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::UniverseIdx;
 use crate::fixture::group::GroupFixtureConfig;
+use crate::fixture::wizlet::Wizlet;
 
 type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
 
@@ -64,6 +65,7 @@ lazy_static! {
         UvLedBrick::patcher(),
         Venus::patcher(),
         WizardExtreme::patcher(),
+        Wizlet::patcher(),
     ];
 }
 
