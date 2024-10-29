@@ -5,14 +5,19 @@ use crate::fixture::prelude::*;
 #[derive(Debug, EmitState, Control)]
 pub struct RushWizard {
     #[channel_control]
+    #[animate]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
     color: LabeledSelect,
     twinkle: Bool<()>,
+    #[animate]
     twinkle_speed: UnipolarChannel,
     gobo: IndexedSelectMult,
+    #[animate]
     drum_rotation: BipolarSplitChannelMirror,
+    #[animate]
     drum_swivel: BipolarChannelMirror,
+    #[animate]
     reflector_rotation: BipolarSplitChannelMirror,
 }
 
@@ -61,30 +66,53 @@ impl Default for RushWizard {
     }
 }
 
-impl PatchFixture for RushWizard {
+impl PatchAnimatedFixture for RushWizard {
     const NAME: FixtureType = FixtureType("RushWizard");
     fn channel_count(&self) -> usize {
         10
     }
 }
 
-impl NonAnimatedFixture for RushWizard {
-    fn render(&self, group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
+impl AnimatedFixture for RushWizard {
+    type Target = AnimationTarget;
+    fn render_with_animations(
+        &self,
+        group_controls: &FixtureGroupControls,
+        animation_vals: TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    ) {
         self.strobe
             .render_with_group(group_controls, std::iter::empty(), dmx_buf);
-        self.dimmer.render_no_anim(dmx_buf);
+        self.dimmer.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::Dimmer),
+            dmx_buf,
+        );
         if self.twinkle.val() {
-            self.twinkle_speed.render_no_anim(dmx_buf);
+            self.twinkle_speed.render_with_group(
+                group_controls,
+                animation_vals.filter(&AnimationTarget::TwinkleSpeed),
+                dmx_buf,
+            );
         } else {
             self.color.render_no_anim(dmx_buf);
         }
         self.gobo.render_no_anim(dmx_buf);
-        self.drum_rotation
-            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
-        self.drum_swivel
-            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
-        self.reflector_rotation
-            .render_with_group(group_controls, std::iter::empty(), dmx_buf);
+        self.drum_rotation.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::DrumRotation),
+            dmx_buf,
+        );
+        self.drum_swivel.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::DrumSwivel),
+            dmx_buf,
+        );
+        self.reflector_rotation.render_with_group(
+            group_controls,
+            animation_vals.filter(&AnimationTarget::ReflectorRotation),
+            dmx_buf,
+        );
         dmx_buf[7] = 0;
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;

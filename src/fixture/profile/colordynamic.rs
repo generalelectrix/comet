@@ -1,18 +1,18 @@
 //! SGM Colordynamic 575
 //! The granddaddy Aquarius.
 
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Colordynamic {
     #[channel_control]
     shutter: BoolChannelLevel<FullShutterStrobe>,
-    color_rotation_on: Bool<()>,
-    color_rotation_speed: UnipolarChannel,
+    #[animate]
     color_position: UnipolarChannel,
+    color_rotation_on: Bool<()>,
+    #[animate]
+    color_rotation_speed: UnipolarChannel,
+    #[animate]
     fiber_rotation: BipolarSplitChannel,
 }
 
@@ -68,32 +68,5 @@ impl AnimatedFixture for Colordynamic {
         );
         self.shutter
             .render_with_group(group_controls, std::iter::empty(), dmx_buf);
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    ColorPosition,
-    ColorRotationSpeed,
-    FiberRotation,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::ColorPosition | Self::ColorRotationSpeed)
     }
 }

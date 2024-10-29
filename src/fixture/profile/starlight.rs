@@ -1,15 +1,13 @@
 //! Control profile for the "house light" Starlight white laser moonflower.
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Starlight {
     #[channel_control]
+    #[animate]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
+    #[animate]
     rotation: BipolarSplitChannelMirror,
 }
 impl Default for Starlight {
@@ -53,29 +51,3 @@ impl AnimatedFixture for Starlight {
 }
 
 impl ControllableFixture for Starlight {}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Dimmer,
-    Rotation,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Dimmer)
-    }
-}

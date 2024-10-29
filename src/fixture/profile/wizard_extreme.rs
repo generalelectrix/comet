@@ -1,20 +1,21 @@
 //! Martin Wizard Extreme - the one that Goes Slow
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct WizardExtreme {
     #[channel_control]
+    #[animate]
     shutter: UnipolarChannelLevel<DimmerStrobe>,
     color: LabeledSelect,
     twinkle: Bool<()>,
+    #[animate]
     twinkle_speed: UnipolarChannel,
     gobo: IndexedSelectMult,
-    drum_rotation: BipolarSplitChannelMirror,
+    #[animate]
     drum_swivel: BipolarChannelMirror,
+    #[animate]
+    drum_rotation: BipolarSplitChannelMirror,
+    #[animate]
     reflector_rotation: BipolarSplitChannelMirror,
 }
 
@@ -77,7 +78,7 @@ impl AnimatedFixture for WizardExtreme {
     ) {
         self.shutter.render_with_group(
             group_controls,
-            animation_vals.filter(&AnimationTarget::Dimmer),
+            animation_vals.filter(&AnimationTarget::Shutter),
             dmx_buf,
         );
         self.reflector_rotation.render_with_group(
@@ -110,34 +111,5 @@ impl AnimatedFixture for WizardExtreme {
         dmx_buf[8] = 0;
         dmx_buf[9] = 0;
         dmx_buf[10] = 0;
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Dimmer,
-    TwinkleSpeed,
-    DrumRotation,
-    DrumSwivel,
-    ReflectorRotation,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Dimmer | Self::TwinkleSpeed)
     }
 }

@@ -1,5 +1,6 @@
+use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{parse_macro_input, Data, DeriveInput, Field, Fields};
 
 /// Derive the EmitState trait on a fixture struct.
@@ -55,7 +56,14 @@ pub fn derive_emit_state(input: TokenStream) -> TokenStream {
 ///
 /// Fields annotated with #[channel_control] will be wired up to the channel
 /// control method.
-#[proc_macro_derive(Control, attributes(skip_control, force_osc_control, channel_control))]
+///
+/// Fields annotated with #[animate] will result in a variant in a generated
+/// AnimationTarget type. The name of the animation variant will be the
+/// PascalCase version of the struct field identifier.
+#[proc_macro_derive(
+    Control,
+    attributes(skip_control, force_osc_control, channel_control, animate)
+)]
 pub fn derive_control(input: TokenStream) -> TokenStream {
     let DeriveInput { ident, data, .. } = parse_macro_input!(input as DeriveInput);
 
@@ -67,6 +75,9 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
     };
     let mut control_lines = quote! {};
     let mut channel_control_lines = quote! {};
+
+    let mut animate_target_idents = vec![];
+
     for field in fields.named.iter() {
         if field_has_attr(field, "skip_control") {
             continue;
@@ -95,6 +106,39 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
                 self.#ident.control_from_channel(msg, emitter)?;
             }
         }
+
+        if field_has_attr(field, "animate") {
+            animate_target_idents.push(ident.to_string().to_case(Case::Pascal));
+        }
+    }
+
+    let mut anim_target_enum = quote! {};
+    if !animate_target_idents.is_empty() {
+        for ident in animate_target_idents {
+            let ident = format_ident!("{ident}");
+            anim_target_enum = quote! {
+                #anim_target_enum
+                #ident,
+            }
+        }
+        anim_target_enum = quote! {
+            #[derive(
+                Clone,
+                Copy,
+                Debug,
+                Default,
+                PartialEq,
+                strum_macros::EnumString,
+                strum_macros::EnumIter,
+                strum_macros::Display,
+                num_derive::FromPrimitive,
+                num_derive::ToPrimitive,
+            )]
+            pub enum AnimationTarget {
+                #[default]
+                #anim_target_enum
+            }
+        }
     }
 
     quote! {
@@ -113,6 +157,8 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
                 Ok(())
             }
         }
+
+        #anim_target_enum
     }
     .into()
 }

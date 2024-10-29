@@ -1,7 +1,4 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
@@ -9,6 +6,7 @@ pub struct Hypnotic {
     red_laser_on: Bool<()>,
     green_laser_on: Bool<()>,
     blue_laser_on: Bool<()>,
+    #[animate]
     rotation: BipolarSplitChannelMirror,
 }
 
@@ -61,28 +59,3 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Rotation,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        false
-    }
-}

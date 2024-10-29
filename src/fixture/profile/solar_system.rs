@@ -1,8 +1,4 @@
 //! Optikinetics Solar System - the grand champion gobo rotator
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
@@ -11,8 +7,10 @@ pub struct SolarSystem {
     shutter_open: BoolChannelLevel<Bool<()>>,
     auto_shutter: Bool<()>,
     front_gobo: IndexedSelectMult,
+    #[animate]
     front_rotation: Mirrored<RenderRotation>,
     rear_gobo: IndexedSelectMult,
+    #[animate]
     rear_rotation: Mirrored<RenderRotation>,
 }
 
@@ -88,31 +86,5 @@ impl RenderToDmx<BipolarFloat> for RenderRotation {
         }
         dmx_buf[self.dmx_buf_offset] = if *val < BipolarFloat::ZERO { 50 } else { 77 };
         dmx_buf[self.dmx_buf_offset + 1] = unipolar_to_range(0, 255, val.abs());
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    FrontRotation,
-    RearRotation,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        false
     }
 }

@@ -1,21 +1,23 @@
 //! Clay Paky Astroscan - drunken sailor extraordinaire
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Astroscan {
     lamp_on: BoolChannel,
     #[channel_control]
+    #[animate]
     shutter: UnipolarChannelLevel<DimmerStrobe>,
+    #[animate]
     iris: UnipolarChannel,
     color: LabeledSelect,
     gobo: IndexedSelectMult,
+    #[animate]
     gobo_rotation: BipolarSplitChannelMirror,
+    #[animate]
     mirror_rotation: BipolarSplitChannelMirror,
+    #[animate]
     pan: BipolarChannelMirror,
+    #[animate]
     tilt: BipolarChannelMirror,
 }
 
@@ -83,7 +85,7 @@ impl AnimatedFixture for Astroscan {
         self.lamp_on.render_no_anim(dmx_buf);
         self.shutter.render_with_group(
             group_controls,
-            animation_vals.filter(&AnimationTarget::Dimmer),
+            animation_vals.filter(&AnimationTarget::Shutter),
             dmx_buf,
         );
         self.pan.render_with_group(
@@ -107,35 +109,5 @@ impl AnimatedFixture for Astroscan {
             animation_vals.filter(&AnimationTarget::MirrorRotation),
             dmx_buf,
         );
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Dimmer,
-    Iris,
-    GoboRotation,
-    MirrorRotation,
-    Pan,
-    Tilt,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Dimmer | Self::Iris)
     }
 }

@@ -2,10 +2,6 @@
 //! Freedom Stick.
 
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use super::color::Color;
 
 use crate::fixture::prelude::*;
@@ -13,9 +9,11 @@ use crate::fixture::prelude::*;
 #[derive(Debug, EmitState, Control)]
 pub struct FreedomFries {
     #[channel_control]
+    #[animate]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     #[force_osc_control]
     color: Color,
+    #[animate]
     speed: UnipolarChannel,
     strobe: StrobeChannel,
     program: ProgramControl,
@@ -62,32 +60,6 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Dimmer,
-    Speed,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Dimmer | Self::Speed)
-    }
-}
 
 const PROGRAM_SELECT_LABEL: LabelArray = LabelArray {
     control: "ProgramLabel",

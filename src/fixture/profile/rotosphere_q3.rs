@@ -1,20 +1,20 @@
 //! Control profle for the Chauvet Rotosphere Q3, aka Son Of Spherion.
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use super::color::Model::Rgbw;
 
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct RotosphereQ3 {
+    #[animate]
+    rotation: BipolarSplitChannel,
+    #[animate]
     hue: PhaseControl<()>,
+    #[animate]
     sat: Unipolar<()>,
     #[channel_control]
+    #[animate]
     val: UnipolarChannelLevel<Unipolar<()>>,
     strobe: StrobeChannel,
-    rotation: BipolarSplitChannel,
 }
 
 impl Default for RotosphereQ3 {
@@ -66,31 +66,3 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Rotation,
-    Hue,
-    Sat,
-    Val,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        false
-    }
-}

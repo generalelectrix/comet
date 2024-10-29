@@ -1,13 +1,10 @@
 //! Control profile for a dimmer.
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Dimmer {
     #[channel_control]
+    #[animate]
     level: UnipolarChannelLevel<UnipolarChannel>,
 }
 
@@ -40,28 +37,3 @@ impl AnimatedFixture for Dimmer {
 }
 
 impl ControllableFixture for Dimmer {}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Level,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        true
-    }
-}

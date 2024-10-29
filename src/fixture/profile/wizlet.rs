@@ -1,18 +1,19 @@
 //! Control profile for the American DJ (Eliminator) Vortex, aka the Wizlet.
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Wizlet {
+    #[channel_control]
+    #[animate]
+    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    #[animate]
     drum_swivel: BipolarChannelMirror,
+    #[animate]
     drum_rotation: BipolarSplitChannelMirror,
     gobo: LabeledSelect,
+    #[animate]
     reflector_rotation: BipolarSplitChannelMirror,
     strobe: StrobeChannel,
-    #[channel_control]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
 }
 
 impl Default for Wizlet {
@@ -104,33 +105,5 @@ impl AnimatedFixture for Wizlet {
         dmx_buf[9] = 0; // no dimming interpolation
         dmx_buf[10] = 0; // fast pan speed
         dmx_buf[11] = 0; // special; note this can trigger remote fixture reset, might be useful to implement this if they get out of whack
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Dimmer,
-    DrumRotation,
-    DrumSwivel,
-    ReflectorRotation,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Dimmer)
     }
 }

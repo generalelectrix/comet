@@ -1,14 +1,11 @@
 //! Intuitive control profile for the American DJ Aquarius 250.
-
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Aquarius {
     #[channel_control]
     lamp_on: BoolChannelLevel<BoolChannel>,
+    #[animate]
     rotation: BipolarSplitChannel,
 }
 
@@ -44,27 +41,3 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Rotation,
-}
-
-impl AnimationTarget {
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        false
-    }
-}
