@@ -7,7 +7,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Colordynamic {
     shutter: BoolChannelLevel<FullShutterStrobe>,
     color_rotation_on: Bool<()>,
@@ -40,14 +40,6 @@ impl PatchAnimatedFixture for Colordynamic {
 }
 
 impl ControllableFixture for Colordynamic {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.shutter.emit_state(emitter);
-        self.color_rotation_on.emit_state(emitter);
-        self.color_rotation_speed.emit_state(emitter);
-        self.color_position.emit_state(emitter);
-        self.fiber_rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

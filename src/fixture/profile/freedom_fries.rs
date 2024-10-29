@@ -11,9 +11,10 @@ use super::color::Color;
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct FreedomFries {
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    #[osc_control_emit]
     color: Color,
     speed: UnipolarChannel,
     strobe: StrobeChannel,
@@ -61,14 +62,6 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.dimmer.emit_state(emitter);
-        OscControl::emit_state(&self.color, emitter);
-        self.speed.emit_state(emitter);
-        self.strobe.emit_state(emitter);
-        self.program.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

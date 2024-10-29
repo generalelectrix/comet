@@ -6,10 +6,11 @@ use std::{collections::HashMap, time::Duration};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Radiance {
     haze: UnipolarChannel,
     fan: UnipolarChannel,
+    #[skip_emit]
     timer: Option<Timer>,
 }
 
@@ -57,11 +58,6 @@ impl ControllableFixture for Radiance {
         if let Some(timer) = self.timer.as_mut() {
             timer.update(delta_t);
         }
-    }
-
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.haze.emit_state(emitter);
-        self.fan.emit_state(emitter);
     }
 
     fn control(

@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Starlight {
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
@@ -77,12 +77,6 @@ impl ControllableFixture for Starlight {
     ) -> anyhow::Result<()> {
         self.dimmer.control_from_channel(msg, emitter)?;
         Ok(())
-    }
-
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.dimmer.emit_state(emitter);
-        self.strobe.emit_state(emitter);
-        self.rotation.emit_state(emitter);
     }
 }
 

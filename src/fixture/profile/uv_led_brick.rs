@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct UvLedBrick {
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
 }
@@ -43,10 +43,6 @@ impl AnimatedFixture for UvLedBrick {
 }
 
 impl ControllableFixture for UvLedBrick {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.dimmer.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

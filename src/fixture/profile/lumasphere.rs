@@ -121,11 +121,7 @@ impl NonAnimatedFixture for Lumasphere {
     }
 }
 
-impl ControllableFixture for Lumasphere {
-    fn update(&mut self, delta_t: Duration) {
-        self.ball_rotation.update(delta_t);
-    }
-
+impl crate::fixture::EmitState for Lumasphere {
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(Lamp1Intensity(self.lamp_1_intensity), emitter);
@@ -136,6 +132,12 @@ impl ControllableFixture for Lumasphere {
         Self::emit(ColorStart(self.color_start), emitter);
         self.strobe_1.emit_state(emitter, Strobe1);
         self.strobe_2.emit_state(emitter, Strobe2);
+    }
+}
+
+impl ControllableFixture for Lumasphere {
+    fn update(&mut self, delta_t: Duration) {
+        self.ball_rotation.update(delta_t);
     }
 
     fn control(

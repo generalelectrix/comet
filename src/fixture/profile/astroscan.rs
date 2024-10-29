@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Astroscan {
     lamp_on: BoolChannel,
     shutter: UnipolarChannelLevel<DimmerStrobe>,
@@ -67,18 +67,6 @@ impl PatchAnimatedFixture for Astroscan {
 }
 
 impl ControllableFixture for Astroscan {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.lamp_on.emit_state(emitter);
-        self.shutter.emit_state(emitter);
-        self.iris.emit_state(emitter);
-        self.color.emit_state(emitter);
-        self.gobo.emit_state(emitter);
-        self.gobo_rotation.emit_state(emitter);
-        self.mirror_rotation.emit_state(emitter);
-        self.pan.emit_state(emitter);
-        self.tilt.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

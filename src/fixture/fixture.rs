@@ -30,10 +30,12 @@ impl Display for FixtureType {
     }
 }
 
-pub trait ControllableFixture {
+pub trait EmitState {
     /// Emit the current state of all controls.
     fn emit_state(&self, emitter: &FixtureStateEmitter);
+}
 
+pub trait ControllableFixture: EmitState {
     /// Process the provided OSC control message.
     ///
     /// Return true if the control message was handled.
@@ -136,6 +138,11 @@ pub struct FixtureWithAnimations<F: AnimatedFixture> {
     pub animations: TargetedAnimations<F::Target>,
 }
 
+impl<F: AnimatedFixture> EmitState for FixtureWithAnimations<F> {
+    fn emit_state(&self, emitter: &FixtureStateEmitter) {
+        self.fixture.emit_state(emitter);
+    }
+}
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control(
         &mut self,
@@ -151,10 +158,6 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<()> {
         self.fixture.control_from_channel(msg, emitter)
-    }
-
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.fixture.emit_state(emitter);
     }
 
     fn update(&mut self, dt: Duration) {

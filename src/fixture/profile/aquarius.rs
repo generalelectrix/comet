@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Aquarius {
     lamp_on: BoolChannelLevel<BoolChannel>,
     rotation: BipolarSplitChannel,
@@ -44,11 +44,6 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.lamp_on.emit_state(emitter);
-        self.rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

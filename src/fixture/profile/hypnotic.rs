@@ -5,7 +5,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Hypnotic {
     red_laser_on: Bool<()>,
     green_laser_on: Bool<()>,
@@ -62,13 +62,6 @@ impl AnimatedFixture for Hypnotic {
 }
 
 impl ControllableFixture for Hypnotic {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.red_laser_on.emit_state(emitter);
-        self.green_laser_on.emit_state(emitter);
-        self.blue_laser_on.emit_state(emitter);
-        self.rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

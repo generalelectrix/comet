@@ -87,14 +87,7 @@ impl NonAnimatedFixture for Venus {
     }
 }
 
-impl ControllableFixture for Venus {
-    fn update(&mut self, delta_t: Duration) {
-        self.base_rotation.update(delta_t);
-        self.cradle_motion.update(delta_t);
-        self.head_rotation.update(delta_t);
-        self.color_rotation.update(delta_t);
-    }
-
+impl crate::fixture::EmitState for Venus {
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         use StateChange::*;
         Self::emit(BaseRotation(self.base_rotation.target), emitter);
@@ -102,6 +95,15 @@ impl ControllableFixture for Venus {
         Self::emit(HeadRotation(self.head_rotation.target), emitter);
         Self::emit(ColorRotation(self.color_rotation.target), emitter);
         Self::emit(LampOn(self.lamp_on), emitter);
+    }
+}
+
+impl ControllableFixture for Venus {
+    fn update(&mut self, delta_t: Duration) {
+        self.base_rotation.update(delta_t);
+        self.cradle_motion.update(delta_t);
+        self.head_rotation.update(delta_t);
+        self.color_rotation.update(delta_t);
     }
 
     fn control(

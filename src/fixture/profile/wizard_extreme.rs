@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct WizardExtreme {
     shutter: UnipolarChannelLevel<DimmerStrobe>,
     color: LabeledSelect,
@@ -65,17 +65,6 @@ impl PatchAnimatedFixture for WizardExtreme {
 }
 
 impl ControllableFixture for WizardExtreme {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.shutter.emit_state(emitter);
-        self.color.emit_state(emitter);
-        self.twinkle.emit_state(emitter);
-        self.twinkle_speed.emit_state(emitter);
-        self.gobo.emit_state(emitter);
-        self.drum_rotation.emit_state(emitter);
-        self.drum_swivel.emit_state(emitter);
-        self.reflector_rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

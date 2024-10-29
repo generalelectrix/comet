@@ -94,11 +94,13 @@ impl AnimatedFixture for Color {
     }
 }
 
-impl ControllableFixture for Color {
+impl crate::fixture::EmitState for Color {
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         OscControl::emit_state(self, emitter);
     }
+}
 
+impl ControllableFixture for Color {
     fn control(
         &mut self,
         msg: &OscControlMessage,

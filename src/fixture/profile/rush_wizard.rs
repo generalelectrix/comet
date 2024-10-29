@@ -3,7 +3,7 @@
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct RushWizard {
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
@@ -92,18 +92,6 @@ impl NonAnimatedFixture for RushWizard {
 }
 
 impl ControllableFixture for RushWizard {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.dimmer.emit_state(emitter);
-        self.strobe.emit_state(emitter);
-        self.color.emit_state(emitter);
-        self.twinkle.emit_state(emitter);
-        self.twinkle_speed.emit_state(emitter);
-        self.gobo.emit_state(emitter);
-        self.drum_rotation.emit_state(emitter);
-        self.drum_swivel.emit_state(emitter);
-        self.reflector_rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

@@ -8,7 +8,7 @@ use super::color::Model::Rgbw;
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct RotosphereQ3 {
     hue: PhaseControl<()>,
     sat: Unipolar<()>,
@@ -66,14 +66,6 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.hue.emit_state(emitter);
-        self.sat.emit_state(emitter);
-        self.val.emit_state(emitter);
-        self.strobe.emit_state(emitter);
-        self.rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

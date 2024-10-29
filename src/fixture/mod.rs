@@ -8,6 +8,7 @@ mod group;
 mod patch;
 mod profile;
 
+pub use fixture::EmitState;
 pub use group::{FixtureGroup, FixtureGroupKey, GroupName};
 pub use patch::Patch;
 pub use profile::*;
@@ -38,5 +39,6 @@ pub mod prelude {
     pub use crate::fixture::control::*;
     pub use crate::fixture::generic::*;
     pub use anyhow::bail;
+    pub use fixture_macros::EmitState;
     pub use number::{BipolarFloat, Phase, UnipolarFloat};
 }

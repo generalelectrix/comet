@@ -3,7 +3,7 @@ use std::{collections::VecDeque, time::Duration};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Comet {
     shutter_open: BoolChannel,
     trigger_state: TriggerState,
@@ -56,16 +56,6 @@ impl NonAnimatedFixture for Comet {
 impl ControllableFixture for Comet {
     fn update(&mut self, delta_t: Duration) {
         self.trigger_state.update(delta_t);
-    }
-
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.shutter_open.emit_state(emitter);
-        self.trigger_state.emit_state(emitter);
-        self.strobe.emit_state(emitter);
-        self.shutter_sound_active.emit_state(emitter);
-        self.macro_pattern.emit_state(emitter);
-        self.mirror_speed.emit_state(emitter);
-        self.reset.emit_state(emitter);
     }
 
     fn control(

@@ -57,13 +57,15 @@ impl NonAnimatedFixture for Faderboard {
     }
 }
 
-impl ControllableFixture for Faderboard {
+impl crate::fixture::EmitState for Faderboard {
     fn emit_state(&self, emitter: &FixtureStateEmitter) {
         for (i, v) in self.vals.iter().enumerate() {
             Self::emit((i, *v), emitter);
         }
     }
+}
 
+impl ControllableFixture for Faderboard {
     fn control(
         &mut self,
         msg: &OscControlMessage,

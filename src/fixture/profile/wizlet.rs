@@ -5,7 +5,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct Wizlet {
     drum_swivel: BipolarChannelMirror,
     drum_rotation: BipolarSplitChannelMirror,
@@ -65,15 +65,6 @@ impl PatchAnimatedFixture for Wizlet {
 }
 
 impl ControllableFixture for Wizlet {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.drum_swivel.emit_state(emitter);
-        self.drum_rotation.emit_state(emitter);
-        self.gobo.emit_state(emitter);
-        self.reflector_rotation.emit_state(emitter);
-        self.strobe.emit_state(emitter);
-        self.dimmer.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,

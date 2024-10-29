@@ -6,7 +6,7 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, EmitState)]
 pub struct SolarSystem {
     shutter_open: BoolChannelLevel<Bool<()>>,
     auto_shutter: Bool<()>,
@@ -42,15 +42,6 @@ impl PatchAnimatedFixture for SolarSystem {
     }
 }
 impl ControllableFixture for SolarSystem {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        self.shutter_open.emit_state(emitter);
-        self.auto_shutter.emit_state(emitter);
-        self.front_gobo.emit_state(emitter);
-        self.front_rotation.emit_state(emitter);
-        self.rear_gobo.emit_state(emitter);
-        self.rear_rotation.emit_state(emitter);
-    }
-
     fn control(
         &mut self,
         msg: &OscControlMessage,
