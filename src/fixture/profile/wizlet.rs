@@ -51,7 +51,7 @@ impl Default for Wizlet {
             )
             .with_detent()
             .with_mirroring(true),
-            strobe: Strobe::channel("Strobe", 5, 64, 95, 32),
+            strobe: Strobe::channel("Strobe", 4, 64, 95, 32),
             dimmer: Unipolar::full_channel("Dimmer", 5).with_channel_level(),
         }
     }

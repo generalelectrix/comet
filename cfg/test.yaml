@@ -1,6 +1,6 @@
 receive_port: 8000
 debug: True
 fixtures:
-  - name: Wizlet
+  - name: WizardExtreme
     addr: 1
     channel: True
