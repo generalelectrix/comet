@@ -38,7 +38,8 @@ impl Default for WizardExtreme {
                     ("Yellow", 72),
                     ("Magenta", 84),
                 ],
-            ),
+            )
+            .with_split(6),
             twinkle: Bool::new_off("Twinkle", ()),
             twinkle_speed: Unipolar::channel("TwinkleSpeed", 2, 176, 243),
             // 14 gobos, including the open position

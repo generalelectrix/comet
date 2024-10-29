@@ -8,7 +8,7 @@ use rosc::OscType;
 
 use crate::osc::ScopedOscMessage;
 
-use super::{OscControl, RenderToDmxWithAnimations};
+use super::{Bool, OscControl, RenderToDmxWithAnimations};
 
 /// Select from a menu of labeled options.
 #[derive(Debug)]
@@ -19,6 +19,10 @@ pub struct LabeledSelect {
     options: Vec<(&'static str, u8)>,
     /// Name of this control.
     name: String,
+
+    /// Optional "split color"-style control.
+    split: Option<Split>,
+
     /// Offset into DMX buffer to render into.
     dmx_buf_offset: usize,
 }
@@ -34,8 +38,19 @@ impl LabeledSelect {
             selected: 0,
             options,
             name: name.into(),
+            split: None,
             dmx_buf_offset,
         }
+    }
+
+    /// Add "split color"-style offset. The name of the split button for eg Color
+    /// will be SplitColor.
+    pub fn with_split(mut self, offset: u8) -> Self {
+        self.split = Some(Split {
+            split_on: Bool::new_off(format!("Split{}", self.name), ()),
+            offset,
+        });
+        self
     }
 
     pub fn labels(&self) -> impl Iterator<Item = &str> {
@@ -75,6 +90,11 @@ impl OscControl<&str> for LabeledSelect {
         msg: &crate::osc::OscControlMessage,
         emitter: &dyn crate::osc::EmitScopedOscMessage,
     ) -> anyhow::Result<bool> {
+        if let Some(split) = &mut self.split {
+            if split.split_on.control(msg, emitter)? {
+                return Ok(true);
+            }
+        }
         if msg.control() != self.name {
             return Ok(false);
         }
@@ -105,6 +125,9 @@ impl OscControl<&str> for LabeledSelect {
     }
 
     fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
+        if let Some(split) = &self.split {
+            split.split_on.emit_state(emitter);
+        }
         for (i, label) in self.labels().enumerate() {
             // TODO: consider caching outgoing addresses
             // We could also do this for matching incoming addresses.
@@ -118,6 +141,20 @@ impl OscControl<&str> for LabeledSelect {
 
 impl RenderToDmxWithAnimations for LabeledSelect {
     fn render(&self, _animations: impl Iterator<Item = f64>, dmx_buf: &mut [u8]) {
-        dmx_buf[self.dmx_buf_offset] = self.options[self.selected].1;
+        let mut val = self.options[self.selected].1;
+        if let Some(split) = &self.split {
+            if split.split_on.val() {
+                val += split.offset;
+            }
+        }
+        dmx_buf[self.dmx_buf_offset] = val;
     }
+}
+
+/// Configure "split" feature for a LabeledSelect.
+#[derive(Debug)]
+struct Split {
+    split_on: Bool<()>,
+    /// The offset to add to the rendered DMX value.
+    offset: u8,
 }
