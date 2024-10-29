@@ -31,6 +31,12 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
         }
     }
 
+    /// Set the initial value of this control to 1.
+    pub fn at_full(mut self) -> Self {
+        self.val = UnipolarFloat::ONE;
+        self
+    }
+
     pub fn with_channel_level(self) -> ChannelLevel<Self, UnipolarFloat> {
         ChannelLevel::wrap(self)
     }

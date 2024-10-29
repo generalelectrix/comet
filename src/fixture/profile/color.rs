@@ -21,7 +21,7 @@ impl Default for Color {
     fn default() -> Self {
         Self {
             hue: PhaseControl::new("Hue", ()),
-            sat: Unipolar::new("Sat", ()),
+            sat: Unipolar::new("Sat", ()).at_full(),
             val: Unipolar::new("Val", ()),
             model: Default::default(),
         }

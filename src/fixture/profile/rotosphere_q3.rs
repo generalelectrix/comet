@@ -21,7 +21,7 @@ impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
             hue: PhaseControl::new("Phase", ()),
-            sat: Unipolar::new("Sat", ()),
+            sat: Unipolar::new("Sat", ()).at_full(),
             val: Unipolar::new("Val", ()).with_channel_level(),
             strobe: Strobe::channel("Strobe", 4, 1, 250, 0),
             rotation: Bipolar::split_channel("Rotation", 5, 1, 127, 129, 255, 0).with_detent(),
