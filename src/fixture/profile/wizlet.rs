@@ -2,7 +2,6 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
@@ -12,6 +11,7 @@ pub struct Wizlet {
     gobo: LabeledSelect,
     reflector_rotation: BipolarSplitChannelMirror,
     strobe: StrobeChannel,
+    #[channel_control]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
 }
 
@@ -64,16 +64,7 @@ impl PatchAnimatedFixture for Wizlet {
     }
 }
 
-impl ControllableFixture for Wizlet {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.dimmer.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for Wizlet {}
 
 impl AnimatedFixture for Wizlet {
     type Target = AnimationTarget;

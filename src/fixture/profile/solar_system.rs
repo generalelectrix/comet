@@ -3,11 +3,11 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct SolarSystem {
+    #[channel_control]
     shutter_open: BoolChannelLevel<Bool<()>>,
     auto_shutter: Bool<()>,
     front_gobo: IndexedSelectMult,
@@ -41,16 +41,7 @@ impl PatchAnimatedFixture for SolarSystem {
         7
     }
 }
-impl ControllableFixture for SolarSystem {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.shutter_open.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for SolarSystem {}
 
 impl AnimatedFixture for SolarSystem {
     type Target = AnimationTarget;

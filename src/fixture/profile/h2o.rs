@@ -3,11 +3,11 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct H2O {
+    #[channel_control]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     rotation: BipolarSplitChannelMirror,
     fixed_color: LabeledSelect,
@@ -85,16 +85,7 @@ impl AnimatedFixture for H2O {
     }
 }
 
-impl ControllableFixture for H2O {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.dimmer.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for H2O {}
 
 #[derive(
     Clone,

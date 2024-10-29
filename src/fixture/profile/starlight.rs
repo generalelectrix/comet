@@ -3,11 +3,11 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Starlight {
+    #[channel_control]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
     rotation: BipolarSplitChannelMirror,
@@ -52,16 +52,7 @@ impl AnimatedFixture for Starlight {
     }
 }
 
-impl ControllableFixture for Starlight {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.dimmer.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for Starlight {}
 
 #[derive(
     Clone,

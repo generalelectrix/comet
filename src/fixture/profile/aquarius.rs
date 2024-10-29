@@ -7,6 +7,7 @@ use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Aquarius {
+    #[channel_control]
     lamp_on: BoolChannelLevel<BoolChannel>,
     rotation: BipolarSplitChannel,
 }
@@ -42,16 +43,7 @@ impl AnimatedFixture for Aquarius {
     }
 }
 
-impl ControllableFixture for Aquarius {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.lamp_on.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for Aquarius {}
 
 #[derive(
     Clone,

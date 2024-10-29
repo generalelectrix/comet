@@ -7,6 +7,7 @@ use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct WizardExtreme {
+    #[channel_control]
     shutter: UnipolarChannelLevel<DimmerStrobe>,
     color: LabeledSelect,
     twinkle: Bool<()>,
@@ -63,16 +64,7 @@ impl PatchAnimatedFixture for WizardExtreme {
     }
 }
 
-impl ControllableFixture for WizardExtreme {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.shutter.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for WizardExtreme {}
 
 impl AnimatedFixture for WizardExtreme {
     type Target = AnimationTarget;

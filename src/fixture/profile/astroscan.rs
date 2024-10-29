@@ -8,6 +8,7 @@ use crate::fixture::prelude::*;
 #[derive(Debug, EmitState, Control)]
 pub struct Astroscan {
     lamp_on: BoolChannel,
+    #[channel_control]
     shutter: UnipolarChannelLevel<DimmerStrobe>,
     iris: UnipolarChannel,
     color: LabeledSelect,
@@ -65,16 +66,7 @@ impl PatchAnimatedFixture for Astroscan {
     }
 }
 
-impl ControllableFixture for Astroscan {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.shutter.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for Astroscan {}
 
 impl AnimatedFixture for Astroscan {
     type Target = AnimationTarget;

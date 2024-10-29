@@ -44,11 +44,8 @@ pub trait Control {
         msg: &OscControlMessage,
         emitter: &FixtureStateEmitter,
     ) -> anyhow::Result<bool>;
-}
 
-pub trait ControllableFixture: EmitState + Control {
     /// Process a channel control message, if the fixture uses it.
-    ///
     #[allow(unused)]
     fn control_from_channel(
         &mut self,
@@ -58,7 +55,9 @@ pub trait ControllableFixture: EmitState + Control {
         // Ignore channel control messages by default.
         Ok(())
     }
+}
 
+pub trait ControllableFixture: EmitState + Control {
     fn update(&mut self, _: Duration) {}
 }
 
@@ -154,9 +153,7 @@ impl<F: AnimatedFixture> Control for FixtureWithAnimations<F> {
     ) -> anyhow::Result<bool> {
         self.fixture.control(msg, emitter)
     }
-}
 
-impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,
@@ -164,7 +161,9 @@ impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     ) -> anyhow::Result<()> {
         self.fixture.control_from_channel(msg, emitter)
     }
+}
 
+impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
     fn update(&mut self, dt: Duration) {
         self.fixture.update(dt);
         for ta in &mut self.animations {

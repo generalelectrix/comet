@@ -1,10 +1,10 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
-
 use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct RushWizard {
+    #[channel_control]
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
     color: LabeledSelect,
@@ -91,13 +91,4 @@ impl NonAnimatedFixture for RushWizard {
     }
 }
 
-impl ControllableFixture for RushWizard {
-    fn control_from_channel(
-        &mut self,
-        msg: &ChannelControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
-        self.dimmer.control_from_channel(msg, emitter)?;
-        Ok(())
-    }
-}
+impl ControllableFixture for RushWizard {}

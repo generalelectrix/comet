@@ -52,7 +52,10 @@ pub fn derive_emit_state(input: TokenStream) -> TokenStream {
 /// Fields that do not have a control method can be skipped with #[skip_control].
 /// Fields that implement OscControl as well as Control can be forced to emit
 /// with the OscControl method with the #[force_osc_control] attribute.
-#[proc_macro_derive(Control, attributes(skip_control, force_osc_control))]
+///
+/// Fields annotated with #[channel_control] will be wired up to the channel
+/// control method.
+#[proc_macro_derive(Control, attributes(skip_control, force_osc_control, channel_control))]
 pub fn derive_control(input: TokenStream) -> TokenStream {
     let DeriveInput { ident, data, .. } = parse_macro_input!(input as DeriveInput);
 
@@ -62,7 +65,8 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
     let Fields::Named(fields) = struct_data.fields else {
         panic!("Can only derive Control for named structs.");
     };
-    let mut lines = quote! {};
+    let mut control_lines = quote! {};
+    let mut channel_control_lines = quote! {};
     for field in fields.named.iter() {
         if field_has_attr(field, "skip_control") {
             continue;
@@ -71,26 +75,42 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
             continue;
         };
         if field_has_attr(field, "force_osc_control") {
-            lines = quote! {
-                #lines
+            control_lines = quote! {
+                #control_lines
                 if crate::fixture::control::OscControl::control(&mut self.#ident, msg, emitter)? {
                     return Ok(true);
                 }
             }
         } else {
-            lines = quote! {
-                #lines
+            control_lines = quote! {
+                #control_lines
                 if self.#ident.control(msg, emitter)? {
                     return Ok(true);
                 }
             }
         }
+        if field_has_attr(field, "channel_control") {
+            channel_control_lines = quote! {
+                #channel_control_lines
+                self.#ident.control_from_channel(msg, emitter)?;
+            }
+        }
     }
+
     quote! {
         impl crate::fixture::Control for #ident {
             fn control(&mut self, msg: &crate::osc::OscControlMessage, emitter: &crate::osc::FixtureStateEmitter) -> anyhow::Result<bool> {
-                #lines
+                #control_lines
                 Ok(false)
+            }
+
+            fn control_from_channel(
+                &mut self,
+                msg: &crate::channel::ChannelControlMessage,
+                emitter: &crate::osc::FixtureStateEmitter,
+            ) -> anyhow::Result<()> {
+                #channel_control_lines
+                Ok(())
             }
         }
     }
