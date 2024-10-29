@@ -42,7 +42,6 @@ impl PatchAnimatedFixture for Color {
                 "rgbw" => Model::Rgbw,
                 "hsv" => Model::Hsv,
                 "rgbwau" => Model::Rgbwau,
-                "sabre_spot" => Model::SabreSpot,
                 other => {
                     bail!("unknown color model \"{}\"", other);
                 }
@@ -148,7 +147,6 @@ pub enum Model {
     Rgbw,
     Hsv,
     Rgbwau,
-    SabreSpot,
 }
 
 impl Default for Model {
@@ -164,7 +162,6 @@ impl Model {
             Self::Rgbw => 4,
             Self::Hsv => 3,
             Self::Rgbwau => 6,
-            Self::SabreSpot => 3,
         }
     }
 
@@ -190,11 +187,6 @@ impl Model {
                 // TODO: decide what to do with those other diodes...
                 let rgb_slice = &mut buf[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
-            }
-            Self::SabreSpot => {
-                buf[0] = unit_to_u8((hue + 0.33333333333).val() * -1.0 + 1.0);
-                buf[1] = unit_to_u8(sat.invert().val());
-                buf[2] = unit_to_u8(val.val());
             }
         }
     }
