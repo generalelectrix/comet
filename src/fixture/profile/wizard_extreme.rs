@@ -3,10 +3,9 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct WizardExtreme {
     shutter: UnipolarChannelLevel<DimmerStrobe>,
     color: LabeledSelect,
@@ -65,38 +64,6 @@ impl PatchAnimatedFixture for WizardExtreme {
 }
 
 impl ControllableFixture for WizardExtreme {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.shutter.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.color.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.twinkle.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.twinkle_speed.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.gobo.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.drum_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.drum_swivel.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.reflector_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

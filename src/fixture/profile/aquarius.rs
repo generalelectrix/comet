@@ -3,10 +3,9 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Aquarius {
     lamp_on: BoolChannelLevel<BoolChannel>,
     rotation: BipolarSplitChannel,
@@ -44,20 +43,6 @@ impl AnimatedFixture for Aquarius {
 }
 
 impl ControllableFixture for Aquarius {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.lamp_on.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

@@ -1,9 +1,9 @@
 //! Martin Rush-series Wizard (still not as good as the OG).
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct RushWizard {
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
     strobe: StrobeChannel,
@@ -92,41 +92,6 @@ impl NonAnimatedFixture for RushWizard {
 }
 
 impl ControllableFixture for RushWizard {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.dimmer.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.strobe.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.color.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.twinkle.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.twinkle_speed.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.gobo.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.drum_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.drum_swivel.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.reflector_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

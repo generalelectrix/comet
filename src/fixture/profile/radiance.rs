@@ -3,14 +3,14 @@
 use anyhow::Result;
 use std::{collections::HashMap, time::Duration};
 
-use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Radiance {
     haze: UnipolarChannel,
     fan: UnipolarChannel,
     #[skip_emit]
+    #[skip_control]
     timer: Option<Timer>,
 }
 
@@ -58,19 +58,5 @@ impl ControllableFixture for Radiance {
         if let Some(timer) = self.timer.as_mut() {
             timer.update(delta_t);
         }
-    }
-
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.haze.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.fan.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
     }
 }

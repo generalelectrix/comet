@@ -2,7 +2,6 @@
 
 use log::error;
 
-use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
 #[derive(Debug)]
@@ -65,7 +64,7 @@ impl crate::fixture::EmitState for Faderboard {
     }
 }
 
-impl ControllableFixture for Faderboard {
+impl crate::fixture::Control for Faderboard {
     fn control(
         &mut self,
         msg: &OscControlMessage,
@@ -78,6 +77,8 @@ impl ControllableFixture for Faderboard {
         Ok(true)
     }
 }
+
+impl ControllableFixture for Faderboard {}
 
 pub type StateChange = (usize, UnipolarFloat);
 

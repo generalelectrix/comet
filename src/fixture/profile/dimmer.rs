@@ -3,10 +3,10 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Dimmer {
     level: UnipolarChannelLevel<UnipolarChannel>,
 }
@@ -40,17 +40,6 @@ impl AnimatedFixture for Dimmer {
 }
 
 impl ControllableFixture for Dimmer {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.level.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

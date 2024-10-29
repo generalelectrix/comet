@@ -3,10 +3,9 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Astroscan {
     lamp_on: BoolChannel,
     shutter: UnipolarChannelLevel<DimmerStrobe>,
@@ -67,41 +66,6 @@ impl PatchAnimatedFixture for Astroscan {
 }
 
 impl ControllableFixture for Astroscan {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.lamp_on.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.shutter.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.iris.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.color.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.gobo.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.gobo_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.mirror_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.pan.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.tilt.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

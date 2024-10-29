@@ -4,10 +4,10 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Colordynamic {
     shutter: BoolChannelLevel<FullShutterStrobe>,
     color_rotation_on: Bool<()>,
@@ -40,29 +40,6 @@ impl PatchAnimatedFixture for Colordynamic {
 }
 
 impl ControllableFixture for Colordynamic {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.shutter.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.color_rotation_on.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.color_rotation_speed.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.color_position.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.fiber_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

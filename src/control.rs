@@ -6,7 +6,6 @@ use std::{
 };
 
 use anyhow::{bail, Result};
-use prelude::OscControlMessage;
 use rosc::OscMessage;
 use tunnels::midi::CreateControlEvent;
 
@@ -14,8 +13,8 @@ use crate::{
     config::Config,
     midi::{Device, EmitMidiChannelMessage, MidiControlMessage, MidiController},
     osc::{
-        EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlResponse, OscController,
-        TalkbackMode,
+        EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlMessage, OscControlResponse,
+        OscController, TalkbackMode,
     },
 };
 
@@ -102,9 +101,4 @@ impl CreateControlEvent<Device> for ControlMessage {
     fn from_event(event: tunnels::midi::Event, device: Device) -> Self {
         Self::Midi(MidiControlMessage { device, event })
     }
-}
-
-pub mod prelude {
-    pub use super::*;
-    pub use crate::osc::prelude::*;
 }

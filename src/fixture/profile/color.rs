@@ -6,8 +6,7 @@ use anyhow::{bail, Result};
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
-use crate::fixture::prelude::*;
+use crate::{fixture::prelude::*, osc::OscControlMessage};
 
 #[derive(Debug)]
 pub struct Color {
@@ -100,7 +99,7 @@ impl crate::fixture::EmitState for Color {
     }
 }
 
-impl ControllableFixture for Color {
+impl crate::fixture::Control for Color {
     fn control(
         &mut self,
         msg: &OscControlMessage,
@@ -109,6 +108,8 @@ impl ControllableFixture for Color {
         OscControl::control(self, msg, emitter)
     }
 }
+
+impl ControllableFixture for Color {}
 
 impl OscControl<()> for Color {
     fn control_direct(

@@ -5,10 +5,10 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::color::Model::Rgbw;
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct RotosphereQ3 {
     hue: PhaseControl<()>,
     sat: Unipolar<()>,
@@ -66,29 +66,6 @@ impl AnimatedFixture for RotosphereQ3 {
 }
 
 impl ControllableFixture for RotosphereQ3 {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.hue.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.sat.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.val.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.strobe.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

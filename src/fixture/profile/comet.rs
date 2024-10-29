@@ -1,9 +1,8 @@
 use std::{collections::VecDeque, time::Duration};
 
-use crate::control::prelude::*;
-use crate::fixture::prelude::*;
+use crate::{fixture::prelude::*, osc::OscControlMessage, util::unipolar_to_range};
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Comet {
     shutter_open: BoolChannel,
     trigger_state: TriggerState,
@@ -56,35 +55,6 @@ impl NonAnimatedFixture for Comet {
 impl ControllableFixture for Comet {
     fn update(&mut self, delta_t: Duration) {
         self.trigger_state.update(delta_t);
-    }
-
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.shutter_open.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.trigger_state.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.strobe.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.shutter_sound_active.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.macro_pattern.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.mirror_speed.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.reset.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
     }
 }
 

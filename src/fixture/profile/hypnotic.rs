@@ -2,10 +2,9 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Hypnotic {
     red_laser_on: Bool<()>,
     green_laser_on: Bool<()>,
@@ -61,27 +60,7 @@ impl AnimatedFixture for Hypnotic {
     }
 }
 
-impl ControllableFixture for Hypnotic {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.red_laser_on.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.green_laser_on.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.blue_laser_on.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-}
+impl ControllableFixture for Hypnotic {}
 
 #[derive(
     Clone,

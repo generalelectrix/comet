@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
 /// Control abstraction for the RA venus.
@@ -98,14 +98,7 @@ impl crate::fixture::EmitState for Venus {
     }
 }
 
-impl ControllableFixture for Venus {
-    fn update(&mut self, delta_t: Duration) {
-        self.base_rotation.update(delta_t);
-        self.cradle_motion.update(delta_t);
-        self.head_rotation.update(delta_t);
-        self.color_rotation.update(delta_t);
-    }
-
+impl crate::fixture::Control for Venus {
     fn control(
         &mut self,
         msg: &OscControlMessage,
@@ -116,6 +109,15 @@ impl ControllableFixture for Venus {
         };
         self.handle_state_change(ctl, emitter);
         Ok(true)
+    }
+}
+
+impl ControllableFixture for Venus {
+    fn update(&mut self, delta_t: Duration) {
+        self.base_rotation.update(delta_t);
+        self.cradle_motion.update(delta_t);
+        self.head_rotation.update(delta_t);
+        self.color_rotation.update(delta_t);
     }
 }
 

@@ -8,13 +8,13 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use super::color::Color;
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct FreedomFries {
     dimmer: UnipolarChannelLevel<UnipolarChannel>,
-    #[osc_control_emit]
+    #[force_osc_control]
     color: Color,
     speed: UnipolarChannel,
     strobe: StrobeChannel,
@@ -62,29 +62,6 @@ impl AnimatedFixture for FreedomFries {
 }
 
 impl ControllableFixture for FreedomFries {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.dimmer.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if OscControl::control(&mut self.color, msg, emitter)? {
-            return Ok(true);
-        }
-        if self.speed.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.strobe.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.program.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,

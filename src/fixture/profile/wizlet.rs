@@ -2,10 +2,10 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
-use crate::control::prelude::*;
+
 use crate::fixture::prelude::*;
 
-#[derive(Debug, EmitState)]
+#[derive(Debug, EmitState, Control)]
 pub struct Wizlet {
     drum_swivel: BipolarChannelMirror,
     drum_rotation: BipolarSplitChannelMirror,
@@ -65,32 +65,6 @@ impl PatchAnimatedFixture for Wizlet {
 }
 
 impl ControllableFixture for Wizlet {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        if self.drum_swivel.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.drum_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.gobo.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.reflector_rotation.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.strobe.control(msg, emitter)? {
-            return Ok(true);
-        }
-        if self.dimmer.control(msg, emitter)? {
-            return Ok(true);
-        }
-        Ok(false)
-    }
-
     fn control_from_channel(
         &mut self,
         msg: &ChannelControlMessage,
