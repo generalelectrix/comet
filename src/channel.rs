@@ -4,7 +4,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
 use log::error;
-use number::UnipolarFloat;
+use number::{BipolarFloat, UnipolarFloat};
 use serde::Deserialize;
 
 use crate::{
@@ -300,6 +300,13 @@ pub enum StateChange {
 #[derive(Clone, Debug)]
 pub enum ChannelStateChange {
     Level(UnipolarFloat),
+    Knob { index: usize, value: KnobValue },
+}
+
+#[derive(Clone, Debug)]
+pub enum KnobValue {
+    Unipolar(UnipolarFloat),
+    Bipolar(BipolarFloat),
 }
 
 pub type ChannelControlMessage = ChannelStateChange;

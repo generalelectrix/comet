@@ -30,6 +30,9 @@ impl Channels {
             StateChange::ChannelLabels(labels) => CHANNEL_LABELS.set(labels.into_iter(), send),
             StateChange::State { channel_id, msg } => match msg {
                 ChannelStateChange::Level(l) => CHANNEL_FADERS.set(channel_id.into(), l, send),
+                ChannelStateChange::Knob { .. } => {
+                    // TODO: decide how/if to implement channel knobs in TouchOSC
+                }
             },
         }
     }

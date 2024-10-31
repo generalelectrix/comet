@@ -9,6 +9,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
+    midi::MidiChannelController,
     osc::{ControlMessageType, ScopedControlEmitter},
 };
 
