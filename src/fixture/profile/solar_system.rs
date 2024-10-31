@@ -4,7 +4,7 @@ use crate::fixture::prelude::*;
 #[derive(Debug, EmitState, Control)]
 pub struct SolarSystem {
     #[channel_control]
-    shutter_open: BoolChannelLevel<Bool<()>>,
+    shutter_open: ChannelLevelBool<Bool<()>>,
     auto_shutter: Bool<()>,
     front_gobo: IndexedSelectMult,
     #[animate]

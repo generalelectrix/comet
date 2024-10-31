@@ -63,10 +63,10 @@ impl Show {
 
         // Configure animation controls if we have at least one animated fixture.
         if patch.iter().any(FixtureGroup::is_animated) {
+            let channel = initial_channel.unwrap();
             animation_ui_state.emit_state(
-                initial_channel.unwrap(),
-                &channels,
-                &patch,
+                channel,
+                channels.group_by_channel(&patch, channel).unwrap(),
                 &ScopedControlEmitter {
                     entity: crate::osc::animation::GROUP,
                     emitter: &controller.sender_with_metadata(None),
@@ -141,6 +141,7 @@ impl Show {
                 self.channels.control(
                     &channel_ctrl_msg,
                     &mut self.patch,
+                    &self.animation_ui_state,
                     &self.controller.sender_with_metadata(None),
                 )
             }
@@ -155,9 +156,12 @@ impl Show {
                         &self.animation_ui_state,
                         &sender,
                     ),
-                    ControlMessageType::Channel => {
-                        self.channels.control_osc(&msg, &mut self.patch, &sender)
-                    }
+                    ControlMessageType::Channel => self.channels.control_osc(
+                        &msg,
+                        &mut self.patch,
+                        &self.animation_ui_state,
+                        &sender,
+                    ),
                     ControlMessageType::Animation => {
                         let Some(channel) = self.channels.current_channel() else {
                             bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
@@ -165,8 +169,8 @@ impl Show {
                         self.animation_ui_state.control(
                             &msg,
                             channel,
-                            &self.channels,
-                            &mut self.patch,
+                            self.channels
+                                .group_by_channel_mut(&mut self.patch, channel)?,
                             &ScopedControlEmitter {
                                 entity: crate::osc::animation::GROUP,
                                 emitter: &sender,

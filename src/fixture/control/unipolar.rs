@@ -4,11 +4,15 @@ use anyhow::Context;
 use number::UnipolarFloat;
 
 use crate::{
+    channel::KnobIndex,
     osc::{EmitScopedOscMessage, OscControlMessage},
     util::unipolar_to_range,
 };
 
-use super::{ChannelLevel, OscControl, RenderToDmx, RenderToDmxWithAnimations};
+use super::{
+    ChannelControl, ChannelKnobHandler, ChannelKnobUnipolar, ChannelLevelHandler,
+    ChannelLevelUnipolar, OscControl, RenderToDmx, RenderToDmxWithAnimations,
+};
 
 /// A unipolar value, with controls.
 #[derive(Debug)]
@@ -37,8 +41,15 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
         self
     }
 
-    pub fn with_channel_level(self) -> ChannelLevel<Self, UnipolarFloat> {
-        ChannelLevel::wrap(self)
+    /// Decorate this control with channel level control.
+    pub fn with_channel_level(self) -> ChannelLevelUnipolar<Self> {
+        ChannelControl::wrap(self, "Level".to_string(), ChannelLevelHandler)
+    }
+
+    /// Decorate this control with a channel knob of the provided index.
+    pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobUnipolar<Self> {
+        let label = self.name.clone();
+        ChannelControl::wrap(self, label, ChannelKnobHandler { index })
     }
 
     pub fn val(&self) -> UnipolarFloat {

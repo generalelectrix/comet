@@ -5,7 +5,7 @@ use crate::fixture::prelude::*;
 pub struct Starlight {
     #[channel_control]
     #[animate]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     strobe: StrobeChannel,
     #[animate]
     rotation: BipolarSplitChannelMirror,

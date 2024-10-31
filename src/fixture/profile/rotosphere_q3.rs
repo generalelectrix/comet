@@ -13,7 +13,7 @@ pub struct RotosphereQ3 {
     sat: Unipolar<()>,
     #[channel_control]
     #[animate]
-    val: UnipolarChannelLevel<Unipolar<()>>,
+    val: ChannelLevelUnipolar<Unipolar<()>>,
     strobe: StrobeChannel,
 }
 

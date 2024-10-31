@@ -5,14 +5,17 @@ use crate::fixture::prelude::*;
 pub struct Wizlet {
     #[channel_control]
     #[animate]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    dimmer: ChannelLevelUnipolar<UnipolarChannel>,
+    #[channel_control]
     #[animate]
-    drum_swivel: BipolarChannelMirror,
+    drum_swivel: ChannelKnobBipolar<BipolarChannelMirror>,
+    #[channel_control]
     #[animate]
-    drum_rotation: BipolarSplitChannelMirror,
+    drum_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
     gobo: LabeledSelect,
+    #[channel_control]
     #[animate]
-    reflector_rotation: BipolarSplitChannelMirror,
+    reflector_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
     strobe: StrobeChannel,
 }
 
@@ -21,10 +24,12 @@ impl Default for Wizlet {
         Self {
             drum_swivel: Bipolar::channel("DrumSwivel", 0, 255, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
             drum_rotation: Bipolar::split_channel("DrumRotation", 1, 120, 10, 135, 245, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(1),
             gobo: LabeledSelect::new(
                 "Gobo",
                 2,
@@ -52,7 +57,8 @@ impl Default for Wizlet {
                 0,
             )
             .with_detent()
-            .with_mirroring(true),
+            .with_mirroring(true)
+            .with_channel_knob(2),
             strobe: Strobe::channel("Strobe", 4, 64, 95, 32),
             dimmer: Unipolar::full_channel("Dimmer", 5).with_channel_level(),
         }

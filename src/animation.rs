@@ -8,7 +8,7 @@ use crate::{
     control::EmitScopedControlMessage,
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
-        Patch,
+        FixtureGroup, Patch,
     },
     osc::{GroupControlMap, OscControlMessage},
     show::ChannelId,
@@ -37,11 +37,10 @@ impl AnimationUIState {
     pub fn emit_state(
         &self,
         channel: ChannelId,
-        channels: &Channels,
-        patch: &Patch,
+        group: &FixtureGroup,
         emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
-        let (ta, index) = self.current_animation_with_index(channel, channels, patch)?;
+        let (ta, index) = self.current_animation_with_index(channel, group)?;
         ta.anim().emit_state(&mut InnerAnimationEmitter(emitter));
         Self::emit_osc_state_change(StateChange::Target(ta.target()), emitter);
         Self::emit_osc_state_change(StateChange::SelectAnimation(index), emitter);
@@ -54,8 +53,7 @@ impl AnimationUIState {
         &mut self,
         msg: &OscControlMessage,
         channel: ChannelId,
-        channels: &Channels,
-        patch: &mut Patch,
+        group: &mut FixtureGroup,
         emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
@@ -63,12 +61,12 @@ impl AnimationUIState {
         };
         match ctl {
             ControlMessage::Animation(msg) => {
-                self.current_animation(channel, channels, patch)?
+                self.current_animation(channel, group)?
                     .anim_mut()
                     .control(msg, &mut InnerAnimationEmitter(emitter));
             }
             ControlMessage::Target(msg) => {
-                let anim = self.current_animation(channel, channels, patch)?;
+                let anim = self.current_animation(channel, group)?;
                 if anim.target() == msg {
                     return Ok(());
                 }
@@ -80,7 +78,7 @@ impl AnimationUIState {
                     return Ok(());
                 }
                 self.set_current_animation(channel, n)?;
-                self.emit_state(channel, channels, patch, emitter)?;
+                self.emit_state(channel, group, emitter)?;
             }
         }
         Ok(())
@@ -89,11 +87,9 @@ impl AnimationUIState {
     fn current_animation_with_index_mut<'a>(
         &self,
         channel: ChannelId,
-        channels: &'a Channels,
-        patch: &'a mut Patch,
+        group: &'a mut FixtureGroup,
     ) -> Result<(&'a mut dyn ControllableTargetedAnimation, usize)> {
         let animation_index = self.animation_index_for_channel(channel);
-        let group = channels.group_by_channel_mut(patch, channel)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation_mut(animation_index) {
             return Ok((anim, animation_index));
@@ -104,11 +100,9 @@ impl AnimationUIState {
     fn current_animation_with_index<'a>(
         &self,
         channel: ChannelId,
-        channels: &'a Channels,
-        patch: &'a Patch,
+        group: &'a FixtureGroup,
     ) -> Result<(&'a dyn ControllableTargetedAnimation, usize)> {
         let animation_index = self.animation_index_for_channel(channel);
-        let group = channels.group_by_channel(patch, channel)?;
         let key = group.key().clone();
         if let Some(anim) = group.get_animation(animation_index) {
             return Ok((anim, animation_index));
@@ -119,10 +113,9 @@ impl AnimationUIState {
     fn current_animation<'a>(
         &self,
         channel: ChannelId,
-        channels: &'a Channels,
-        patch: &'a mut Patch,
+        group: &'a mut FixtureGroup,
     ) -> Result<&'a mut dyn ControllableTargetedAnimation> {
-        let (ta, _) = self.current_animation_with_index_mut(channel, channels, patch)?;
+        let (ta, _) = self.current_animation_with_index_mut(channel, group)?;
         Ok(ta)
     }
 

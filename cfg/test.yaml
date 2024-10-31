@@ -4,3 +4,6 @@ fixtures:
   - name: WizardExtreme
     addr: 1
     channel: True
+  - name: Wizlet
+    addr: 20
+    channel: True

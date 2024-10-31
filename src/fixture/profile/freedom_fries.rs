@@ -10,7 +10,7 @@ use crate::fixture::prelude::*;
 pub struct FreedomFries {
     #[channel_control]
     #[animate]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     #[force_osc_control]
     color: Color,
     #[animate]

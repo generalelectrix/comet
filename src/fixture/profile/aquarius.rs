@@ -4,7 +4,7 @@ use crate::fixture::prelude::*;
 #[derive(Debug, EmitState, Control)]
 pub struct Aquarius {
     #[channel_control]
-    lamp_on: BoolChannelLevel<BoolChannel>,
+    lamp_on: ChannelLevelBool<BoolChannel>,
     #[animate]
     rotation: BipolarSplitChannel,
 }

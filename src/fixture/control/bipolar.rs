@@ -4,11 +4,15 @@ use anyhow::Context;
 use number::{BipolarFloat, UnipolarFloat};
 
 use crate::{
+    channel::KnobIndex,
     osc::{EmitScopedOscMessage, OscControlMessage},
     util::{bipolar_fader_with_detent, unipolar_to_range},
 };
 
-use super::{Bool, OscControl, RenderToDmx, RenderToDmxWithAnimations};
+use super::{
+    Bool, ChannelControl, ChannelKnobBipolar, ChannelKnobHandler, OscControl, RenderToDmx,
+    RenderToDmxWithAnimations,
+};
 
 /// A bipolar value, with controls.
 #[derive(Debug)]
@@ -55,6 +59,12 @@ impl<R: RenderToDmx<BipolarFloat>> Bipolar<R> {
     /// Use the provided bool to determine whether mirroring should be on or off by default.
     pub fn with_mirroring(self, init: bool) -> Mirrored<R> {
         Mirrored::new(self, init)
+    }
+
+    /// Decorate this control with a channel knob of the provided index.
+    pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobBipolar<Self> {
+        let label = self.name.clone();
+        ChannelControl::wrap(self, label, ChannelKnobHandler { index })
     }
 
     fn val_with_anim(&self, animations: impl Iterator<Item = f64>) -> BipolarFloat {
@@ -236,6 +246,12 @@ impl<R: RenderToDmx<BipolarFloat>> Mirrored<R> {
             },
             control,
         }
+    }
+
+    /// Decorate this control with a channel knob of the provided index.
+    pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobBipolar<Self> {
+        let label = self.control.name.clone();
+        ChannelControl::wrap(self, label, ChannelKnobHandler { index })
     }
 }
 

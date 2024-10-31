@@ -4,7 +4,10 @@ use anyhow::Context;
 
 use crate::osc::{EmitScopedOscMessage, OscControlMessage};
 
-use super::{ChannelLevel, OscControl, RenderToDmx, RenderToDmxWithAnimations};
+use super::{
+    ChannelControl, ChannelLevelBool, ChannelLevelHandler, OscControl, RenderToDmx,
+    RenderToDmxWithAnimations,
+};
 
 /// A bool value, with controls.
 #[derive(Debug)]
@@ -42,8 +45,8 @@ impl<R: RenderToDmx<bool>> Bool<R> {
         self.val
     }
 
-    pub fn with_channel_level(self) -> ChannelLevel<Self, bool> {
-        ChannelLevel::wrap(self)
+    pub fn with_channel_level(self) -> ChannelLevelBool<Self> {
+        ChannelControl::wrap(self, "Level".to_string(), ChannelLevelHandler)
     }
 }
 

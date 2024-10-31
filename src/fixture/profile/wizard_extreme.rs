@@ -5,27 +5,31 @@ use crate::fixture::prelude::*;
 pub struct WizardExtreme {
     #[channel_control]
     #[animate]
-    shutter: UnipolarChannelLevel<DimmerStrobe>,
+    shutter: ChannelLevelUnipolar<DimmerStrobe>,
     color: LabeledSelect,
     twinkle: Bool<()>,
     #[animate]
     twinkle_speed: UnipolarChannel,
     gobo: IndexedSelectMult,
+    #[channel_control]
     #[animate]
-    drum_swivel: BipolarChannelMirror,
+    drum_swivel: ChannelKnobBipolar<BipolarChannelMirror>,
+    #[channel_control]
     #[animate]
-    drum_rotation: BipolarSplitChannelMirror,
+    drum_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
+    #[channel_control]
     #[animate]
-    reflector_rotation: BipolarSplitChannelMirror,
+    reflector_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
 }
 
 impl Default for WizardExtreme {
     fn default() -> Self {
         Self {
-            shutter: ChannelLevel::wrap(ShutterStrobe::new(
+            shutter: ShutterStrobe::new(
                 Unipolar::channel("Dimmer", 0, 0, 129),
                 Strobe::channel("Strobe", 0, 189, 130, 0),
-            )),
+            )
+            .with_channel_level(),
             color: LabeledSelect::new(
                 "Color",
                 2,
@@ -45,15 +49,18 @@ impl Default for WizardExtreme {
             twinkle_speed: Unipolar::channel("TwinkleSpeed", 2, 176, 243),
             // 14 gobos, including the open position
             gobo: IndexedSelect::multiple("Gobo", 4, false, 14, 12, 0),
-            drum_rotation: Bipolar::split_channel("DrumRotation", 7, 2, 63, 127, 66, 0)
-                .with_detent()
-                .with_mirroring(true),
             drum_swivel: Bipolar::channel("DrumSwivel", 6, 0, 127)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
+            drum_rotation: Bipolar::split_channel("DrumRotation", 7, 2, 63, 127, 66, 0)
+                .with_detent()
+                .with_mirroring(true)
+                .with_channel_knob(1),
             reflector_rotation: Bipolar::split_channel("ReflectorRotation", 1, 2, 63, 127, 66, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(2),
         }
     }
 }

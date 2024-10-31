@@ -3,11 +3,12 @@
 use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
-use log::error;
+use log::{debug, error};
 use number::{BipolarFloat, UnipolarFloat};
 use serde::Deserialize;
 
 use crate::{
+    animation::AnimationUIState,
     control::EmitControlMessage,
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
     osc::{EmitOscMessage, GroupControlMap, OscControlMessage, ScopedControlEmitter},
@@ -191,12 +192,13 @@ impl Channels {
         &mut self,
         msg: &OscControlMessage,
         patch: &mut Patch,
+        animation_ui: &AnimationUIState,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         let Some((ctl, _)) = self.controls.handle(msg)? else {
             return Ok(());
         };
-        self.control(&ctl, patch, emitter)
+        self.control(&ctl, patch, animation_ui, emitter)
     }
 
     /// Handle a typed control message.
@@ -204,6 +206,7 @@ impl Channels {
         &mut self,
         ctl: &ControlMessage,
         patch: &mut Patch,
+        animation_ui: &AnimationUIState,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
         match ctl {
@@ -216,6 +219,15 @@ impl Channels {
                 }
                 self.current_channel = Some(channel);
                 self.emit_state(true, patch, emitter);
+                // FIXME this is so goddamn inside out, I hate it.
+                animation_ui.emit_state(
+                    channel,
+                    self.group_by_channel(patch, channel)?,
+                    &ScopedControlEmitter {
+                        entity: crate::osc::animation::GROUP,
+                        emitter,
+                    },
+                )?;
             }
             ControlMessage::Control { channel_id, msg } => {
                 let channel_id = if let Some(id) = channel_id {
@@ -297,16 +309,42 @@ pub enum StateChange {
     },
 }
 
-#[derive(Clone, Debug)]
+pub type KnobIndex = u8;
+
+#[derive(Clone, Copy, Debug)]
 pub enum ChannelStateChange {
     Level(UnipolarFloat),
-    Knob { index: usize, value: KnobValue },
+    Knob { index: KnobIndex, value: KnobValue },
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum KnobValue {
     Unipolar(UnipolarFloat),
     Bipolar(BipolarFloat),
+}
+
+impl KnobValue {
+    /// Return this knob value as a unipolar float.
+    /// If it came in as a bipolar knob, assume the entire knob range should
+    /// be mapped to the unipolar range, such that a "centered" bipolar knob
+    /// becomes a unipolar knob at 0.5.
+    pub fn as_unipolar(&self) -> UnipolarFloat {
+        match self {
+            Self::Unipolar(v) => *v,
+            Self::Bipolar(v) => UnipolarFloat::new((v.val() + 1.0) / 2.0),
+        }
+    }
+
+    /// Return this knob value as a bipolar float.
+    /// If it came in as a unipolar knob, assume the entire knob range should
+    /// be mapped to the bipolar range, such that a "centered" unipolar knob
+    /// becomes a bipolar knob at 0.
+    pub fn as_bipolar(&self) -> BipolarFloat {
+        match self {
+            Self::Bipolar(v) => *v,
+            Self::Unipolar(v) => BipolarFloat::new((v.val() * 2.0) - 1.0),
+        }
+    }
 }
 
 pub type ChannelControlMessage = ChannelStateChange;

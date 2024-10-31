@@ -4,7 +4,7 @@ use crate::fixture::prelude::*;
 pub struct FusionRoll {
     #[channel_control]
     #[animate]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     #[animate]
     drum_swivel: BipolarChannelMirror,
     #[animate]

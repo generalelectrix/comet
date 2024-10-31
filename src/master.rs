@@ -96,8 +96,7 @@ impl MasterControls {
                 if let Some(channel) = channels.current_channel() {
                     animation_ui_state.emit_state(
                         channel,
-                        channels,
-                        patch,
+                        channels.group_by_channel(patch, channel)?,
                         &ScopedControlEmitter {
                             entity: crate::osc::animation::GROUP,
                             emitter,

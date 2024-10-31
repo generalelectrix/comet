@@ -5,7 +5,7 @@ use crate::fixture::prelude::*;
 pub struct UvLedBrick {
     #[channel_control]
     #[animate]
-    level: UnipolarChannelLevel<UnipolarChannel>,
+    level: ChannelLevelUnipolar<UnipolarChannel>,
 }
 
 impl Default for UvLedBrick {

@@ -73,7 +73,7 @@ impl MidiChannelController for NovationLaunchControlXL {
                 Knob { row, val } => ChannelControlMessage::Control {
                     channel_id: Some(channel as usize + self.channel_offset),
                     msg: ScopedChannelControlMessage::Knob {
-                        index: row as usize,
+                        index: row, // TODO: these are numbered top to bottom, do we want bottom to top?
                         value: KnobValue::Unipolar(unipolar_from_midi(val)),
                     },
                 },

@@ -1,10 +1,11 @@
-use crate::channel::{ChannelControlMessage, ChannelStateChange, Channels};
+use crate::channel::{ChannelControlMessage, ChannelStateChange, Channels, KnobIndex};
 use crate::channel::{ControlMessage, StateChange};
 
 use crate::osc::{GroupControlMap, RadioButton};
 
 use super::fader_array::FaderArray;
 use super::label_array::LabelArray;
+use anyhow::{anyhow, Context};
 
 const N_CHANNELS: usize = 8;
 
@@ -19,6 +20,26 @@ impl Channels {
                 msg: ChannelControlMessage::Level(level),
             })
         });
+        map.add("ChannelKnob", |msg| {
+            let index = msg
+                .addr_payload()
+                .split('/')
+                .skip(1)
+                .take(1)
+                .next()
+                .ok_or_else(|| anyhow!("channel knob index missing for {msg:?}"))?
+                .parse::<KnobIndex>()
+                .with_context(|| format!("handling message {msg:?}"))?;
+            let val = msg.get_unipolar()?;
+
+            Ok(Some(ControlMessage::Control {
+                channel_id: None,
+                msg: ChannelControlMessage::Knob {
+                    index,
+                    value: crate::channel::KnobValue::Unipolar(val),
+                },
+            }))
+        });
     }
 
     pub fn emit_osc_state_change<S>(sc: StateChange, send: &S)
@@ -30,8 +51,8 @@ impl Channels {
             StateChange::ChannelLabels(labels) => CHANNEL_LABELS.set(labels.into_iter(), send),
             StateChange::State { channel_id, msg } => match msg {
                 ChannelStateChange::Level(l) => CHANNEL_FADERS.set(channel_id.into(), l, send),
-                ChannelStateChange::Knob { .. } => {
-                    // TODO: decide how/if to implement channel knobs in TouchOSC
+                ChannelStateChange::Knob { index, value } => {
+                    send.emit_float(&format!("ChannelKnob/{index}"), value.as_unipolar().val());
                 }
             },
         }

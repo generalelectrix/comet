@@ -5,7 +5,7 @@ use crate::fixture::prelude::*;
 pub struct H2O {
     #[channel_control]
     #[animate]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     #[animate]
     rotation: BipolarSplitChannelMirror,
     fixed_color: LabeledSelect,

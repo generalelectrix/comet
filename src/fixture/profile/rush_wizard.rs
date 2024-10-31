@@ -6,7 +6,7 @@ use crate::fixture::prelude::*;
 pub struct RushWizard {
     #[channel_control]
     #[animate]
-    dimmer: UnipolarChannelLevel<UnipolarChannel>,
+    dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     strobe: StrobeChannel,
     color: LabeledSelect,
     twinkle: Bool<()>,

@@ -6,7 +6,7 @@ pub struct Astroscan {
     lamp_on: BoolChannel,
     #[channel_control]
     #[animate]
-    shutter: UnipolarChannelLevel<DimmerStrobe>,
+    shutter: ChannelLevelUnipolar<DimmerStrobe>,
     #[animate]
     iris: UnipolarChannel,
     color: LabeledSelect,
@@ -25,10 +25,11 @@ impl Default for Astroscan {
     fn default() -> Self {
         Self {
             lamp_on: Bool::full_channel("LampOn", 2),
-            shutter: ChannelLevel::wrap(ShutterStrobe::new(
+            shutter: ShutterStrobe::new(
                 Unipolar::channel("Dimmer", 3, 0, 139),
                 Strobe::channel("Strobe", 3, 140, 243, 0),
-            )),
+            )
+            .with_channel_level(),
             iris: Unipolar::full_channel("Iris", 0),
             color: LabeledSelect::new(
                 "Color",
