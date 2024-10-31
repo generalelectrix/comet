@@ -2,7 +2,6 @@
 
 use std::time::Duration;
 
-
 use crate::fixture::prelude::*;
 
 /// Control abstraction for the RA venus.

@@ -1,0 +1,10 @@
+receive_port: 8000
+debug: True
+fixtures:
+  - name: Wizlet
+    addr: 1
+    channel: True
+  - name: Wizlet
+    addr: 13
+    channel: True
+    mirror: True

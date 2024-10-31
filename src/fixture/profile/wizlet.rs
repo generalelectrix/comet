@@ -19,7 +19,7 @@ pub struct Wizlet {
 impl Default for Wizlet {
     fn default() -> Self {
         Self {
-            drum_swivel: Bipolar::channel("DrumSwivel", 0, 0, 255)
+            drum_swivel: Bipolar::channel("DrumSwivel", 0, 255, 0)
                 .with_detent()
                 .with_mirroring(true),
             drum_rotation: Bipolar::split_channel("DrumRotation", 1, 120, 10, 135, 245, 0)
@@ -41,13 +41,14 @@ impl Default for Wizlet {
                     ("WhiteDots", 56),
                 ],
             ),
+            // FIME: flip fast/slow rotation
             reflector_rotation: Bipolar::split_channel(
                 "ReflectorRotation",
                 3,
-                120,
                 10,
-                135,
+                120,
                 245,
+                135,
                 0,
             )
             .with_detent()

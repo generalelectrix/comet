@@ -6,6 +6,7 @@ pub mod comet;
 pub mod dimmer;
 pub mod faderboard;
 pub mod freedom_fries;
+pub mod fusion_roll;
 pub mod generic;
 pub mod h2o;
 pub mod hypnotic;
