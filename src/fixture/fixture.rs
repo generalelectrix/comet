@@ -12,6 +12,7 @@ use super::animation_target::{
 use super::FixtureGroupControls;
 use crate::channel::ChannelControlMessage;
 use crate::fixture::animation_target::AnimationTarget;
+use crate::master::MasterControls;
 use crate::osc::{FixtureStateEmitter, OscControlMessage};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -58,7 +59,8 @@ pub trait Control {
 }
 
 pub trait ControllableFixture: EmitState + Control {
-    fn update(&mut self, _: Duration) {}
+    #[allow(unused)]
+    fn update(&mut self, master_controls: &MasterControls, dt: Duration) {}
 }
 
 pub trait NonAnimatedFixture: ControllableFixture + Debug {
@@ -164,8 +166,8 @@ impl<F: AnimatedFixture> Control for FixtureWithAnimations<F> {
 }
 
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
-    fn update(&mut self, dt: Duration) {
-        self.fixture.update(dt);
+    fn update(&mut self, master_controls: &MasterControls, dt: Duration) {
+        self.fixture.update(master_controls, dt);
         for ta in &mut self.animations {
             ta.animation.update_state(dt, UnipolarFloat::ZERO);
         }

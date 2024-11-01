@@ -205,7 +205,7 @@ impl Show {
     fn update(&mut self, delta_t: Duration) {
         self.master_controls.update(delta_t);
         for fixture in self.patch.iter_mut() {
-            fixture.update(delta_t, UnipolarFloat::ZERO);
+            fixture.update(&self.master_controls, delta_t, UnipolarFloat::ZERO);
         }
         if let Some(ref clock_service) = self.clock_service {
             let clock_state = clock_service.get();

@@ -112,7 +112,7 @@ impl crate::fixture::Control for Venus {
 }
 
 impl ControllableFixture for Venus {
-    fn update(&mut self, delta_t: Duration) {
+    fn update(&mut self, _: &MasterControls, delta_t: Duration) {
         self.base_rotation.update(delta_t);
         self.cradle_motion.update(delta_t);
         self.head_rotation.update(delta_t);
