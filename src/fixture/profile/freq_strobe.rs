@@ -117,18 +117,13 @@ impl Flasher {
     }
 }
 
-const MAX_INTERVAL_MILLIS: u64 = 1000;
-
 fn interval_from_rate(rate: UnipolarFloat) -> Duration {
     // lowest rate: 1 flash/sec => 1 sec interval
     // highest rate: 50 flash/sec => 20 ms interval
     // use exact frame intervals
     // FIXME: this should depend on the show framerate explicitly.
-    if rate == UnipolarFloat::ZERO {
-        return Duration::from_millis(MAX_INTERVAL_MILLIS);
-    }
-    let raw_interval = (MAX_INTERVAL_MILLIS as f64 / (rate.val() * 10.)) as u64 - 80;
-    let coerced_interval = ((raw_interval / 20) * 20).clamp(20, MAX_INTERVAL_MILLIS);
+    let raw_interval = (100. / (rate.val() + 0.09)) as u64 - 70;
+    let coerced_interval = ((raw_interval / 20) * 20).max(20);
     Duration::from_millis(coerced_interval)
 }
 
