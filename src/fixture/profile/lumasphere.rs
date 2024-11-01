@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-
 use crate::fixture::prelude::*;
 
 /// DMX 255 is too fast; restrict to a reasonable value.

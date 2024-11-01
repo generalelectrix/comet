@@ -4,11 +4,10 @@ use std::collections::HashMap;
 use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
 
 use crate::{
-    channel::Channels,
     control::EmitScopedControlMessage,
     fixture::{
         animation_target::{AnimationTargetIndex, ControllableTargetedAnimation, N_ANIM},
-        FixtureGroup, Patch,
+        FixtureGroup,
     },
     osc::{GroupControlMap, OscControlMessage},
     show::ChannelId,

@@ -2,16 +2,12 @@
 
 use anyhow::Result;
 use device::{apc20::AkaiApc20, launch_control_xl::NovationLaunchControlXL};
-use log::error;
 use std::{cell::RefCell, fmt::Display, sync::mpsc::Sender};
 
-use crate::channel::{
-    ChannelControlMessage as ScopedChannelControlMessage, ControlMessage as ChannelControlMessage,
-    StateChange as ChannelStateChange,
-};
+use crate::channel::{ControlMessage as ChannelControlMessage, StateChange as ChannelStateChange};
 use tunnels::{
-    midi::{DeviceSpec, Event, EventType, Manager, Mapping, Output},
-    midi_controls::{init_apc_20, unipolar_from_midi, MidiDevice},
+    midi::{DeviceSpec, Event, Manager, Output},
+    midi_controls::MidiDevice,
 };
 
 use crate::control::ControlMessage;
