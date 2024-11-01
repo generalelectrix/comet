@@ -291,27 +291,28 @@ fn start_sender(clients: Vec<OscClientId>) -> Result<Sender<OscControlResponse>>
     let (send, recv) = channel::<OscControlResponse>();
     let socket = UdpSocket::bind("0.0.0.0:0")?;
 
-    thread::spawn(move || loop {
-        let Ok(resp) = recv.recv() else {
-            info!("OSC sender channel hung up, terminating sender thread.");
-            return;
-        };
-        // Encode the message.
-        let packet = OscPacket::Message(resp.msg);
-        let msg_buf = match encoder::encode(&packet) {
-            Ok(buf) => buf,
-            Err(err) => {
+    thread::spawn(move || {
+        let mut msg_buf = Vec::new();
+        loop {
+            let Ok(resp) = recv.recv() else {
+                info!("OSC sender channel hung up, terminating sender thread.");
+                return;
+            };
+            // Encode the message.
+            let packet = OscPacket::Message(resp.msg);
+            msg_buf.clear();
+            if let Err(err) = encoder::encode_into(&packet, &mut msg_buf) {
                 error!("Error encoding OSC packet {packet:?}: {err}.");
                 continue;
-            }
-        };
-        //log::debug!("Sending OSC message: {packet:?}");
-        for client in &clients {
-            if resp.talkback == TalkbackMode::Off && resp.sender_id == Some(*client) {
-                continue;
-            }
-            if let Err(err) = socket.send_to(&msg_buf, client.addr()) {
-                error!("OSC send error to {client}: {}.", err);
+            };
+            //log::debug!("Sending OSC message: {packet:?}");
+            for client in &clients {
+                if resp.talkback == TalkbackMode::Off && resp.sender_id == Some(*client) {
+                    continue;
+                }
+                if let Err(err) = socket.send_to(&msg_buf, client.addr()) {
+                    error!("OSC send error to {client}: {}.", err);
+                }
             }
         }
     });
