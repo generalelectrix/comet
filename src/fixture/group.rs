@@ -19,7 +19,6 @@ use crate::fixture::FixtureGroupControls;
 use crate::master::MasterControls;
 use crate::osc::{FixtureStateEmitter, OscControlMessage};
 
-#[derive(Debug)]
 pub struct FixtureGroup {
     /// The unique identifier of this group.
     key: FixtureGroupKey,

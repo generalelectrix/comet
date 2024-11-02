@@ -63,7 +63,7 @@ pub trait ControllableFixture: EmitState + Control {
     fn update(&mut self, master_controls: &MasterControls, dt: Duration) {}
 }
 
-pub trait NonAnimatedFixture: ControllableFixture + Debug {
+pub trait NonAnimatedFixture: ControllableFixture {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
@@ -71,7 +71,7 @@ pub trait NonAnimatedFixture: ControllableFixture + Debug {
     fn render(&self, group_controls: &FixtureGroupControls, dmx_buffer: &mut [u8]);
 }
 
-pub trait AnimatedFixture: ControllableFixture + Debug {
+pub trait AnimatedFixture: ControllableFixture {
     type Target: AnimationTarget;
 
     fn render_with_animations(
@@ -82,7 +82,7 @@ pub trait AnimatedFixture: ControllableFixture + Debug {
     );
 }
 
-pub trait Fixture: ControllableFixture + Debug {
+pub trait Fixture: ControllableFixture {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
