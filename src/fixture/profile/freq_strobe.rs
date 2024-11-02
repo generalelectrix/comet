@@ -28,7 +28,7 @@ impl Default for FreqStrobe {
             // strobe: Strobe::channel("Strobe", 17, 9, 131, 0),
             run: Bool::new_off("Run", ()),
             rate: Unipolar::new("Rate", ()),
-            pattern: IndexedSelect::new("Pattern", flasher.len(), false, ()),
+            pattern: IndexedSelect::new("Chase", flasher.len(), false, ()),
             flasher,
         }
     }
