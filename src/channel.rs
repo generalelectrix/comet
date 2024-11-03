@@ -331,7 +331,7 @@ impl KnobValue {
     pub fn as_unipolar(&self) -> UnipolarFloat {
         match self {
             Self::Unipolar(v) => *v,
-            Self::Bipolar(v) => UnipolarFloat::new((v.val() + 1.0) / 2.0),
+            Self::Bipolar(v) => v.rescale_as_unipolar(),
         }
     }
 
@@ -342,7 +342,7 @@ impl KnobValue {
     pub fn as_bipolar(&self) -> BipolarFloat {
         match self {
             Self::Bipolar(v) => *v,
-            Self::Unipolar(v) => BipolarFloat::new((v.val() * 2.0) - 1.0),
+            Self::Unipolar(v) => v.rescale_as_bipolar(),
         }
     }
 }
