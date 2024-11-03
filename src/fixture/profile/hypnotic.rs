@@ -6,8 +6,9 @@ pub struct Hypnotic {
     red_laser_on: Bool<()>,
     green_laser_on: Bool<()>,
     blue_laser_on: Bool<()>,
+    #[channel_control]
     #[animate]
-    rotation: BipolarSplitChannelMirror,
+    rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
 }
 
 impl Default for Hypnotic {
@@ -18,7 +19,8 @@ impl Default for Hypnotic {
             blue_laser_on: Bool::new_off("BlueLaserOn", ()),
             rotation: Bipolar::split_channel("Rotation", 1, 135, 245, 120, 10, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
         }
     }
 }

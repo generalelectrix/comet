@@ -6,12 +6,14 @@ pub struct H2O {
     #[channel_control]
     #[animate]
     dimmer: ChannelLevelUnipolar<UnipolarChannel>,
+    #[channel_control]
     #[animate]
-    rotation: BipolarSplitChannelMirror,
+    rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
     fixed_color: LabeledSelect,
     color_rotate: Bool<()>,
+    #[channel_control]
     #[animate]
-    color_rotation: BipolarSplitChannel,
+    color_rotation: ChannelKnobBipolar<BipolarSplitChannel>,
 }
 
 impl Default for H2O {
@@ -20,7 +22,8 @@ impl Default for H2O {
             dimmer: Unipolar::full_channel("Dimmer", 0).with_channel_level(),
             rotation: Bipolar::split_channel("Rotation", 1, 120, 10, 135, 245, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
             fixed_color: LabeledSelect::new(
                 "FixedColor",
                 2,
@@ -41,7 +44,8 @@ impl Default for H2O {
             ),
             color_rotate: Bool::new_off("ColorRotate", ()),
             color_rotation: Bipolar::split_channel("ColorRotation", 2, 186, 128, 197, 255, 187)
-                .with_detent(),
+                .with_detent()
+                .with_channel_knob(1),
         }
     }
 }

@@ -14,6 +14,7 @@ pub struct FreqStrobe {
     #[animate]
     dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     run: Bool<()>,
+    #[channel_control]
     rate: ChannelKnobUnipolar<Unipolar<()>>,
     pattern: IndexedSelect<()>,
     multiplier: IndexedSelect<()>,

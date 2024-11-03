@@ -5,12 +5,15 @@ use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct RotosphereQ3 {
+    #[channel_control]
     #[animate]
-    rotation: BipolarSplitChannel,
+    rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
+    #[channel_control]
     #[animate]
-    hue: PhaseControl<()>,
+    hue: ChannelKnobPhase<PhaseControl<()>>,
+    #[channel_control]
     #[animate]
-    sat: Unipolar<()>,
+    sat: ChannelKnobUnipolar<Unipolar<()>>,
     #[channel_control]
     #[animate]
     val: ChannelLevelUnipolar<Unipolar<()>>,
@@ -20,11 +23,14 @@ pub struct RotosphereQ3 {
 impl Default for RotosphereQ3 {
     fn default() -> Self {
         Self {
-            hue: PhaseControl::new("Phase", ()),
-            sat: Unipolar::new("Sat", ()).at_full(),
+            hue: PhaseControl::new("Phase", ()).with_channel_knob(0),
+            sat: Unipolar::new("Sat", ()).at_full().with_channel_knob(1),
             val: Unipolar::new("Val", ()).with_channel_level(),
             strobe: Strobe::channel("Strobe", 4, 1, 250, 0),
-            rotation: Bipolar::split_channel("Rotation", 5, 1, 127, 129, 255, 0).with_detent(),
+            rotation: Bipolar::split_channel("Rotation", 5, 1, 127, 129, 255, 0)
+                .with_detent()
+                .with_mirroring(true)
+                .with_channel_knob(2),
         }
     }
 }
@@ -48,8 +54,10 @@ impl AnimatedFixture for RotosphereQ3 {
         Rgbw.render(
             &mut dmx_buf[0..4],
             self.hue
+                .control
                 .val_with_anim(animation_vals.filter(&AnimationTarget::Hue)),
             self.sat
+                .control
                 .val_with_anim(animation_vals.filter(&AnimationTarget::Sat)),
             self.val
                 .control
