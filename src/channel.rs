@@ -3,7 +3,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
-use log::{debug, error};
+use log::error;
 use number::{BipolarFloat, UnipolarFloat};
 use serde::Deserialize;
 

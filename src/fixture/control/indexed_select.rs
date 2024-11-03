@@ -40,6 +40,10 @@ impl<R: RenderToDmx<usize>> IndexedSelect<R> {
             render,
         }
     }
+
+    pub fn selected(&self) -> usize {
+        self.val
+    }
 }
 
 impl IndexedSelect<RenderIndexedSelectToFixedValues> {

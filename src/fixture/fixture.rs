@@ -12,6 +12,7 @@ use super::animation_target::{
 use super::FixtureGroupControls;
 use crate::channel::ChannelControlMessage;
 use crate::fixture::animation_target::AnimationTarget;
+use crate::master::MasterControls;
 use crate::osc::{FixtureStateEmitter, OscControlMessage};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -58,10 +59,11 @@ pub trait Control {
 }
 
 pub trait ControllableFixture: EmitState + Control {
-    fn update(&mut self, _: Duration) {}
+    #[allow(unused)]
+    fn update(&mut self, master_controls: &MasterControls, dt: Duration) {}
 }
 
-pub trait NonAnimatedFixture: ControllableFixture + Debug {
+pub trait NonAnimatedFixture: ControllableFixture {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
@@ -69,7 +71,7 @@ pub trait NonAnimatedFixture: ControllableFixture + Debug {
     fn render(&self, group_controls: &FixtureGroupControls, dmx_buffer: &mut [u8]);
 }
 
-pub trait AnimatedFixture: ControllableFixture + Debug {
+pub trait AnimatedFixture: ControllableFixture {
     type Target: AnimationTarget;
 
     fn render_with_animations(
@@ -80,7 +82,7 @@ pub trait AnimatedFixture: ControllableFixture + Debug {
     );
 }
 
-pub trait Fixture: ControllableFixture + Debug {
+pub trait Fixture: ControllableFixture {
     /// Render into the provided DMX buffer.
     /// The buffer will be pre-sized to the fixture's channel count and offset
     /// to the fixture's start address.
@@ -164,8 +166,8 @@ impl<F: AnimatedFixture> Control for FixtureWithAnimations<F> {
 }
 
 impl<F: AnimatedFixture> ControllableFixture for FixtureWithAnimations<F> {
-    fn update(&mut self, dt: Duration) {
-        self.fixture.update(dt);
+    fn update(&mut self, master_controls: &MasterControls, dt: Duration) {
+        self.fixture.update(master_controls, dt);
         for ta in &mut self.animations {
             ta.animation.update_state(dt, UnipolarFloat::ZERO);
         }

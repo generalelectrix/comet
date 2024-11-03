@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-
 use crate::fixture::prelude::*;
 
 /// DMX 255 is too fast; restrict to a reasonable value.
@@ -150,7 +149,7 @@ impl crate::fixture::Control for Lumasphere {
 }
 
 impl ControllableFixture for Lumasphere {
-    fn update(&mut self, delta_t: Duration) {
+    fn update(&mut self, _: &MasterControls, delta_t: Duration) {
         self.ball_rotation.update(delta_t);
     }
 }
