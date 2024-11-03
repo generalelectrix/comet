@@ -7,8 +7,9 @@ pub struct Starlight {
     #[animate]
     dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     strobe: StrobeChannel,
+    #[channel_control]
     #[animate]
-    rotation: BipolarSplitChannelMirror,
+    rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
 }
 impl Default for Starlight {
     fn default() -> Self {
@@ -17,7 +18,8 @@ impl Default for Starlight {
             strobe: Strobe::channel("Strobe", 2, 10, 255, 0),
             rotation: Bipolar::split_channel("Rotation", 3, 127, 1, 128, 255, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
         }
     }
 }
