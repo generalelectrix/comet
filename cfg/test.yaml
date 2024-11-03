@@ -5,3 +5,6 @@ fixtures:
   - name: Aquarius
     addr: 20
     channel: True
+  - name: Color
+    addr: 30
+    channel: True

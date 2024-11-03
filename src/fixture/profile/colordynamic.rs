@@ -7,13 +7,16 @@ use crate::fixture::prelude::*;
 pub struct Colordynamic {
     #[channel_control]
     shutter: ChannelLevelBool<FullShutterStrobe>,
+    #[channel_control]
     #[animate]
-    color_position: UnipolarChannel,
+    color_position: ChannelKnobUnipolar<UnipolarChannel>,
     color_rotation_on: Bool<()>,
     #[animate]
-    color_rotation_speed: UnipolarChannel,
+    #[channel_control]
+    color_rotation_speed: ChannelKnobUnipolar<UnipolarChannel>,
     #[animate]
-    fiber_rotation: BipolarSplitChannel,
+    #[channel_control]
+    fiber_rotation: ChannelKnobBipolar<BipolarSplitChannel>,
 }
 
 impl Default for Colordynamic {
@@ -25,10 +28,12 @@ impl Default for Colordynamic {
             )
             .with_channel_level(),
             color_rotation_on: Bool::new_off("ColorRotationOn", ()),
-            color_rotation_speed: Unipolar::channel("ColorRotationSpeed", 1, 128, 255),
-            color_position: Unipolar::channel("ColorPosition", 1, 0, 127),
+            color_rotation_speed: Unipolar::channel("ColorRotationSpeed", 1, 128, 255)
+                .with_channel_knob(1),
+            color_position: Unipolar::channel("ColorPosition", 1, 0, 127).with_channel_knob(0),
             fiber_rotation: Bipolar::split_channel("FiberRotation", 2, 113, 0, 142, 255, 128)
-                .with_detent(),
+                .with_detent()
+                .with_channel_knob(2),
         }
     }
 }
