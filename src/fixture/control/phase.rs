@@ -4,11 +4,15 @@ use anyhow::Context;
 use number::{Phase, UnipolarFloat};
 
 use crate::{
+    channel::KnobIndex,
     osc::{EmitScopedOscMessage, OscControlMessage},
     util::unipolar_to_range,
 };
 
-use super::{OscControl, RenderToDmx, RenderToDmxWithAnimations};
+use super::{
+    ChannelControl, ChannelKnobHandler, ChannelKnobPhase, OscControl, RenderToDmx,
+    RenderToDmxWithAnimations,
+};
 
 /// A phase value, with controls.
 #[derive(Debug)]
@@ -43,6 +47,12 @@ impl<R: RenderToDmx<Phase>> PhaseControl<R> {
             val += anim_val;
         }
         Phase::new(val)
+    }
+
+    /// Decorate this control with a channel knob of the provided index.
+    pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobPhase<Self> {
+        let label = self.name.clone();
+        ChannelControl::wrap(self, label, false, ChannelKnobHandler { index })
     }
 }
 

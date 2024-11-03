@@ -14,7 +14,8 @@ pub struct FreqStrobe {
     #[animate]
     dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     run: Bool<()>,
-    rate: Unipolar<()>,
+    #[channel_control]
+    rate: ChannelKnobUnipolar<Unipolar<()>>,
     pattern: IndexedSelect<()>,
     multiplier: IndexedSelect<()>,
     reverse: Bool<()>,
@@ -30,7 +31,7 @@ impl Default for FreqStrobe {
             dimmer: Unipolar::channel("Dimmer", 16, 1, 255).with_channel_level(),
             // strobe: Strobe::channel("Strobe", 17, 9, 131, 0),
             run: Bool::new_off("Run", ()),
-            rate: Unipolar::new("Rate", ()),
+            rate: Unipolar::new("Rate", ()).with_channel_knob(0),
             pattern: IndexedSelect::new("Chase", flasher.len(), false, ()),
             multiplier: IndexedSelect::new("Multiplier", 3, false, ()),
             reverse: Bool::new_off("Reverse", ()),
@@ -53,7 +54,7 @@ impl ControllableFixture for FreqStrobe {
         let rate = if master_controls.strobe().use_master_rate {
             master_controls.strobe().state.rate
         } else {
-            self.rate.val()
+            self.rate.control.val()
         };
         self.flasher.update(
             dt,

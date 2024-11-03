@@ -13,12 +13,15 @@ pub struct RushWizard {
     #[animate]
     twinkle_speed: UnipolarChannel,
     gobo: IndexedSelectMult,
+    #[channel_control]
     #[animate]
-    drum_rotation: BipolarSplitChannelMirror,
+    drum_swivel: ChannelKnobBipolar<BipolarChannelMirror>,
+    #[channel_control]
     #[animate]
-    drum_swivel: BipolarChannelMirror,
+    drum_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
+    #[channel_control]
     #[animate]
-    reflector_rotation: BipolarSplitChannelMirror,
+    reflector_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
 }
 
 impl Default for RushWizard {
@@ -45,12 +48,15 @@ impl Default for RushWizard {
             twinkle_speed: Unipolar::channel("TwinkleSpeed", 2, 221, 243),
             // 16 gobos, including the open position
             gobo: IndexedSelect::multiple("Gobo", 3, false, 16, 2, 160),
-            drum_rotation: Bipolar::split_channel("DrumRotation", 4, 190, 128, 193, 255, 191)
-                .with_detent()
-                .with_mirroring(true),
             drum_swivel: Bipolar::channel("DrumSwivel", 5, 0, 120)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
+            drum_rotation: Bipolar::split_channel("DrumRotation", 4, 190, 128, 193, 255, 191)
+                .with_detent()
+                .with_mirroring(true)
+                .with_channel_knob(1),
+
             reflector_rotation: Bipolar::split_channel(
                 "ReflectorRotation",
                 6,
@@ -61,7 +67,8 @@ impl Default for RushWizard {
                 191,
             )
             .with_detent()
-            .with_mirroring(true),
+            .with_mirroring(true)
+            .with_channel_knob(2),
         }
     }
 }

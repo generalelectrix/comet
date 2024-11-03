@@ -7,11 +7,13 @@ pub struct SolarSystem {
     shutter_open: ChannelLevelBool<Bool<()>>,
     auto_shutter: Bool<()>,
     front_gobo: IndexedSelectMult,
+    #[channel_control]
     #[animate]
-    front_rotation: Mirrored<RenderRotation>,
+    front_rotation: ChannelKnobBipolar<Mirrored<RenderRotation>>,
     rear_gobo: IndexedSelectMult,
+    #[channel_control]
     #[animate]
-    rear_rotation: Mirrored<RenderRotation>,
+    rear_rotation: ChannelKnobBipolar<Mirrored<RenderRotation>>,
 }
 
 const GOBO_COUNT: usize = 8;
@@ -24,11 +26,13 @@ impl Default for SolarSystem {
             front_gobo: IndexedSelect::multiple("FrontGobo", 0, false, GOBO_COUNT, 32, 16),
             front_rotation: Bipolar::new("FrontRotation", RenderRotation { dmx_buf_offset: 1 })
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
             rear_gobo: IndexedSelect::multiple("RearGobo", 0, false, GOBO_COUNT, 32, 16),
             rear_rotation: Bipolar::new("RearRotation", RenderRotation { dmx_buf_offset: 1 })
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(1),
         }
     }
 }

@@ -5,14 +5,17 @@ pub struct FusionRoll {
     #[channel_control]
     #[animate]
     dimmer: ChannelLevelUnipolar<UnipolarChannel>,
+    #[channel_control]
     #[animate]
-    drum_swivel: BipolarChannelMirror,
+    drum_swivel: ChannelKnobBipolar<BipolarChannelMirror>,
+    #[channel_control]
     #[animate]
-    drum_rotation: BipolarSplitChannelMirror,
+    drum_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
     color: LabeledSelect,
 
+    #[channel_control]
     #[animate]
-    laser_rotation: BipolarSplitChannelMirror,
+    laser_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
     led_strobe: StrobeChannel,
     laser: FullShutterStrobe,
 }
@@ -22,10 +25,12 @@ impl Default for FusionRoll {
         Self {
             drum_swivel: Bipolar::channel("DrumSwivel", 0, 255, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
             drum_rotation: Bipolar::split_channel("DrumRotation", 1, 120, 10, 135, 245, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(1),
 
             color: LabeledSelect::new(
                 "Color",
@@ -46,7 +51,8 @@ impl Default for FusionRoll {
 
             laser_rotation: Bipolar::split_channel("LaserRotation", 5, 10, 120, 136, 245, 0)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(2),
             led_strobe: Strobe::channel("LEDStrobe", 3, 16, 131, 8),
             laser: FullShutterStrobe::new(
                 Bool::channel("LaserOn", 6, 0, 8),
