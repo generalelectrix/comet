@@ -1,11 +1,13 @@
 //! Device model for the Novation Launch Control XL.
+use std::{cell::OnceCell, collections::HashMap};
+
 use log::{debug, error};
 use tunnels::{
     midi::{Event, EventType, Mapping, Output},
     midi_controls::MidiDevice,
 };
 
-use crate::midi::Device;
+use crate::{midi::Device, show::ChannelId};
 
 /// Model of the Novation Launch Control XL.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,33 +17,41 @@ pub struct NovationLaunchControlXL {
     pub channel_offset: usize,
 }
 
-const FADER: u8 = 0; // TODO
-const TRACK_FOCUS: u8 = 1; // TODO
-const TRACK_CONTROL: u8 = 2; // TODO
-const TOP_KNOB: u8 = 3; // TODO
-const MIDDLE_KNOB: u8 = 4; // TODO
-const BOTTOM_KNOB: u8 = 5; // TODO
+const FADER: u8 = 0;
+const TOP_KNOB: u8 = 1;
+const MIDDLE_KNOB: u8 = 2;
+const BOTTOM_KNOB: u8 = 3;
+const TRACK_FOCUS: u8 = 0;
+const TRACK_CONTROL: u8 = 1;
 
 impl NovationLaunchControlXL {
     pub const CHANNEL_COUNT: u8 = 8;
 
     pub fn device_name(&self) -> &str {
-        "Novation Launch Control XL"
+        "Launch Control XL"
     }
 
     /// Select factory template 0.
     pub fn init_midi<D: MidiDevice>(&self, out: &mut Output<D>) -> anyhow::Result<()> {
-        debug!("Sending Launch Control XL sysex template select command.");
-        out.send_raw(&[0xF0, 0x00, 0x20, 0x29, 0x02, 0x11, 0x77, 0x08, 0xF7])?;
+        debug!("Sending Launch Control XL sysex template select command (User 1).");
+        out.send_raw(&[0xF0, 0x00, 0x20, 0x29, 0x02, 0x11, 0x77, 0x00, 0xF7])?;
         Ok(())
+    }
+
+    /// Determine the midi channel for the given show control channel.
+    /// Return None if the show channel isn't mapped onto this device.
+    pub fn midi_channel_for_control_channel(&self, channel: ChannelId) -> Option<u8> {
+        let midi_channel = channel.inner() as isize - self.channel_offset as isize;
+        (midi_channel >= 0 && midi_channel < Self::CHANNEL_COUNT as isize)
+            .then_some(midi_channel as u8)
     }
 
     /// Interpret a midi event as a typed control event.
     pub fn parse(&self, event: &Event) -> Option<LaunchControlXLControlEvent> {
-        use LaunchControlXLChannelButtonType::*;
+        use LaunchControlXLChannelButton::*;
         use LaunchControlXLChannelControlEvent::*;
         use LaunchControlXLControlEvent::*;
-        match event.mapping.event_type {
+        let event = match event.mapping.event_type {
             EventType::ControlChange => Some(Channel {
                 channel: event.mapping.channel,
                 event: match event.mapping.control {
@@ -63,6 +73,23 @@ impl NovationLaunchControlXL {
                     }
                 },
             }),
+            EventType::NoteOn if event.mapping.channel == 8 => {
+                use LaunchControlXLSideButton::*;
+                let button = match event.mapping.control {
+                    0 => Up,
+                    1 => Down,
+                    2 => Left,
+                    3 => Right,
+                    4 => Device,
+                    5 => Mute,
+                    6 => Solo,
+                    7 => Record,
+                    _ => {
+                        return None;
+                    }
+                };
+                Some(SideButton(button))
+            }
             EventType::NoteOn => match event.mapping.control {
                 TRACK_FOCUS => Some(Channel {
                     channel: event.mapping.channel,
@@ -75,12 +102,14 @@ impl NovationLaunchControlXL {
                 _ => None,
             },
             _ => None,
-        }
+        };
+        println!("{event:?}");
+        event
     }
 
     /// Process a state change and emit midi.
     pub fn emit(&self, sc: LaunchControlXLStateChange, output: &mut Output<Device>) {
-        use LaunchControlXLChannelButtonType::*;
+        use LaunchControlXLChannelButton::*;
         use LaunchControlXLStateChange::*;
         match sc {
             ChannelButtonRadio {
@@ -113,16 +142,16 @@ impl NovationLaunchControlXL {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum LaunchControlXLControlEvent {
     Channel {
         channel: u8,
         event: LaunchControlXLChannelControlEvent,
     },
-    // SpecialButton(LaunchControlXLSpecialButtonType),
+    SideButton(LaunchControlXLSideButton),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum LaunchControlXLChannelControlEvent {
     Fader(u8),
     Knob {
@@ -130,18 +159,25 @@ pub enum LaunchControlXLChannelControlEvent {
         row: u8,
         val: u8,
     },
-    Button(LaunchControlXLChannelButtonType),
+    Button(LaunchControlXLChannelButton),
 }
 
-#[derive(Clone, Copy)]
-pub enum LaunchControlXLChannelButtonType {
+#[derive(Clone, Copy, Debug)]
+pub enum LaunchControlXLChannelButton {
     TrackFocus,   // top button
     TrackControl, // bottom button
 }
 
-#[derive(Clone, Copy)]
-pub enum LaunchControlXLSpecialButtonType {
-    // TODO
+#[derive(Clone, Copy, Debug)]
+pub enum LaunchControlXLSideButton {
+    Up,
+    Down,
+    Left,
+    Right,
+    Device,
+    Mute,
+    Solo,
+    Record,
 }
 
 #[derive(Clone, Copy)]
@@ -155,7 +191,7 @@ pub enum LaunchControlXLStateChange {
     /// If channel is None, turn all buttons off.
     ChannelButtonRadio {
         channel: Option<u8>,
-        button: LaunchControlXLChannelButtonType,
+        button: LaunchControlXLChannelButton,
         state: LedState,
     },
     // TODO: knob LED state
