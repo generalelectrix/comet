@@ -13,8 +13,9 @@ pub struct FreedomFries {
     dimmer: ChannelLevelUnipolar<UnipolarChannel>,
     #[force_osc_control]
     color: Color,
+    #[channel_control]
     #[animate]
-    speed: UnipolarChannel,
+    speed: ChannelKnobUnipolar<UnipolarChannel>,
     strobe: StrobeChannel,
     program: ProgramControl,
 }
@@ -24,7 +25,7 @@ impl Default for FreedomFries {
         Self {
             dimmer: Unipolar::full_channel("Dimmer", 0).with_channel_level(),
             color: Default::default(),
-            speed: Unipolar::full_channel("Speed", 7),
+            speed: Unipolar::full_channel("Speed", 7).with_channel_knob(0),
             strobe: Strobe::channel("Strobe", 5, 0, 11, 255),
 
             program: ProgramControl::default(),
