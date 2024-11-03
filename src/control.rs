@@ -88,7 +88,7 @@ impl<'a> EmitOscMessage for ControlMessageWithMetadataSender<'a> {
 
 impl<'a> EmitMidiChannelMessage for ControlMessageWithMetadataSender<'a> {
     fn emit_midi_channel_message(&self, msg: &crate::channel::StateChange) {
-        self.controller.midi.update(msg);
+        self.controller.midi.emit_channel_control(msg);
     }
 }
 

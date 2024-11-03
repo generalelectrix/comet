@@ -4,7 +4,10 @@ use anyhow::Result;
 use device::{apc20::AkaiApc20, launch_control_xl::NovationLaunchControlXL};
 use std::{cell::RefCell, fmt::Display, sync::mpsc::Sender};
 
-use crate::channel::{ControlMessage as ChannelControlMessage, StateChange as ChannelStateChange};
+use crate::{
+    channel::{ControlMessage as ChannelControlMessage, StateChange as ChannelStateChange},
+    show::ShowControlMessage,
+};
 use tunnels::{
     midi::{DeviceSpec, Event, Manager, Output},
     midi_controls::MidiDevice,
@@ -53,8 +56,8 @@ impl Device {
     }
 }
 
-impl MidiChannelController for Device {
-    fn interpret(&self, event: &Event) -> Option<ChannelControlMessage> {
+impl MidiHandler for Device {
+    fn interpret(&self, event: &Event) -> Option<ShowControlMessage> {
         match self {
             Self::Apc20(d) => d.interpret(event),
             Self::LaunchControlXL(d) => d.interpret(event),
@@ -67,15 +70,27 @@ impl MidiChannelController for Device {
             Self::LaunchControlXL(d) => d.emit_channel_control(msg, output),
         }
     }
+
+    fn emit_master_control(&self, msg: &crate::master::StateChange, output: &mut Output<Device>) {
+        match self {
+            Self::Apc20(d) => d.emit_master_control(msg, output),
+            Self::LaunchControlXL(d) => d.emit_master_control(msg, output),
+        }
+    }
 }
 
 /// MIDI handling, interpreting a MIDI event as a channel control message.
-pub trait MidiChannelController {
-    /// Interpet an incoming MIDI event as a channel control message.
-    fn interpret(&self, event: &Event) -> Option<ChannelControlMessage>;
+pub trait MidiHandler {
+    /// Interpet an incoming MIDI event as a show control message.
+    fn interpret(&self, event: &Event) -> Option<ShowControlMessage>;
 
-    /// Send MIDI state to handle the provided ChannelControlMessage.
-    fn emit_channel_control(&self, msg: &ChannelStateChange, output: &mut Output<Device>);
+    /// Send MIDI state to handle the provided channel state change.
+    #[allow(unused)]
+    fn emit_channel_control(&self, msg: &ChannelStateChange, output: &mut Output<Device>) {}
+
+    /// Send MIDI state to handle the provided master state change.
+    #[allow(unused)]
+    fn emit_master_control(&self, msg: &crate::master::StateChange, output: &mut Output<Device>) {}
 }
 
 pub struct MidiControlMessage {
@@ -99,21 +114,40 @@ impl MidiController {
     }
 
     /// Handle a channel state change message.
-    pub fn update(&self, msg: &ChannelStateChange) {
+    pub fn emit_channel_control(&self, msg: &ChannelStateChange) {
         for output in self.0.borrow_mut().outputs() {
             // FIXME: tunnels devices are inside-out/stateless
             let device = *output.device();
             device.emit_channel_control(msg, output);
         }
     }
+
+    /// Handle a master state change message.
+    pub fn emit_master_control(&self, msg: &crate::master::StateChange) {
+        for output in self.0.borrow_mut().outputs() {
+            // FIXME: tunnels devices are inside-out/stateless
+            let device = *output.device();
+            device.emit_master_control(msg, output);
+        }
+    }
 }
 
 impl EmitMidiChannelMessage for MidiController {
     fn emit_midi_channel_message(&self, msg: &ChannelStateChange) {
-        self.update(msg);
+        self.emit_channel_control(msg);
+    }
+}
+
+impl EmitMidiMasterMessage for MidiController {
+    fn emit_midi_master_message(&self, msg: &crate::master::StateChange) {
+        self.emit_master_control(msg);
     }
 }
 
 pub trait EmitMidiChannelMessage {
     fn emit_midi_channel_message(&self, msg: &ChannelStateChange);
+}
+
+pub trait EmitMidiMasterMessage {
+    fn emit_midi_master_message(&self, msg: &crate::master::StateChange);
 }
