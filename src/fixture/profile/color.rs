@@ -8,11 +8,13 @@ use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::{fixture::prelude::*, osc::OscControlMessage};
 
-#[derive(Debug)]
+#[derive(Debug, Control, EmitState)]
 pub struct Color {
     hue: PhaseControl<()>,
     sat: Unipolar<()>,
     val: Unipolar<()>,
+    #[skip_emit]
+    #[skip_control]
     model: Model,
 }
 
@@ -90,22 +92,6 @@ impl AnimatedFixture for Color {
             UnipolarFloat::new(sat),
             UnipolarFloat::new(val),
         );
-    }
-}
-
-impl crate::fixture::EmitState for Color {
-    fn emit_state(&self, emitter: &FixtureStateEmitter) {
-        OscControl::emit_state(self, emitter);
-    }
-}
-
-impl crate::fixture::Control for Color {
-    fn control(
-        &mut self,
-        msg: &OscControlMessage,
-        emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<bool> {
-        OscControl::control(self, msg, emitter)
     }
 }
 

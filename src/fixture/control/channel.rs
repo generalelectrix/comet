@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 
-use number::{BipolarFloat, UnipolarFloat};
+use number::{BipolarFloat, Phase, UnipolarFloat};
 
 use crate::{
     channel::{ChannelControlMessage, ChannelStateChange, KnobIndex, KnobValue},
@@ -193,6 +193,19 @@ impl ChannelHandler<UnipolarFloat> for ChannelKnobHandler {
     }
 }
 
+impl ChannelHandler<Phase> for ChannelKnobHandler {
+    fn parse(&self, msg: &ChannelControlMessage) -> Option<Phase> {
+        Some(self.matches(msg)?.as_unipolar().as_phase())
+    }
+
+    fn emit(&self, val: &Phase) -> ChannelStateChange {
+        ChannelStateChange::Knob {
+            index: self.index,
+            value: KnobValue::Unipolar(val.as_unipolar()),
+        }
+    }
+}
+
 impl ChannelHandler<BipolarFloat> for ChannelKnobHandler {
     fn parse(&self, msg: &ChannelControlMessage) -> Option<BipolarFloat> {
         Some(self.matches(msg)?.as_bipolar())
@@ -209,5 +222,7 @@ impl ChannelHandler<BipolarFloat> for ChannelKnobHandler {
 pub type ChannelKnobControl<C, T> = ChannelControl<C, T, ChannelKnobHandler>;
 
 pub type ChannelKnobUnipolar<C> = ChannelKnobControl<C, UnipolarFloat>;
+
+pub type ChannelKnobPhase<C> = ChannelKnobControl<C, Phase>;
 
 pub type ChannelKnobBipolar<C> = ChannelKnobControl<C, BipolarFloat>;
