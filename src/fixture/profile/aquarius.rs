@@ -5,15 +5,19 @@ use crate::fixture::prelude::*;
 pub struct Aquarius {
     #[channel_control]
     lamp_on: ChannelLevelBool<BoolChannel>,
+    #[channel_control]
     #[animate]
-    rotation: BipolarSplitChannel,
+    rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
 }
 
 impl Default for Aquarius {
     fn default() -> Self {
         Self {
             lamp_on: Bool::full_channel("LampOn", 1).with_channel_level(),
-            rotation: Bipolar::split_channel("Rotation", 0, 130, 8, 132, 255, 0).with_detent(),
+            rotation: Bipolar::split_channel("Rotation", 0, 130, 8, 132, 255, 0)
+                .with_detent()
+                .with_mirroring(true)
+                .with_channel_knob(0),
         }
     }
 }

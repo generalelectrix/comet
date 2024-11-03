@@ -279,7 +279,6 @@ impl LedState {
     /// Near 0 is dark.
     pub fn from_bipolar(val: BipolarFloat) -> Self {
         let mag = ((val.val().abs() * 4.0) as u8).min(3);
-        println!("mag: {mag}");
         if val.val() < 0.0 {
             Self { red: mag, green: 0 }
         } else {

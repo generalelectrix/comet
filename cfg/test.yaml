@@ -2,3 +2,6 @@ fixtures:
   - name: WizardExtreme
     addr: 1
     channel: True
+  - name: Aquarius
+    addr: 20
+    channel: True
