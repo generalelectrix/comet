@@ -3,16 +3,20 @@
 use std::collections::HashMap;
 
 use anyhow::{bail, Result};
-use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::{Display as EnumDisplay, EnumIter, EnumString};
 
 use crate::{fixture::prelude::*, osc::OscControlMessage};
 
 #[derive(Debug, Control, EmitState)]
 pub struct Color {
-    hue: PhaseControl<()>,
-    sat: Unipolar<()>,
-    val: Unipolar<()>,
+    #[channel_control]
+    #[animate]
+    hue: ChannelKnobPhase<PhaseControl<()>>,
+    #[channel_control]
+    #[animate]
+    sat: ChannelKnobUnipolar<Unipolar<()>>,
+    #[channel_control]
+    #[animate]
+    val: ChannelLevelUnipolar<Unipolar<()>>,
     #[skip_emit]
     #[skip_control]
     model: Model,
@@ -21,9 +25,9 @@ pub struct Color {
 impl Default for Color {
     fn default() -> Self {
         Self {
-            hue: PhaseControl::new("Hue", ()),
-            sat: Unipolar::new("Sat", ()).at_full(),
-            val: Unipolar::new("Val", ()),
+            hue: PhaseControl::new("Hue", ()).with_channel_knob(0),
+            sat: Unipolar::new("Sat", ()).at_full().with_channel_knob(1),
+            val: Unipolar::new("Val", ()).with_channel_level(),
             model: Default::default(),
         }
     }
@@ -61,8 +65,12 @@ impl Color {
     }
 
     pub fn render_without_animations(&self, dmx_buf: &mut [u8]) {
-        self.model
-            .render(dmx_buf, self.hue.val(), self.sat.val(), self.val.val());
+        self.model.render(
+            dmx_buf,
+            self.hue.control.val(),
+            self.sat.control.val(),
+            self.val.control.val(),
+        );
     }
 }
 
@@ -74,9 +82,9 @@ impl AnimatedFixture for Color {
         animation_vals: TargetedAnimationValues<Self::Target>,
         dmx_buf: &mut [u8],
     ) {
-        let mut hue = self.hue.val().val();
-        let mut sat = self.sat.val().val();
-        let mut val = self.val.val().val();
+        let mut hue = self.hue.control.val().val();
+        let mut sat = self.sat.control.val().val();
+        let mut val = self.val.control.val().val();
         for (anim_val, target) in animation_vals.iter() {
             use AnimationTarget::*;
             match target {
@@ -111,22 +119,22 @@ impl OscControl<()> for Color {
         msg: &OscControlMessage,
         emitter: &dyn crate::osc::EmitScopedOscMessage,
     ) -> anyhow::Result<bool> {
-        if self.hue.control(msg, emitter)? {
+        if self.hue.control.control(msg, emitter)? {
             return Ok(true);
         }
-        if self.sat.control(msg, emitter)? {
+        if self.sat.control.control(msg, emitter)? {
             return Ok(true);
         }
-        if self.val.control(msg, emitter)? {
+        if self.val.control.control(msg, emitter)? {
             return Ok(true);
         }
         Ok(false)
     }
 
     fn emit_state(&self, emitter: &dyn crate::osc::EmitScopedOscMessage) {
-        self.hue.emit_state(emitter);
-        self.sat.emit_state(emitter);
-        self.val.emit_state(emitter);
+        self.hue.control.emit_state(emitter);
+        self.sat.control.emit_state(emitter);
+        self.val.control.emit_state(emitter);
     }
 }
 
@@ -208,31 +216,4 @@ fn hsv_to_rgb(hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) -> ColorRgb {
 
 fn unit_to_u8(v: f64) -> u8 {
     (255. * v).round() as u8
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    EnumString,
-    EnumIter,
-    EnumDisplay,
-    FromPrimitive,
-    ToPrimitive,
-)]
-pub enum AnimationTarget {
-    #[default]
-    Hue,
-    Sat,
-    Val,
-}
-
-impl AnimationTarget {
-    /// Return true if this target is unipolar instead of bipolar.
-    #[allow(unused)]
-    pub fn is_unipolar(&self) -> bool {
-        matches!(self, Self::Sat | Self::Val)
-    }
 }

@@ -48,6 +48,12 @@ impl<R: RenderToDmx<Phase>> PhaseControl<R> {
         }
         Phase::new(val)
     }
+
+    /// Decorate this control with a channel knob of the provided index.
+    pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobPhase<Self> {
+        let label = self.name.clone();
+        ChannelControl::wrap(self, label, false, ChannelKnobHandler { index })
+    }
 }
 
 impl PhaseControl<RenderPhaseToRange> {
@@ -62,12 +68,6 @@ impl PhaseControl<RenderPhaseToRange> {
                 end: 255,
             },
         )
-    }
-
-    /// Decorate this control with a channel knob of the provided index.
-    pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobPhase<Self> {
-        let label = self.name.clone();
-        ChannelControl::wrap(self, label, false, ChannelKnobHandler { index })
     }
 }
 
