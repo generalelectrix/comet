@@ -10,14 +10,15 @@ use super::{
         },
         launch_control_xl::{
             LaunchControlXLChannelButton, LaunchControlXLChannelControlEvent,
-            LaunchControlXLControlEvent, LaunchControlXLStateChange, LedState,
-            NovationLaunchControlXL,
+            LaunchControlXLChannelStateChange, LaunchControlXLControlEvent,
+            LaunchControlXLStateChange, LedState, NovationLaunchControlXL,
         },
     },
     MidiChannelController,
 };
 use crate::channel::{
-    ChannelControlMessage as ScopedChannelControlMessage, ControlMessage as ChannelControlMessage,
+    ChannelControlMessage as ScopedChannelControlMessage,
+    ChannelStateChange as SpecificChannelStateChange, ControlMessage as ChannelControlMessage,
     KnobValue, StateChange as ChannelStateChange,
 };
 
@@ -95,16 +96,37 @@ impl MidiChannelController for NovationLaunchControlXL {
         msg: &ChannelStateChange,
         output: &mut tunnels::midi::Output<super::Device>,
     ) {
-        if let ChannelStateChange::SelectChannel(channel) = msg {
-            let midi_channel = self.midi_channel_for_control_channel(*channel);
-            self.emit(
-                LaunchControlXLStateChange::ChannelButtonRadio {
-                    channel: midi_channel,
-                    button: LaunchControlXLChannelButton::TrackFocus,
-                    state: LedState::YELLOW,
-                },
-                output,
-            );
+        match msg {
+            ChannelStateChange::SelectChannel(channel) => {
+                let midi_channel = self.midi_channel_for_control_channel(*channel);
+                self.emit(
+                    LaunchControlXLStateChange::ChannelButtonRadio {
+                        channel: midi_channel,
+                        button: LaunchControlXLChannelButton::TrackFocus,
+                        state: LedState::YELLOW,
+                    },
+                    output,
+                );
+            }
+            ChannelStateChange::State { channel_id, msg } => {
+                let Some(channel) = self.midi_channel_for_control_channel(*channel_id) else {
+                    return;
+                };
+                match msg {
+                    SpecificChannelStateChange::Knob { index, value } => self.emit(
+                        LaunchControlXLStateChange::Channel {
+                            channel,
+                            state: LaunchControlXLChannelStateChange::Knob {
+                                row: *index,
+                                state: LedState::from_knob_value(value),
+                            },
+                        },
+                        output,
+                    ),
+                    SpecificChannelStateChange::Level(_) => (),
+                }
+            }
+            ChannelStateChange::ChannelLabels(_) => (),
         }
     }
 }
