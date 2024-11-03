@@ -46,7 +46,7 @@ impl<R: RenderToDmx<bool>> Bool<R> {
     }
 
     pub fn with_channel_level(self) -> ChannelLevelBool<Self> {
-        ChannelControl::wrap(self, "Level".to_string(), ChannelLevelHandler)
+        ChannelControl::wrap(self, "Level".to_string(), true, ChannelLevelHandler)
     }
 }
 

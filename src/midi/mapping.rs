@@ -9,15 +9,16 @@ use super::{
             Apc20StateChange,
         },
         launch_control_xl::{
-            LaunchControlXLChannelButtonType, LaunchControlXLChannelControlEvent,
-            LaunchControlXLControlEvent, LaunchControlXLStateChange, LedState,
-            NovationLaunchControlXL,
+            LaunchControlXLChannelButton, LaunchControlXLChannelControlEvent,
+            LaunchControlXLChannelStateChange, LaunchControlXLControlEvent,
+            LaunchControlXLStateChange, LedState, NovationLaunchControlXL,
         },
     },
     MidiChannelController,
 };
 use crate::channel::{
-    ChannelControlMessage as ScopedChannelControlMessage, ControlMessage as ChannelControlMessage,
+    ChannelControlMessage as ScopedChannelControlMessage,
+    ChannelStateChange as SpecificChannelStateChange, ControlMessage as ChannelControlMessage,
     KnobValue, StateChange as ChannelStateChange,
 };
 
@@ -61,7 +62,7 @@ impl MidiChannelController for AkaiApc20 {
 
 impl MidiChannelController for NovationLaunchControlXL {
     fn interpret(&self, event: &tunnels::midi::Event) -> Option<crate::channel::ControlMessage> {
-        use LaunchControlXLChannelButtonType::*;
+        use LaunchControlXLChannelButton::*;
         use LaunchControlXLChannelControlEvent::*;
         use LaunchControlXLControlEvent::*;
         Some(match self.parse(event)? {
@@ -84,6 +85,9 @@ impl MidiChannelController for NovationLaunchControlXL {
                     return None;
                 }
             },
+            SideButton(_) => {
+                return None;
+            }
         })
     }
 
@@ -92,18 +96,37 @@ impl MidiChannelController for NovationLaunchControlXL {
         msg: &ChannelStateChange,
         output: &mut tunnels::midi::Output<super::Device>,
     ) {
-        if let ChannelStateChange::SelectChannel(channel) = msg {
-            let midi_channel = channel.inner() as isize - self.channel_offset as isize;
-            let midi_channel = (midi_channel >= 0 && midi_channel < Self::CHANNEL_COUNT as isize)
-                .then_some(midi_channel as u8);
-            self.emit(
-                LaunchControlXLStateChange::ChannelButtonRadio {
-                    channel: midi_channel,
-                    button: LaunchControlXLChannelButtonType::TrackFocus,
-                    state: LedState::YELLOW,
-                },
-                output,
-            );
+        match msg {
+            ChannelStateChange::SelectChannel(channel) => {
+                let midi_channel = self.midi_channel_for_control_channel(*channel);
+                self.emit(
+                    LaunchControlXLStateChange::ChannelButtonRadio {
+                        channel: midi_channel,
+                        button: LaunchControlXLChannelButton::TrackFocus,
+                        state: LedState::YELLOW,
+                    },
+                    output,
+                );
+            }
+            ChannelStateChange::State { channel_id, msg } => {
+                let Some(channel) = self.midi_channel_for_control_channel(*channel_id) else {
+                    return;
+                };
+                match msg {
+                    SpecificChannelStateChange::Knob { index, value } => self.emit(
+                        LaunchControlXLStateChange::Channel {
+                            channel,
+                            state: LaunchControlXLChannelStateChange::Knob {
+                                row: *index,
+                                state: LedState::from_knob_value(value),
+                            },
+                        },
+                        output,
+                    ),
+                    SpecificChannelStateChange::Level(_) => (),
+                }
+            }
+            ChannelStateChange::ChannelLabels(_) => (),
         }
     }
 }
