@@ -11,10 +11,12 @@ pub struct Astroscan {
     iris: UnipolarChannel,
     color: LabeledSelect,
     gobo: IndexedSelectMult,
+    #[channel_control]
     #[animate]
-    gobo_rotation: BipolarSplitChannelMirror,
+    mirror_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
+    #[channel_control]
     #[animate]
-    mirror_rotation: BipolarSplitChannelMirror,
+    gobo_rotation: ChannelKnobBipolar<BipolarSplitChannelMirror>,
     #[animate]
     pan: BipolarChannelMirror,
     #[animate]
@@ -48,10 +50,12 @@ impl Default for Astroscan {
             gobo: IndexedSelect::multiple("Gobo", 6, false, 5, 55, 0),
             gobo_rotation: Bipolar::split_channel("GoboRotation", 7, 189, 128, 193, 255, 191)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(1),
             mirror_rotation: Bipolar::split_channel("MirrorRotation", 8, 189, 128, 193, 255, 191)
                 .with_detent()
-                .with_mirroring(true),
+                .with_mirroring(true)
+                .with_channel_knob(0),
             pan: Bipolar::channel("Pan", 4, 0, 255)
                 .with_detent()
                 .with_mirroring(true),
