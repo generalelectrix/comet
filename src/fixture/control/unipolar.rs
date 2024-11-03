@@ -43,13 +43,13 @@ impl<R: RenderToDmx<UnipolarFloat>> Unipolar<R> {
 
     /// Decorate this control with channel level control.
     pub fn with_channel_level(self) -> ChannelLevelUnipolar<Self> {
-        ChannelControl::wrap(self, "Level".to_string(), ChannelLevelHandler)
+        ChannelControl::wrap(self, "Level".to_string(), true, ChannelLevelHandler)
     }
 
     /// Decorate this control with a channel knob of the provided index.
     pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobUnipolar<Self> {
         let label = self.name.clone();
-        ChannelControl::wrap(self, label, ChannelKnobHandler { index })
+        ChannelControl::wrap(self, label, false, ChannelKnobHandler { index })
     }
 
     pub fn val(&self) -> UnipolarFloat {

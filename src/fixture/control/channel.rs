@@ -20,6 +20,20 @@ where
     pub control: C,
     label: String,
     handler: H,
+    /// If true, echo exact channel control messages.
+    /// If false, use the handler's emit method to create the output message.
+    /// This behavior can be used to control whether or not we want to echo
+    /// the control update in the domain of the target control, or in the domain
+    /// of the source of the control message. Examples where this is useful:
+    ///
+    /// - a level fader controlling a boolean shutter would want to echo the exact
+    ///     channel control message, since we'd want virtual faders to track
+    ///     each other and not snap to a boolean value
+    /// - a hardware device may represent all knob inputs as unipolar, but these
+    ///     could be connected to a bipolar control parameter, or vice versa.
+    ///     In this case, we'd want to echo out the control value in the bipolar
+    ///     domain, to things like indicator rings can be set correctly.
+    exact_echo: bool,
     phantom: PhantomData<T>,
 }
 
@@ -28,10 +42,11 @@ where
     C: OscControl<T> + RenderToDmxWithAnimations,
     H: ChannelHandler<T>,
 {
-    pub fn wrap(control: C, label: String, handler: H) -> Self {
+    pub fn wrap(control: C, label: String, exact_echo: bool, handler: H) -> Self {
         Self {
             control,
             label,
+            exact_echo,
             handler,
             phantom: PhantomData,
         }
@@ -62,9 +77,12 @@ where
         let Some(v) = self.handler.parse(msg) else {
             return Ok(false);
         };
+        emitter.emit_channel(if self.exact_echo {
+            *msg
+        } else {
+            self.handler.emit(&v)
+        });
         self.control.control_direct(v, emitter)?;
-        // Echo the exact channel message back out.
-        emitter.emit_channel(*msg);
         Ok(true)
     }
 }

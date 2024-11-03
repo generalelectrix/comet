@@ -1,4 +1,4 @@
 fixtures:
-  - name: FreqStrobe
+  - name: WizardExtreme
     addr: 1
     channel: True

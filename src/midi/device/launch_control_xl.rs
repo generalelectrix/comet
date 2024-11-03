@@ -1,5 +1,5 @@
 //! Device model for the Novation Launch Control XL.
-use std::{cell::OnceCell, collections::HashMap};
+use std::{cell::OnceCell, collections::HashMap, time::Duration};
 
 use log::{debug, error};
 use number::{BipolarFloat, UnipolarFloat};
@@ -22,8 +22,28 @@ const FADER: u8 = 0;
 const TOP_KNOB: u8 = 1;
 const MIDDLE_KNOB: u8 = 2;
 const BOTTOM_KNOB: u8 = 3;
-const TRACK_FOCUS: u8 = 0;
-const TRACK_CONTROL: u8 = 1;
+const TRACK_FOCUS: u8 = 1;
+const TRACK_CONTROL: u8 = 2;
+
+const TEMPLATE_ID: u8 = 0x00;
+
+fn set_led<D: MidiDevice>(index: u8, state: LedState, out: &mut Output<D>) {
+    if let Err(err) = out.send_raw(&[
+        0xF0,
+        0x00,
+        0x20,
+        0x29,
+        0x02,
+        0x11,
+        0x78,
+        TEMPLATE_ID,
+        index,
+        state.as_byte(),
+        0xF7,
+    ]) {
+        error!("MIDI send error setting LED index {index}: {err}.");
+    }
+}
 
 impl NovationLaunchControlXL {
     pub const CHANNEL_COUNT: u8 = 8;
@@ -35,7 +55,7 @@ impl NovationLaunchControlXL {
     /// Select factory template 0.
     pub fn init_midi<D: MidiDevice>(&self, out: &mut Output<D>) -> anyhow::Result<()> {
         debug!("Sending Launch Control XL sysex template select command (User 1).");
-        out.send_raw(&[0xF0, 0x00, 0x20, 0x29, 0x02, 0x11, 0x77, 0x00, 0xF7])?;
+        out.send_raw(&[0xF0, 0x00, 0x20, 0x29, 0x02, 0x11, 0x77, TEMPLATE_ID, 0xF7])?;
         Ok(())
     }
 
@@ -52,7 +72,7 @@ impl NovationLaunchControlXL {
         use LaunchControlXLChannelButton::*;
         use LaunchControlXLChannelControlEvent::*;
         use LaunchControlXLControlEvent::*;
-        let event = match event.mapping.event_type {
+        match event.mapping.event_type {
             EventType::ControlChange => Some(Channel {
                 channel: event.mapping.channel,
                 event: match event.mapping.control {
@@ -77,14 +97,14 @@ impl NovationLaunchControlXL {
             EventType::NoteOn if event.mapping.channel == 8 => {
                 use LaunchControlXLSideButton::*;
                 let button = match event.mapping.control {
-                    0 => Up,
-                    1 => Down,
-                    2 => Left,
-                    3 => Right,
-                    4 => Device,
-                    5 => Mute,
-                    6 => Solo,
-                    7 => Record,
+                    12 => Up,
+                    13 => Down,
+                    14 => Left,
+                    15 => Right,
+                    16 => Device,
+                    17 => Mute,
+                    18 => Solo,
+                    19 => Record,
                     _ => {
                         return None;
                     }
@@ -103,9 +123,7 @@ impl NovationLaunchControlXL {
                 _ => None,
             },
             _ => None,
-        };
-        println!("{event:?}");
-        event
+        }
     }
 
     /// Process a state change and emit midi.
@@ -114,82 +132,53 @@ impl NovationLaunchControlXL {
         use LaunchControlXLChannelStateChange::*;
         use LaunchControlXLSideButton::*;
         use LaunchControlXLStateChange::*;
-        let mut send_log_err = move |event| {
-            if let Err(err) = output.send(event) {
-                error!("midi send error for Launch Control XL: {err}");
-            }
-        };
+
         match sc {
             Channel { channel, state } => match state {
-                Knob { row, state } => send_log_err(Event {
-                    mapping: Mapping {
-                        event_type: EventType::ControlChange,
-                        channel,
-                        control: match row {
-                            0 => TOP_KNOB,
-                            1 => MIDDLE_KNOB,
-                            2 => BOTTOM_KNOB,
-                            _ => {
-                                error!("Launch Control XL knob index {row} out of range.");
-                                return;
-                            }
-                        },
-                    },
-                    value: state.as_byte(),
-                }),
-                Button { button, state } => send_log_err(Event {
-                    mapping: Mapping {
-                        event_type: EventType::NoteOn,
-                        channel,
-                        control: match button {
-                            TrackFocus => TRACK_FOCUS,
-                            TrackControl => TRACK_CONTROL,
-                        },
-                    },
-                    value: state.as_byte(),
-                }),
+                Knob { row, state } => {
+                    if row > 2 {
+                        error!("Launch Control XL knob index {row} out of range.");
+                        return;
+                    }
+                    set_led((row * 8) + channel, state, output);
+                }
+                Button { button, state } => {
+                    set_led(button.sysex_set_led_offset() + channel, state, output);
+                }
+                _ => (),
             },
             ChannelButtonRadio {
                 channel,
                 button,
                 state,
             } => {
-                let control = match button {
-                    TrackFocus => TRACK_FOCUS,
-                    TrackControl => TRACK_CONTROL,
-                };
+                let start_index = button.sysex_set_led_offset();
                 for c in 0..8 {
-                    send_log_err(Event {
-                        mapping: Mapping {
-                            event_type: EventType::NoteOn,
-                            channel: c,
-                            control,
-                        },
-                        value: if Some(c) == channel {
-                            state.as_byte()
+                    set_led(
+                        start_index + c,
+                        if Some(c) == channel {
+                            state
                         } else {
-                            0
+                            LedState::OFF
                         },
-                    });
+                        output,
+                    );
                 }
             }
-            SideButton { button, state } => send_log_err(Event {
-                mapping: Mapping {
-                    event_type: EventType::NoteOn,
-                    channel: 8,
-                    control: match button {
-                        Up => 0,
-                        Down => 1,
-                        Left => 2,
-                        Right => 3,
-                        Device => 4,
-                        Mute => 5,
-                        Solo => 6,
-                        Record => 7,
-                    },
+            SideButton { button, state } => set_led(
+                match button {
+                    Up => 44,
+                    Down => 45,
+                    Left => 46,
+                    Right => 47,
+                    Device => 40,
+                    Mute => 41,
+                    Solo => 42,
+                    Record => 43,
                 },
-                value: state.as_byte(),
-            }),
+                state,
+                output,
+            ),
         }
     }
 }
@@ -218,6 +207,15 @@ pub enum LaunchControlXLChannelControlEvent {
 pub enum LaunchControlXLChannelButton {
     TrackFocus,   // top button
     TrackControl, // bottom button
+}
+
+impl LaunchControlXLChannelButton {
+    pub fn sysex_set_led_offset(&self) -> u8 {
+        match self {
+            Self::TrackFocus => 24,
+            Self::TrackControl => 32,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -270,6 +268,7 @@ pub struct LedState {
 }
 
 impl LedState {
+    pub const OFF: Self = Self { red: 0, green: 0 };
     pub const YELLOW: Self = Self { red: 3, green: 3 };
 
     fn as_byte(self) -> u8 {
@@ -279,7 +278,8 @@ impl LedState {
     /// Map negative values to brighter red, positive values to brighter green.
     /// Near 0 is dark.
     pub fn from_bipolar(val: BipolarFloat) -> Self {
-        let mag = ((val.val().abs() * 4.0) as u8).max(3);
+        let mag = ((val.val().abs() * 4.0) as u8).min(3);
+        println!("mag: {mag}");
         if val.val() < 0.0 {
             Self { red: mag, green: 0 }
         } else {
@@ -290,7 +290,7 @@ impl LedState {
     /// Map values to shades of yellow.
     /// FIXME: use gradient for more resolution?
     pub fn from_unipolar(val: UnipolarFloat) -> Self {
-        let mag = ((val.val() * 4.0) as u8).max(3);
+        let mag = ((val.val() * 4.0) as u8).min(3);
         Self {
             red: mag,
             green: mag,

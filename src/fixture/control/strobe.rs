@@ -166,7 +166,7 @@ where
     R: RenderToDmx<Option<UnipolarFloat>>,
 {
     pub fn with_channel_level(self) -> ChannelLevelUnipolar<Self> {
-        ChannelControl::wrap(self, "Level".to_string(), ChannelLevelHandler)
+        ChannelControl::wrap(self, "Level".to_string(), false, ChannelLevelHandler)
     }
 }
 
@@ -176,7 +176,7 @@ where
     R: RenderToDmx<Option<UnipolarFloat>>,
 {
     pub fn with_channel_level(self) -> ChannelLevelBool<Self> {
-        ChannelControl::wrap(self, "Level".to_string(), ChannelLevelHandler)
+        ChannelControl::wrap(self, "Level".to_string(), true, ChannelLevelHandler)
     }
 }
 

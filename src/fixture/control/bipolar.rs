@@ -64,7 +64,7 @@ impl<R: RenderToDmx<BipolarFloat>> Bipolar<R> {
     /// Decorate this control with a channel knob of the provided index.
     pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobBipolar<Self> {
         let label = self.name.clone();
-        ChannelControl::wrap(self, label, ChannelKnobHandler { index })
+        ChannelControl::wrap(self, label, false, ChannelKnobHandler { index })
     }
 
     fn val_with_anim(&self, animations: impl Iterator<Item = f64>) -> BipolarFloat {
@@ -251,7 +251,7 @@ impl<R: RenderToDmx<BipolarFloat>> Mirrored<R> {
     /// Decorate this control with a channel knob of the provided index.
     pub fn with_channel_knob(self, index: KnobIndex) -> ChannelKnobBipolar<Self> {
         let label = self.control.name.clone();
-        ChannelControl::wrap(self, label, ChannelKnobHandler { index })
+        ChannelControl::wrap(self, label, false, ChannelKnobHandler { index })
     }
 }
 
