@@ -288,7 +288,6 @@ impl LedState {
     }
 
     /// Map values to shades of yellow.
-    /// FIXME: use gradient for more resolution?
     pub fn from_unipolar(val: UnipolarFloat) -> Self {
         let mag = ((val.val() * 4.0) as u8).min(3);
         Self {
