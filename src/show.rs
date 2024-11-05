@@ -10,7 +10,7 @@ use crate::{
     fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
     midi::MidiHandler,
-    osc::{ControlMessageType, ScopedControlEmitter},
+    osc::ScopedControlEmitter,
 };
 
 pub use crate::channel::ChannelId;
@@ -36,52 +36,26 @@ impl Show {
         let mut channels = Channels::new();
         let mut patch = Patch::default();
 
-        let mut controller = Controller::from_config(&cfg)?;
+        let controller = Controller::from_config(&cfg)?;
 
         for fixture in cfg.fixtures.into_iter() {
             patch.patch(&mut channels, fixture)?;
         }
 
-        for group in patch.iter() {
-            group.emit_state(ChannelStateEmitter::new(
-                channels.channel_for_fixture(group.key()),
-                &controller.sender_with_metadata(None),
-            ));
-        }
-
         let master_controls = MasterControls::new();
-        master_controls.emit_state(&ScopedControlEmitter {
-            entity: crate::master::GROUP,
-            emitter: &controller.sender_with_metadata(None),
-        });
-
         let initial_channel = channels.current_channel();
-
-        channels.emit_state(false, &patch, &controller.sender_with_metadata(None));
-
         let animation_ui_state = AnimationUIState::new(initial_channel);
 
-        // Configure animation controls if we have at least one animated fixture.
-        if patch.iter().any(FixtureGroup::is_animated) {
-            let channel = initial_channel.unwrap();
-            animation_ui_state.emit_state(
-                channel,
-                channels.group_by_channel(&patch, channel).unwrap(),
-                &ScopedControlEmitter {
-                    entity: crate::osc::animation::GROUP,
-                    emitter: &controller.sender_with_metadata(None),
-                },
-            )?;
-        };
-
-        Ok(Self {
+        let mut show = Self {
             controller,
             patch,
             channels,
             master_controls,
             animation_ui_state,
             clock_service,
-        })
+        };
+        show.refresh_ui()?;
+        Ok(show)
     }
 
     /// Return the number of universes patched in the show.
@@ -147,13 +121,7 @@ impl Show {
                         &self.animation_ui_state,
                         &sender,
                     ),
-                    ShowControlMessage::Master(msg) => self.master_controls.control(
-                        &msg,
-                        &self.channels,
-                        &self.patch,
-                        &self.animation_ui_state,
-                        &sender,
-                    ),
+                    ShowControlMessage::Master(msg) => self.master_controls.control(&msg, &sender),
                     ShowControlMessage::Animation(msg) => {
                         let Some(channel) = self.channels.current_channel() else {
                             bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
@@ -174,21 +142,22 @@ impl Show {
             ControlMessage::Osc(msg) => {
                 let sender = self.controller.sender_with_metadata(Some(&msg.client_id));
 
-                match ControlMessageType::parse(msg.entity_type()) {
-                    ControlMessageType::Master => self.master_controls.control_osc(
-                        &msg,
-                        &self.channels,
-                        &self.patch,
-                        &self.animation_ui_state,
-                        &sender,
-                    ),
-                    ControlMessageType::Channel => self.channels.control_osc(
+                match msg.entity_type() {
+                    "Meta" => {
+                        if msg.control() == "RefreshUI" {
+                            self.refresh_ui()
+                        } else {
+                            bail!("unknown Meta control {}", msg.control())
+                        }
+                    }
+                    crate::master::GROUP => self.master_controls.control_osc(&msg, &sender),
+                    crate::osc::channels::GROUP => self.channels.control_osc(
                         &msg,
                         &mut self.patch,
                         &self.animation_ui_state,
                         &sender,
                     ),
-                    ControlMessageType::Animation => {
+                    crate::osc::animation::GROUP => {
                         let Some(channel) = self.channels.current_channel() else {
                             bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                         };
@@ -203,8 +172,9 @@ impl Show {
                             },
                         )
                     }
-                    ControlMessageType::Fixture => {
-                        let Some(fixture_type) = self.patch.lookup_fixture_type(msg.entity_type())
+                    // Assume any other group is the name of a fixture.
+                    fixture_type => {
+                        let Some(fixture_type) = self.patch.lookup_fixture_type(fixture_type)
                         else {
                             bail!(
                                 "entity type \"{}\" not registered with patch, from OSC message {msg:?}",
@@ -246,6 +216,34 @@ impl Show {
         for group in self.patch.iter() {
             group.render(&self.master_controls, dmx_buffers);
         }
+    }
+
+    fn refresh_ui(&mut self) -> anyhow::Result<()> {
+        let emitter = &self.controller.sender_with_metadata(None);
+        for group in self.patch.iter() {
+            group.emit_state(ChannelStateEmitter::new(
+                self.channels.channel_for_fixture(group.key()),
+                emitter,
+            ));
+        }
+
+        self.master_controls.emit_state(emitter);
+
+        self.channels.emit_state(false, &self.patch, emitter);
+
+        if let Some(current_channel) = self.channels.current_channel() {
+            self.animation_ui_state.emit_state(
+                current_channel,
+                self.channels
+                    .group_by_channel(&self.patch, current_channel)?,
+                &ScopedControlEmitter {
+                    entity: crate::osc::animation::GROUP,
+                    emitter,
+                },
+            )?;
+        }
+
+        Ok(())
     }
 }
 

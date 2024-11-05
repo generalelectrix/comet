@@ -36,12 +36,12 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> Strobe<R> {
     /// Get the current value of this strobe control, if active.
     pub fn val_with_master(&self, master: &crate::master::Strobe) -> Option<UnipolarFloat> {
         let rate = if master.use_master_rate {
-            master.state.rate
+            master.rate
         } else {
             self.rate.val()
         };
 
-        (self.on.val() && master.state.on).then_some(rate)
+        (self.on.val() && master.on).then_some(rate)
     }
 }
 
@@ -106,7 +106,7 @@ impl<R: RenderToDmx<Option<UnipolarFloat>>> RenderToDmxWithAnimations for Strobe
         dmx_buf: &mut [u8],
     ) {
         self.render
-            .render(&self.val_with_master(group_controls.strobe()), dmx_buf);
+            .render(&self.val_with_master(&group_controls.strobe()), dmx_buf);
     }
 }
 
@@ -256,7 +256,7 @@ impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<Unipola
         animations: impl Iterator<Item = f64>,
         dmx_buf: &mut [u8],
     ) {
-        if let Some(rate) = self.strobe.val_with_master(group_controls.strobe()) {
+        if let Some(rate) = self.strobe.val_with_master(&group_controls.strobe()) {
             self.strobe.render.render(&Some(rate), dmx_buf);
         } else {
             self.shutter.render(animations, dmx_buf);

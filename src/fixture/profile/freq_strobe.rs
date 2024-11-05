@@ -50,9 +50,9 @@ impl PatchAnimatedFixture for FreqStrobe {
 impl ControllableFixture for FreqStrobe {
     fn update(&mut self, master_controls: &MasterControls, dt: std::time::Duration) {
         let master_strobe = master_controls.strobe();
-        let run = master_strobe.state.on && self.run.val();
-        let rate = if master_controls.strobe().use_master_rate {
-            master_controls.strobe().state.rate
+        let run = master_strobe.on && self.run.val();
+        let rate = if master_strobe.use_master_rate {
+            master_strobe.rate
         } else {
             self.rate.control.val()
         };

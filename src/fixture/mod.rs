@@ -23,7 +23,7 @@ pub struct FixtureGroupControls<'a> {
 }
 
 impl<'a> FixtureGroupControls<'a> {
-    pub fn strobe(&self) -> &Strobe {
+    pub fn strobe(&self) -> Strobe {
         self.master_controls.strobe()
     }
 }

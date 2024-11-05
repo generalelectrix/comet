@@ -11,10 +11,12 @@ use tunnels::midi::CreateControlEvent;
 
 use crate::{
     config::Config,
-    midi::{Device, EmitMidiChannelMessage, MidiControlMessage, MidiController},
+    midi::{
+        Device, EmitMidiChannelMessage, EmitMidiMasterMessage, MidiControlMessage, MidiController,
+    },
     osc::{
         EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlMessage, OscControlResponse,
-        OscController, TalkbackMode,
+        OscController, ScopedControlEmitter, TalkbackMode,
     },
 };
 
@@ -26,9 +28,15 @@ impl<T> EmitScopedControlMessage for T where T: EmitScopedOscMessage {}
 
 /// Emit control messages.
 /// Will be extended in the future to potentially cover more cases.
-pub trait EmitControlMessage: EmitOscMessage + EmitMidiChannelMessage {}
+pub trait EmitControlMessage:
+    EmitOscMessage + EmitMidiChannelMessage + EmitMidiMasterMessage
+{
+}
 
-impl<T> EmitControlMessage for T where T: EmitOscMessage + EmitMidiChannelMessage {}
+impl<T> EmitControlMessage for T where
+    T: EmitOscMessage + EmitMidiChannelMessage + EmitMidiMasterMessage
+{
+}
 
 /// Handle receiving and responding to show control messages.
 pub struct Controller {
@@ -89,6 +97,12 @@ impl<'a> EmitOscMessage for ControlMessageWithMetadataSender<'a> {
 impl<'a> EmitMidiChannelMessage for ControlMessageWithMetadataSender<'a> {
     fn emit_midi_channel_message(&self, msg: &crate::channel::StateChange) {
         self.controller.midi.emit_channel_control(msg);
+    }
+}
+
+impl<'a> EmitMidiMasterMessage for ControlMessageWithMetadataSender<'a> {
+    fn emit_midi_master_message(&self, msg: &crate::master::StateChange) {
+        self.controller.midi.emit_master_control(msg);
     }
 }
 

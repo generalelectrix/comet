@@ -143,27 +143,6 @@ impl Display for OscClientId {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum ControlMessageType {
-    Master,
-    Channel,
-    Animation,
-    Fixture,
-}
-
-impl ControlMessageType {
-    /// Parse the provided type string as a control message type.
-    /// Any unknown type will be treated as a fixture control message.
-    pub fn parse(t: &str) -> Self {
-        match t {
-            crate::master::GROUP => Self::Master,
-            channels::GROUP => Self::Channel,
-            animation::GROUP => Self::Animation,
-            _ => Self::Fixture,
-        }
-    }
-}
-
 type ControlMessageCreator<C> =
     Box<dyn Fn(&OscControlMessage) -> Result<Option<(C, TalkbackMode)>>>;
 

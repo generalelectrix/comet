@@ -11,101 +11,79 @@ use crate::channel::{ChannelStateEmitter, Channels};
 use crate::control::EmitScopedControlMessage;
 use crate::fixture::prelude::*;
 use crate::fixture::Patch;
-use crate::osc::ScopedControlEmitter;
+use crate::osc::{EmitScopedOscMessage, ScopedControlEmitter};
 
 pub struct MasterControls {
-    strobe: Strobe,
+    strobe_on: Bool<()>,
+    strobe_rate: Unipolar<()>,
+    use_master_rate: Bool<()>,
     pub clock_state: StaticClockBank,
     pub audio_envelope: UnipolarFloat,
-    controls: GroupControlMap<ControlMessage>,
 }
 
 impl MasterControls {
     pub fn new() -> Self {
-        let mut controls = GroupControlMap::default();
-        Self::map_controls(&mut controls);
         Self {
-            strobe: Default::default(),
+            strobe_on: Bool::new_off("StrobeOn", ()),
+            strobe_rate: Unipolar::new("StrobeRate", ()),
+            use_master_rate: Bool::new_off("UseMasterStrobeRate", ()),
             clock_state: Default::default(),
             audio_envelope: Default::default(),
-            controls,
         }
     }
 
-    pub fn strobe(&self) -> &Strobe {
-        &self.strobe
+    pub fn strobe(&self) -> Strobe {
+        Strobe {
+            on: self.strobe_on.val(),
+            rate: self.strobe_rate.val(),
+            use_master_rate: self.use_master_rate.val(),
+        }
     }
 
     pub fn update(&mut self, _delta_t: Duration) {}
 
-    pub fn emit_state(&self, emitter: &dyn EmitScopedControlMessage) {
-        use StateChange::*;
-        let mut emit_strobe = |ssc| {
-            Self::emit(&Strobe(ssc), emitter);
+    pub fn emit_state(&self, emitter: &dyn EmitControlMessage) {
+        let scoped_emitter = &ScopedControlEmitter {
+            entity: GROUP,
+            emitter,
         };
-        self.strobe.state.emit_state(&mut emit_strobe);
+        self.strobe_on
+            .emit_state_with_callback(scoped_emitter, |v| {
+                emitter.emit_midi_master_message(&StateChange::StrobeOn(*v));
+            });
+        self.strobe_rate
+            .emit_state_with_callback(scoped_emitter, |v| {
+                emitter.emit_midi_master_message(&StateChange::StrobeRate(*v));
+            });
+        self.strobe_on
+            .emit_state_with_callback(scoped_emitter, |v| {
+                emitter.emit_midi_master_message(&StateChange::UseMasterStrobeRate(*v));
+            });
     }
 
-    pub fn handle_state_change(
-        &mut self,
-        sc: &StateChange,
-        emitter: &dyn EmitScopedControlMessage,
-    ) {
-        use StateChange::*;
-        match sc {
-            Strobe(sc) => self.strobe.state.handle_state_change(sc),
-            UseMasterStrobeRate(v) => self.strobe.use_master_rate = *v,
-        }
-        Self::emit(sc, emitter);
-    }
-
-    fn emit(_sc: &StateChange, _emitter: &dyn EmitScopedControlMessage) {
-        // FIXME: no talkback
-    }
-
-    // FIXME: we should lift UI refresh up and out of here
     pub fn control(
         &mut self,
         msg: &ControlMessage,
-        channels: &Channels,
-        patch: &Patch,
-        animation_ui_state: &AnimationUIState,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
+        let scoped_emitter = &ScopedControlEmitter {
+            entity: GROUP,
+            emitter,
+        };
+
         match msg {
-            ControlMessage::State(sc) => {
-                self.handle_state_change(
-                    sc,
-                    &ScopedControlEmitter {
-                        entity: GROUP,
-                        emitter,
-                    },
-                );
+            StateChange::StrobeOn(v) => {
+                self.strobe_on.control_direct(*v, scoped_emitter)?;
             }
-            ControlMessage::RefreshUI => {
-                self.emit_state(&ScopedControlEmitter {
-                    entity: GROUP,
-                    emitter,
-                });
-                channels.emit_state(false, patch, emitter);
-                for group in patch.iter() {
-                    group.emit_state(ChannelStateEmitter::new(
-                        channels.channel_for_fixture(group.key()),
-                        emitter,
-                    ));
-                }
-                if let Some(channel) = channels.current_channel() {
-                    animation_ui_state.emit_state(
-                        channel,
-                        channels.group_by_channel(patch, channel)?,
-                        &ScopedControlEmitter {
-                            entity: crate::osc::animation::GROUP,
-                            emitter,
-                        },
-                    )?;
-                }
+            StateChange::StrobeRate(v) => {
+                self.strobe_rate.control_direct(*v, scoped_emitter)?;
+            }
+            StateChange::UseMasterStrobeRate(v) => {
+                self.use_master_rate.control_direct(*v, scoped_emitter)?;
             }
         }
+
+        emitter.emit_midi_master_message(msg);
         Ok(())
     }
 
@@ -113,51 +91,44 @@ impl MasterControls {
     pub fn control_osc(
         &mut self,
         msg: &OscControlMessage,
-        channels: &Channels,
-        patch: &Patch,
-        animation_ui_state: &AnimationUIState,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
+        let scoped_emitter = &ScopedControlEmitter {
+            entity: GROUP,
+            emitter,
         };
-        self.control(&ctl, channels, patch, animation_ui_state, emitter)
+        if self.strobe_on.control(msg, scoped_emitter)? {
+            emitter.emit_midi_master_message(&StateChange::StrobeOn(self.strobe_on.val()));
+            return Ok(());
+        }
+        if self.strobe_rate.control(msg, scoped_emitter)? {
+            emitter.emit_midi_master_message(&StateChange::StrobeRate(self.strobe_rate.val()));
+            return Ok(());
+        }
+        if self.use_master_rate.control(msg, scoped_emitter)? {
+            emitter.emit_midi_master_message(&StateChange::UseMasterStrobeRate(
+                self.use_master_rate.val(),
+            ));
+            return Ok(());
+        }
+        Ok(())
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum ControlMessage {
-    State(StateChange),
-    RefreshUI,
-}
+pub type ControlMessage = StateChange;
 
 #[derive(Debug, Clone)]
 pub enum StateChange {
-    Strobe(GenericStrobeStateChange),
+    StrobeOn(bool),
+    StrobeRate(UnipolarFloat),
     UseMasterStrobeRate(bool),
 }
 
 #[derive(Debug, Default)]
 pub struct Strobe {
-    pub state: GenericStrobe,
+    pub on: bool,
+    pub rate: UnipolarFloat,
     pub use_master_rate: bool,
 }
 
-pub(crate) const GROUP: &str = "Master";
-
-const USE_MASTER_STROBE_RATE: Button = button("UseMasterStrobeRate");
-const REFRESH_UI: Button = button("RefreshUI");
-
-impl MasterControls {
-    pub fn map_controls(map: &mut GroupControlMap<ControlMessage>) {
-        map_strobe(map, "Strobe", &wrap_strobe);
-        USE_MASTER_STROBE_RATE.map_state(map, |v| {
-            ControlMessage::State(StateChange::UseMasterStrobeRate(v))
-        });
-        REFRESH_UI.map_trigger(map, || ControlMessage::RefreshUI)
-    }
-}
-
-fn wrap_strobe(sc: GenericStrobeStateChange) -> ControlMessage {
-    ControlMessage::State(StateChange::Strobe(sc))
-}
+pub const GROUP: &str = "Master";
