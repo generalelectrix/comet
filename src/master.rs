@@ -5,13 +5,8 @@ use std::time::Duration;
 use number::UnipolarFloat;
 use tunnels::clock_server::StaticClockBank;
 
-use crate::animation::AnimationUIState;
-use crate::channel::{ChannelStateEmitter, Channels};
-
-use crate::control::EmitScopedControlMessage;
 use crate::fixture::prelude::*;
-use crate::fixture::Patch;
-use crate::osc::{EmitScopedOscMessage, ScopedControlEmitter};
+use crate::osc::ScopedControlEmitter;
 
 pub struct MasterControls {
     strobe_on: Bool<()>,

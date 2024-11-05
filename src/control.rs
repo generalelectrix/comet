@@ -16,7 +16,7 @@ use crate::{
     },
     osc::{
         EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlMessage, OscControlResponse,
-        OscController, ScopedControlEmitter, TalkbackMode,
+        OscController, TalkbackMode,
     },
 };
 

@@ -7,7 +7,7 @@ use crate::{
     config::Config,
     control::{ControlMessage, Controller},
     dmx::DmxBuffer,
-    fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
+    fixture::{FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
     midi::MidiHandler,
     osc::ScopedControlEmitter,
