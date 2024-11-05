@@ -4,10 +4,7 @@ use anyhow::Result;
 use device::{apc20::AkaiApc20, launch_control_xl::NovationLaunchControlXL};
 use std::{cell::RefCell, fmt::Display, sync::mpsc::Sender};
 
-use crate::{
-    channel::{ControlMessage as ChannelControlMessage, StateChange as ChannelStateChange},
-    show::ShowControlMessage,
-};
+use crate::{channel::StateChange as ChannelStateChange, show::ShowControlMessage};
 use tunnels::{
     midi::{DeviceSpec, Event, Manager, Output},
     midi_controls::MidiDevice,
