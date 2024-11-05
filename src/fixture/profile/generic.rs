@@ -31,11 +31,11 @@ impl GenericStrobe {
         emit(Rate(self.rate));
     }
 
-    pub fn handle_state_change(&mut self, sc: GenericStrobeStateChange) {
+    pub fn handle_state_change(&mut self, sc: &GenericStrobeStateChange) {
         use GenericStrobeStateChange::*;
         match sc {
-            On(v) => self.on = v,
-            Rate(v) => self.rate = v,
+            On(v) => self.on = *v,
+            Rate(v) => self.rate = *v,
         }
     }
 }

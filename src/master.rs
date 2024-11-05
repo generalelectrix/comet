@@ -41,37 +41,38 @@ impl MasterControls {
     pub fn emit_state(&self, emitter: &dyn EmitScopedControlMessage) {
         use StateChange::*;
         let mut emit_strobe = |ssc| {
-            Self::emit(Strobe(ssc), emitter);
+            Self::emit(&Strobe(ssc), emitter);
         };
         self.strobe.state.emit_state(&mut emit_strobe);
     }
 
-    pub fn handle_state_change(&mut self, sc: StateChange, emitter: &dyn EmitScopedControlMessage) {
+    pub fn handle_state_change(
+        &mut self,
+        sc: &StateChange,
+        emitter: &dyn EmitScopedControlMessage,
+    ) {
         use StateChange::*;
         match sc {
             Strobe(sc) => self.strobe.state.handle_state_change(sc),
-            UseMasterStrobeRate(v) => self.strobe.use_master_rate = v,
+            UseMasterStrobeRate(v) => self.strobe.use_master_rate = *v,
         }
         Self::emit(sc, emitter);
     }
 
-    fn emit(_sc: StateChange, _emitter: &dyn EmitScopedControlMessage) {
+    fn emit(_sc: &StateChange, _emitter: &dyn EmitScopedControlMessage) {
         // FIXME: no talkback
     }
 
     // FIXME: we should lift UI refresh up and out of here
     pub fn control(
         &mut self,
-        msg: &OscControlMessage,
+        msg: &ControlMessage,
         channels: &Channels,
         patch: &Patch,
         animation_ui_state: &AnimationUIState,
         emitter: &dyn EmitControlMessage,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        match ctl {
+        match msg {
             ControlMessage::State(sc) => {
                 self.handle_state_change(
                     sc,
@@ -106,6 +107,21 @@ impl MasterControls {
             }
         }
         Ok(())
+    }
+
+    // FIXME: we should lift UI refresh up and out of here
+    pub fn control_osc(
+        &mut self,
+        msg: &OscControlMessage,
+        channels: &Channels,
+        patch: &Patch,
+        animation_ui_state: &AnimationUIState,
+        emitter: &dyn EmitControlMessage,
+    ) -> anyhow::Result<()> {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.control(&ctl, channels, patch, animation_ui_state, emitter)
     }
 }
 

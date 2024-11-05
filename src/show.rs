@@ -9,7 +9,7 @@ use crate::{
     dmx::DmxBuffer,
     fixture::{FixtureGroup, FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
-    midi::MidiChannelController,
+    midi::MidiHandler,
     osc::{ControlMessageType, ScopedControlEmitter},
 };
 
@@ -133,23 +133,49 @@ impl Show {
             }
         };
 
+        let sender = self.controller.sender_with_metadata(None);
+
         match msg {
             ControlMessage::Midi(msg) => {
                 let Some(channel_ctrl_msg) = msg.device.interpret(&msg.event) else {
                     return Ok(());
                 };
-                self.channels.control(
-                    &channel_ctrl_msg,
-                    &mut self.patch,
-                    &self.animation_ui_state,
-                    &self.controller.sender_with_metadata(None),
-                )
+                match channel_ctrl_msg {
+                    ShowControlMessage::Channel(msg) => self.channels.control(
+                        &msg,
+                        &mut self.patch,
+                        &self.animation_ui_state,
+                        &sender,
+                    ),
+                    ShowControlMessage::Master(msg) => self.master_controls.control(
+                        &msg,
+                        &self.channels,
+                        &self.patch,
+                        &self.animation_ui_state,
+                        &sender,
+                    ),
+                    ShowControlMessage::Animation(msg) => {
+                        let Some(channel) = self.channels.current_channel() else {
+                            bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
+                        };
+                        self.animation_ui_state.control(
+                            msg,
+                            channel,
+                            self.channels
+                                .group_by_channel_mut(&mut self.patch, channel)?,
+                            &ScopedControlEmitter {
+                                entity: crate::osc::animation::GROUP,
+                                emitter: &sender,
+                            },
+                        )
+                    }
+                }
             }
             ControlMessage::Osc(msg) => {
                 let sender = self.controller.sender_with_metadata(Some(&msg.client_id));
 
                 match ControlMessageType::parse(msg.entity_type()) {
-                    ControlMessageType::Master => self.master_controls.control(
+                    ControlMessageType::Master => self.master_controls.control_osc(
                         &msg,
                         &self.channels,
                         &self.patch,
@@ -166,7 +192,7 @@ impl Show {
                         let Some(channel) = self.channels.current_channel() else {
                             bail!("cannot handle animation control message because no channel is selected\n{msg:?}");
                         };
-                        self.animation_ui_state.control(
+                        self.animation_ui_state.control_osc(
                             &msg,
                             channel,
                             self.channels
@@ -221,4 +247,13 @@ impl Show {
             group.render(&self.master_controls, dmx_buffers);
         }
     }
+}
+
+/// Strongly-typed top-level show control messages.
+/// These cover all of the fixed control features, but not fixture-specific controls.
+#[derive(Debug, Clone)]
+pub enum ShowControlMessage {
+    Master(crate::master::ControlMessage),
+    Channel(crate::channel::ControlMessage),
+    Animation(crate::animation::ControlMessage),
 }

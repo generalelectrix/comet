@@ -14,20 +14,23 @@ use super::{
             LaunchControlXLStateChange, LedState, NovationLaunchControlXL,
         },
     },
-    MidiChannelController,
+    MidiHandler,
 };
-use crate::channel::{
-    ChannelControlMessage as ScopedChannelControlMessage,
-    ChannelStateChange as SpecificChannelStateChange, ControlMessage as ChannelControlMessage,
-    KnobValue, StateChange as ChannelStateChange,
+use crate::{
+    channel::{
+        ChannelControlMessage as ScopedChannelControlMessage,
+        ChannelStateChange as SpecificChannelStateChange, ControlMessage as ChannelControlMessage,
+        KnobValue, StateChange as ChannelStateChange,
+    },
+    show::ShowControlMessage,
 };
 
-impl MidiChannelController for AkaiApc20 {
-    fn interpret(&self, event: &tunnels::midi::Event) -> Option<crate::channel::ControlMessage> {
+impl MidiHandler for AkaiApc20 {
+    fn interpret(&self, event: &tunnels::midi::Event) -> Option<ShowControlMessage> {
         use Apc20ChannelButtonType::*;
         use Apc20ChannelControlEvent::*;
         use Apc20ControlEvent::*;
-        Some(match self.parse(event)? {
+        Some(ShowControlMessage::Channel(match self.parse(event)? {
             Channel { channel, event } => match event {
                 Fader(val) => ChannelControlMessage::Control {
                     channel_id: Some(channel as usize + self.channel_offset),
@@ -37,7 +40,7 @@ impl MidiChannelController for AkaiApc20 {
                     ChannelControlMessage::SelectChannel(channel as usize + self.channel_offset)
                 }
             },
-        })
+        }))
     }
 
     fn emit_channel_control(
@@ -60,12 +63,12 @@ impl MidiChannelController for AkaiApc20 {
     }
 }
 
-impl MidiChannelController for NovationLaunchControlXL {
-    fn interpret(&self, event: &tunnels::midi::Event) -> Option<crate::channel::ControlMessage> {
+impl MidiHandler for NovationLaunchControlXL {
+    fn interpret(&self, event: &tunnels::midi::Event) -> Option<ShowControlMessage> {
         use LaunchControlXLChannelButton::*;
         use LaunchControlXLChannelControlEvent::*;
         use LaunchControlXLControlEvent::*;
-        Some(match self.parse(event)? {
+        Some(ShowControlMessage::Channel(match self.parse(event)? {
             Channel { channel, event } => match event {
                 Fader(val) => ChannelControlMessage::Control {
                     channel_id: Some(channel as usize + self.channel_offset),
@@ -88,7 +91,7 @@ impl MidiChannelController for NovationLaunchControlXL {
             SideButton(_) => {
                 return None;
             }
-        })
+        }))
     }
 
     fn emit_channel_control(

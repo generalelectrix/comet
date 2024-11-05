@@ -50,15 +50,12 @@ impl AnimationUIState {
     /// Handle a control message.
     pub fn control(
         &mut self,
-        msg: &OscControlMessage,
+        msg: ControlMessage,
         channel: ChannelId,
         group: &mut FixtureGroup,
         emitter: &dyn EmitScopedControlMessage,
     ) -> anyhow::Result<()> {
-        let Some((ctl, _)) = self.controls.handle(msg)? else {
-            return Ok(());
-        };
-        match ctl {
+        match msg {
             ControlMessage::Animation(msg) => {
                 self.current_animation(channel, group)?
                     .anim_mut()
@@ -81,6 +78,20 @@ impl AnimationUIState {
             }
         }
         Ok(())
+    }
+
+    /// Handle a control message.
+    pub fn control_osc(
+        &mut self,
+        msg: &OscControlMessage,
+        channel: ChannelId,
+        group: &mut FixtureGroup,
+        emitter: &dyn EmitScopedControlMessage,
+    ) -> anyhow::Result<()> {
+        let Some((ctl, _)) = self.controls.handle(msg)? else {
+            return Ok(());
+        };
+        self.control(ctl, channel, group, emitter)
     }
 
     fn current_animation_with_index_mut<'a>(

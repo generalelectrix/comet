@@ -97,9 +97,9 @@ impl Lumasphere {
             BallStart(v) => self.ball_start = v,
             ColorRotation(v) => self.color_rotation = v,
             ColorStart(v) => self.color_start = v,
-            Strobe1(sc) => self.strobe_1.handle_state_change(sc),
+            Strobe1(sc) => self.strobe_1.handle_state_change(&sc),
 
-            Strobe2(sc) => self.strobe_2.handle_state_change(sc),
+            Strobe2(sc) => self.strobe_2.handle_state_change(&sc),
         };
         Self::emit(sc, emitter);
     }
@@ -186,11 +186,11 @@ impl Strobe {
         self.state.emit_state(&mut emit);
     }
 
-    fn handle_state_change(&mut self, sc: StrobeStateChange) {
+    fn handle_state_change(&mut self, sc: &StrobeStateChange) {
         use StrobeStateChange::*;
         match sc {
             State(v) => self.state.handle_state_change(v),
-            Intensity(v) => self.intensity = v,
+            Intensity(v) => self.intensity = *v,
         }
     }
 }

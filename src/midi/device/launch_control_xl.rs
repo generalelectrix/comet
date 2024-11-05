@@ -1,10 +1,8 @@
 //! Device model for the Novation Launch Control XL.
-use std::{cell::OnceCell, collections::HashMap, time::Duration};
-
 use log::{debug, error};
 use number::{BipolarFloat, UnipolarFloat};
 use tunnels::{
-    midi::{Event, EventType, Mapping, Output},
+    midi::{Event, EventType, Output},
     midi_controls::MidiDevice,
 };
 
@@ -128,7 +126,6 @@ impl NovationLaunchControlXL {
 
     /// Process a state change and emit midi.
     pub fn emit(&self, sc: LaunchControlXLStateChange, output: &mut Output<Device>) {
-        use LaunchControlXLChannelButton::*;
         use LaunchControlXLChannelStateChange::*;
         use LaunchControlXLSideButton::*;
         use LaunchControlXLStateChange::*;
