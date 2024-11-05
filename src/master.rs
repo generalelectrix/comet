@@ -82,7 +82,6 @@ impl MasterControls {
         Ok(())
     }
 
-    // FIXME: we should lift UI refresh up and out of here
     pub fn control_osc(
         &mut self,
         msg: &OscControlMessage,

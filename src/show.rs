@@ -153,10 +153,13 @@ impl Show {
         match msg.entity_type() {
             "Meta" => {
                 if msg.control() == "RefreshUI" {
-                    self.refresh_ui()
+                    if msg.get_bool()? {
+                        self.refresh_ui()?;
+                    }
                 } else {
-                    bail!("unknown Meta control {}", msg.control())
+                    bail!("unknown Meta control {}", msg.control());
                 }
+                Ok(())
             }
             crate::master::GROUP => self.master_controls.control_osc(msg, &sender),
             crate::osc::channels::GROUP => {
