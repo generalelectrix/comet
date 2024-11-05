@@ -99,6 +99,9 @@ impl Show {
         }
     }
 
+    /// Handle at most one control message.
+    ///
+    /// Wait for the provided duration for a message to appear.
     fn control(&mut self, timeout: Duration) -> Result<()> {
         let msg = match self.controller.recv(timeout)? {
             Some(m) => m,
@@ -113,6 +116,7 @@ impl Show {
         }
     }
 
+    /// Handle a single MIDI control message.
     fn handle_midi_message(&mut self, msg: &MidiControlMessage) -> Result<()> {
         let sender = self.controller.sender_with_metadata(None);
         let Some(channel_ctrl_msg) = msg.device.interpret(&msg.event) else {
@@ -142,6 +146,7 @@ impl Show {
         }
     }
 
+    /// Handle a single OSC message.
     fn handle_osc_message(&mut self, msg: &OscControlMessage) -> Result<()> {
         let sender = self.controller.sender_with_metadata(Some(&msg.client_id));
 
@@ -196,6 +201,7 @@ impl Show {
         }
     }
 
+    /// Update the state of the show using the provided timestep.
     fn update(&mut self, delta_t: Duration) {
         self.master_controls.update(delta_t);
         for fixture in self.patch.iter_mut() {
@@ -208,6 +214,7 @@ impl Show {
         }
     }
 
+    /// Render the state of the show out to DMX.
     fn render(&self, dmx_buffers: &mut [DmxBuffer]) {
         // NOTE: we don't bother to empty the buffer because we will always
         // overwrite all previously-rendered state.
@@ -216,6 +223,7 @@ impl Show {
         }
     }
 
+    /// Send messages to refresh all UI state.
     fn refresh_ui(&mut self) -> anyhow::Result<()> {
         let emitter = &self.controller.sender_with_metadata(None);
         for group in self.patch.iter() {
