@@ -10,7 +10,7 @@ use crate::{
     fixture::{FixtureGroupKey, GroupName, Patch},
     master::MasterControls,
     midi::{MidiControlMessage, MidiHandler},
-    osc::{OscControlMessage, ScopedControlEmitter},
+    osc::{GroupControlMap, OscControlMessage, ScopedControlEmitter},
     wled::WledResponse,
 };
 
@@ -19,6 +19,11 @@ use anyhow::{bail, Result};
 use log::error;
 use number::UnipolarFloat;
 use rust_dmx::DmxPort;
+use tunnels::{
+    audio::AudioInput,
+    clock_bank::ClockBank,
+    clock_server::{SharedClockData, StaticClockBank},
+};
 
 pub struct Show {
     controller: Controller,
@@ -26,14 +31,68 @@ pub struct Show {
     channels: Channels,
     master_controls: MasterControls,
     animation_ui_state: AnimationUIState,
-    clock_service: Option<ClockService>,
+    clocks: Clocks,
+}
+
+#[allow(clippy::large_enum_variant)]
+pub enum Clocks {
+    Service(ClockService),
+    Internal {
+        clocks: ClockBank,
+        audio_input: AudioInput,
+        audio_controls: GroupControlMap<tunnels::audio::ControlMessage>,
+    },
+}
+
+impl Clocks {
+    pub fn get(&self) -> SharedClockData {
+        match self {
+            Self::Service(service) => service.get(),
+            Self::Internal {
+                clocks,
+                audio_input,
+                ..
+            } => SharedClockData {
+                clock_bank: StaticClockBank(clocks.as_static()),
+                audio_envelope: audio_input.envelope(),
+            },
+        }
+    }
+
+    /// Emit all current audio and clock state.
+    pub fn emit_state(&self, emitter: &mut Controller) {
+        let Self::Internal {
+            clocks,
+            audio_input,
+            ..
+        } = self
+        else {
+            return;
+        };
+        audio_input.emit_state(emitter);
+        clocks.emit_state(emitter);
+    }
+
+    /// Update clock state.
+    pub fn update(&mut self, delta_t: Duration, controller: &mut Controller) {
+        if let Clocks::Internal {
+            clocks,
+            audio_input,
+            ..
+        } = self
+        {
+            audio_input.update_state(delta_t, controller);
+            let audio_envelope = audio_input.envelope();
+            clocks.update_state(delta_t, audio_envelope, controller);
+        }
+    }
 }
 
 const CONTROL_TIMEOUT: Duration = Duration::from_millis(1);
 const UPDATE_INTERVAL: Duration = Duration::from_millis(20);
 
 impl Show {
-    pub fn new(cfg: Config, clock_service: Option<ClockService>) -> Result<Self> {
+    pub fn new(cfg: Config, clocks: Clocks) -> Result<Self> {
         let mut channels = Channels::new();
         let mut patch = Patch::default();
 
@@ -53,7 +112,7 @@ impl Show {
             channels,
             master_controls,
             animation_ui_state,
-            clock_service,
+            clocks,
         };
         show.refresh_ui()?;
         Ok(show)
@@ -183,6 +242,21 @@ impl Show {
                     },
                 )
             }
+            crate::osc::audio::GROUP => {
+                let Clocks::Internal {
+                    audio_input,
+                    audio_controls,
+                    ..
+                } = &mut self.clocks
+                else {
+                    bail!("cannot handle audio control message because no audio input is configured\n{msg:?}");
+                };
+                let Some((msg, _talkback)) = audio_controls.handle(msg)? else {
+                    return Ok(());
+                };
+                audio_input.control(msg, &mut self.controller);
+                Ok(())
+            }
             // Assume any other group is the name of a fixture.
             fixture_type => {
                 let Some(fixture_type) = self.patch.lookup_fixture_type(fixture_type) else {
@@ -214,15 +288,14 @@ impl Show {
 
     /// Update the state of the show using the provided timestep.
     fn update(&mut self, delta_t: Duration) {
+        self.clocks.update(delta_t, &mut self.controller);
         self.master_controls.update(delta_t);
         for fixture in self.patch.iter_mut() {
             fixture.update(&self.master_controls, delta_t, UnipolarFloat::ZERO);
         }
-        if let Some(ref clock_service) = self.clock_service {
-            let clock_state = clock_service.get();
-            self.master_controls.clock_state = clock_state.clock_bank;
-            self.master_controls.audio_envelope = clock_state.audio_envelope;
-        }
+        let clock_state = self.clocks.get();
+        self.master_controls.clock_state = clock_state.clock_bank;
+        self.master_controls.audio_envelope = clock_state.audio_envelope;
     }
 
     /// Render the state of the show out to DMX.
@@ -259,6 +332,8 @@ impl Show {
                 },
             )?;
         }
+
+        self.clocks.emit_state(&mut self.controller);
 
         Ok(())
     }

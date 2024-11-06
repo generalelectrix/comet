@@ -21,8 +21,10 @@ use thiserror::Error;
 use self::radio_button::RadioButton;
 
 pub mod animation;
+pub mod audio;
 mod basic_controls;
 pub mod channels;
+pub mod clock;
 mod control_message;
 mod fader_array;
 mod label_array;

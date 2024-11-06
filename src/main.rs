@@ -4,10 +4,16 @@ use local_ip_address::local_ip;
 use log::info;
 use log::LevelFilter;
 use midi::Device;
+use number::UnipolarFloat;
 use osc::prompt_osc_config;
+use osc::GroupControlMap;
 use rust_dmx::select_port;
+use show::Clocks;
 use simplelog::{Config as LogConfig, SimpleLogger};
 use std::env;
+use tunnels::audio::prompt_audio;
+use tunnels::audio::AudioInput;
+use tunnels::clock_bank::ClockBank;
 use tunnels::midi::list_ports;
 use tunnels::midi::prompt_midi;
 use zmq::Context;
@@ -41,7 +47,19 @@ fn main() -> anyhow::Result<()> {
     };
 
     SimpleLogger::init(log_level, LogConfig::default())?;
-    let clock_service = prompt_start_clock_service(Context::new())?;
+    let clocks = if let Some(clock_service) = prompt_start_clock_service(Context::new())? {
+        Clocks::Service(clock_service)
+    } else {
+        let audio_input = AudioInput::new(prompt_audio()?)?;
+        let clocks = ClockBank::default();
+        let mut audio_controls = GroupControlMap::default();
+        crate::osc::audio::map_controls(&mut audio_controls);
+        Clocks::Internal {
+            clocks,
+            audio_input,
+            audio_controls,
+        }
+    };
 
     match local_ip() {
         Ok(ip) => info!("Listening for OSC at {}:{}.", ip, cfg.receive_port),
@@ -53,11 +71,11 @@ fn main() -> anyhow::Result<()> {
     }
     let (midi_inputs, midi_outputs) = list_ports()?;
     cfg.midi_devices = prompt_midi(&midi_inputs, &midi_outputs, Device::all())?;
-    if cfg.controllers.is_empty() {
-        bail!("No OSC clients were registered or manually configured.");
+    if cfg.controllers.is_empty() && cfg.midi_devices.is_empty() {
+        bail!("No OSC or midi clients were registered or manually configured.");
     }
 
-    let mut show = Show::new(cfg, clock_service)?;
+    let mut show = Show::new(cfg, clocks)?;
 
     let universe_count = show.universe_count();
     println!("This show requires {universe_count} universes.");

@@ -16,7 +16,7 @@ use crate::{
     },
     osc::{
         EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlMessage, OscControlResponse,
-        OscController, TalkbackMode,
+        OscController, ScopedControlEmitter, TalkbackMode,
     },
     wled::{EmitWledControlMessage, WledController, WledResponse},
 };
@@ -83,6 +83,36 @@ impl Controller {
             sender_id,
             controller: self,
         }
+    }
+}
+
+impl tunnels::audio::EmitStateChange for Controller {
+    fn emit_audio_state_change(&mut self, sc: tunnels::audio::StateChange) {
+        crate::osc::audio::emit_osc_state_change(
+            &sc,
+            &ScopedControlEmitter {
+                entity: crate::osc::audio::GROUP,
+                emitter: &ControlMessageWithMetadataSender {
+                    sender_id: None,
+                    controller: self,
+                },
+            },
+        );
+    }
+}
+
+impl tunnels::clock_bank::EmitStateChange for Controller {
+    fn emit_clock_bank_state_change(&mut self, sc: tunnels::clock_bank::StateChange) {
+        crate::osc::clock::emit_osc_state_change(
+            &sc,
+            &ScopedControlEmitter {
+                entity: crate::osc::clock::GROUP,
+                emitter: &ControlMessageWithMetadataSender {
+                    sender_id: None,
+                    controller: self,
+                },
+            },
+        );
     }
 }
 
