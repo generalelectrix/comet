@@ -42,9 +42,11 @@ impl PatchAnimatedFixture for Color {
     fn new(options: &HashMap<String, String>) -> Result<Self> {
         let mut c = Self::default();
         if let Some(kind) = options.get("kind") {
-            c.model = match kind.to_lowercase().as_str() {
+            c.model = match kind.as_str() {
                 "rgb" => Model::Rgb,
+                "DimmerRgb" => Model::DimmerRgb,
                 "rgbw" => Model::Rgbw,
+                "DimmerRgbw" => Model::DimmerRgbw,
                 "hsv" => Model::Hsv,
                 "rgbwau" => Model::Rgbwau,
                 other => {
@@ -141,7 +143,9 @@ impl OscControl<()> for Color {
 #[derive(Debug, Clone)]
 pub enum Model {
     Rgb,
+    DimmerRgb,
     Rgbw,
+    DimmerRgbw,
     Hsv,
     Rgbwau,
 }
@@ -156,7 +160,9 @@ impl Model {
     fn channel_count(&self) -> usize {
         match self {
             Self::Rgb => 3,
+            Self::DimmerRgb => 4,
             Self::Rgbw => 4,
+            Self::DimmerRgbw => 5,
             Self::Hsv => 3,
             Self::Rgbwau => 6,
         }
@@ -164,6 +170,13 @@ impl Model {
 
     pub fn render(&self, buf: &mut [u8], hue: Phase, sat: UnipolarFloat, val: UnipolarFloat) {
         match self {
+            Self::DimmerRgb => {
+                buf[0] = 255;
+                let [r, g, b] = hsv_to_rgb(hue, sat, val);
+                buf[1] = r;
+                buf[2] = g;
+                buf[3] = b;
+            }
             Self::Rgb => {
                 let [r, g, b] = hsv_to_rgb(hue, sat, val);
                 buf[0] = r;
@@ -174,6 +187,12 @@ impl Model {
                 let rgb_slice = &mut buf[0..3];
                 rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
                 buf[3] = unit_to_u8((sat.invert() * val).val());
+            }
+            Self::DimmerRgbw => {
+                buf[0] = 255;
+                let rgb_slice = &mut buf[1..4];
+                rgb_slice.copy_from_slice(&hsv_to_rgb(hue, sat, val));
+                buf[4] = unit_to_u8((sat.invert() * val).val());
             }
             Self::Hsv => {
                 buf[0] = unit_to_u8(hue.val());
