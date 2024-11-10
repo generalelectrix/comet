@@ -7,8 +7,11 @@ use crate::fixture::prelude::*;
 
 #[derive(Debug, EmitState, Control)]
 pub struct Radiance {
-    haze: UnipolarChannel,
-    fan: UnipolarChannel,
+    #[channel_control]
+    haze: ChannelLevelUnipolar<UnipolarChannel>,
+    #[channel_control]
+    #[animate]
+    fan: ChannelKnobUnipolar<UnipolarChannel>,
     #[skip_emit]
     #[skip_control]
     timer: Option<Timer>,
@@ -17,14 +20,14 @@ pub struct Radiance {
 impl Default for Radiance {
     fn default() -> Self {
         Self {
-            haze: Unipolar::full_channel("Haze", 0),
-            fan: Unipolar::full_channel("Fan", 1),
+            haze: Unipolar::full_channel("Haze", 0).with_channel_level(),
+            fan: Unipolar::full_channel("Fan", 1).with_channel_knob(0),
             timer: None,
         }
     }
 }
 
-impl PatchFixture for Radiance {
+impl PatchAnimatedFixture for Radiance {
     const NAME: FixtureType = FixtureType("Radiance");
     fn channel_count(&self) -> usize {
         2
@@ -39,8 +42,15 @@ impl PatchFixture for Radiance {
     }
 }
 
-impl NonAnimatedFixture for Radiance {
-    fn render(&self, _group_controls: &FixtureGroupControls, dmx_buf: &mut [u8]) {
+impl AnimatedFixture for Radiance {
+    type Target = AnimationTarget;
+
+    fn render_with_animations(
+        &self,
+        group_controls: &FixtureGroupControls,
+        animation_vals: TargetedAnimationValues<Self::Target>,
+        dmx_buf: &mut [u8],
+    ) {
         if let Some(timer) = self.timer.as_ref() {
             if !timer.is_on() {
                 dmx_buf[0] = 0;
