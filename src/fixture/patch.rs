@@ -32,6 +32,7 @@ use super::profile::wizard_extreme::WizardExtreme;
 use crate::channel::Channels;
 use crate::config::{FixtureConfig, Options};
 use crate::dmx::UniverseIdx;
+use crate::fixture::cosmic_burst::CosmicBurst;
 use crate::fixture::freq_strobe::FreqStrobe;
 use crate::fixture::group::GroupFixtureConfig;
 use crate::fixture::wizlet::Wizlet;
@@ -52,6 +53,7 @@ lazy_static! {
         Color::patcher(),
         Colordynamic::patcher(),
         Comet::patcher(),
+        CosmicBurst::patcher(),
         Dimmer::patcher(),
         Faderboard::patcher(),
         FreedomFries::patcher(),

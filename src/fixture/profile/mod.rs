@@ -3,6 +3,7 @@ pub mod astroscan;
 pub mod color;
 pub mod colordynamic;
 pub mod comet;
+pub mod cosmic_burst;
 pub mod dimmer;
 pub mod faderboard;
 pub mod freedom_fries;
