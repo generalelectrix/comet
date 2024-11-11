@@ -34,6 +34,7 @@ use crate::config::{FixtureConfig, Options};
 use crate::dmx::UniverseIdx;
 use crate::fixture::cosmic_burst::CosmicBurst;
 use crate::fixture::freq_strobe::FreqStrobe;
+use crate::fixture::fusion_roll::FusionRoll;
 use crate::fixture::group::GroupFixtureConfig;
 use crate::fixture::wizlet::Wizlet;
 
@@ -58,6 +59,7 @@ lazy_static! {
         Faderboard::patcher(),
         FreedomFries::patcher(),
         FreqStrobe::patcher(),
+        FusionRoll::patcher(),
         H2O::patcher(),
         Hypnotic::patcher(),
         Lumasphere::patcher(),

@@ -27,7 +27,7 @@ impl Default for CosmicBurst {
 impl PatchAnimatedFixture for CosmicBurst {
     const NAME: FixtureType = FixtureType("CosmicBurst");
     fn channel_count(&self) -> usize {
-        7
+        6
     }
 }
 

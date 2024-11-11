@@ -27,7 +27,7 @@ impl Default for FusionRoll {
                 .with_detent()
                 .with_mirroring(true)
                 .with_channel_knob(0),
-            drum_rotation: Bipolar::split_channel("DrumRotation", 1, 120, 10, 135, 245, 0)
+            drum_rotation: Bipolar::split_channel("DrumRotation", 1, 10, 120, 245, 135, 0)
                 .with_detent()
                 .with_mirroring(true)
                 .with_channel_knob(1),
