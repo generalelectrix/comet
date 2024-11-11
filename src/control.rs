@@ -18,6 +18,7 @@ use crate::{
         EmitOscMessage, EmitScopedOscMessage, OscClientId, OscControlMessage, OscControlResponse,
         OscController, TalkbackMode,
     },
+    wled::{EmitWledControlMessage, WledController, WledResponse},
 };
 
 /// Emit scoped control messages.
@@ -29,12 +30,12 @@ impl<T> EmitScopedControlMessage for T where T: EmitScopedOscMessage {}
 /// Emit control messages.
 /// Will be extended in the future to potentially cover more cases.
 pub trait EmitControlMessage:
-    EmitOscMessage + EmitMidiChannelMessage + EmitMidiMasterMessage
+    EmitOscMessage + EmitMidiChannelMessage + EmitMidiMasterMessage + EmitWledControlMessage
 {
 }
 
 impl<T> EmitControlMessage for T where
-    T: EmitOscMessage + EmitMidiChannelMessage + EmitMidiMasterMessage
+    T: EmitOscMessage + EmitMidiChannelMessage + EmitMidiMasterMessage + EmitWledControlMessage
 {
 }
 
@@ -42,15 +43,22 @@ impl<T> EmitControlMessage for T where
 pub struct Controller {
     osc: OscController,
     midi: MidiController,
+    wled: Option<WledController>,
     recv: Receiver<ControlMessage>,
 }
 
 impl Controller {
     pub fn from_config(cfg: &Config) -> Result<Self> {
         let (send, recv) = channel();
+        let wled = cfg
+            .wled_addr
+            .as_ref()
+            .map(|addr| WledController::run(addr, send.clone()))
+            .transpose()?;
         Ok(Self {
             osc: OscController::new(cfg.receive_port, cfg.controllers.clone(), send.clone())?,
             midi: MidiController::new(cfg.midi_devices.clone(), send)?,
+            wled,
             recv,
         })
     }
@@ -106,9 +114,18 @@ impl<'a> EmitMidiMasterMessage for ControlMessageWithMetadataSender<'a> {
     }
 }
 
+impl<'a> EmitWledControlMessage for ControlMessageWithMetadataSender<'a> {
+    fn emit_wled(&self, msg: crate::wled::WledControlMessage) {
+        if let Some(wled) = self.controller.wled.as_ref() {
+            wled.emit_wled(msg);
+        }
+    }
+}
+
 pub enum ControlMessage {
     Osc(OscControlMessage),
     Midi(MidiControlMessage),
+    Wled(WledResponse),
 }
 
 impl CreateControlEvent<Device> for ControlMessage {

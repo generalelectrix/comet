@@ -27,6 +27,7 @@ mod midi;
 mod osc;
 mod show;
 mod util;
+mod wled;
 
 fn main() -> anyhow::Result<()> {
     let config_path = env::args()
@@ -38,6 +39,7 @@ fn main() -> anyhow::Result<()> {
     } else {
         LevelFilter::Info
     };
+
     SimpleLogger::init(log_level, LogConfig::default())?;
     let clock_service = prompt_start_clock_service(Context::new())?;
 

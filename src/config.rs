@@ -13,6 +13,8 @@ pub struct Config {
     #[serde(default = "default_receive_port")]
     pub receive_port: u16,
     #[serde(default)]
+    pub wled_addr: Option<String>,
+    #[serde(default)]
     pub controllers: Vec<OscClientId>,
     #[serde(skip)]
     pub midi_devices: Vec<DeviceSpec<Device>>,
@@ -38,7 +40,10 @@ impl Config {
 #[derive(Clone, Debug, Deserialize)]
 pub struct FixtureConfig {
     pub name: String,
-    pub addr: DmxAddr,
+    /// The DMX address to patch this fixture at.
+    /// If no address it provided, assume this fixture doesn't need to render.
+    #[serde(default)]
+    pub addr: Option<DmxAddr>,
     /// The universe this fixture is patched in.
     /// Defaults to 0.
     #[serde(default)]

@@ -110,7 +110,7 @@ impl FixtureGroup {
         &mut self,
         msg: &ChannelControlMessage,
         channel_emitter: ChannelStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         self.fixture
             .control_from_channel(msg, &FixtureStateEmitter::new(&self.key, channel_emitter))
     }
@@ -130,9 +130,11 @@ impl FixtureGroup {
     pub fn render(&self, master_controls: &MasterControls, dmx_buffers: &mut [DmxBuffer]) {
         let phase_offset_per_fixture = Phase::new(1.0 / self.fixture_configs.len() as f64);
         for (i, cfg) in self.fixture_configs.iter().enumerate() {
+            let Some(dmx_addr) = cfg.dmx_addr else {
+                continue;
+            };
             let phase_offset = phase_offset_per_fixture * i as f64;
-            let dmx_buf =
-                &mut dmx_buffers[cfg.universe][cfg.dmx_addr..cfg.dmx_addr + self.channel_count];
+            let dmx_buf = &mut dmx_buffers[cfg.universe][dmx_addr..dmx_addr + self.channel_count];
             self.fixture.render(
                 phase_offset,
                 &FixtureGroupControls {
@@ -154,7 +156,9 @@ impl FixtureGroup {
 #[derive(Debug)]
 pub struct GroupFixtureConfig {
     /// The starting index into the DMX buffer for a fixture in a group.
-    pub dmx_addr: usize,
+    ///
+    /// If None, the fixture is assumed to not render to DMX.
+    pub dmx_addr: Option<usize>,
     /// The universe that this fixture is patched in.
     pub universe: usize,
     /// True if the fixture should be mirrored in mirror mode.

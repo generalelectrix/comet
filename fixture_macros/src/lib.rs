@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Data, DeriveInput, Field, Fields};
+use syn::{parse_macro_input, Data, DeriveInput, Expr, Field, Fields, Lit, Meta};
 
 /// Derive the EmitState trait on a fixture struct.
 ///
@@ -60,9 +60,12 @@ pub fn derive_emit_state(input: TokenStream) -> TokenStream {
 /// Fields annotated with #[animate] will result in a variant in a generated
 /// AnimationTarget type. The name of the animation variant will be the
 /// PascalCase version of the struct field identifier.
+///
+/// Fields may declare a named method on the implementing struct to call when
+/// a change happens to the control.
 #[proc_macro_derive(
     Control,
-    attributes(skip_control, force_osc_control, channel_control, animate)
+    attributes(skip_control, force_osc_control, channel_control, animate, on_change)
 )]
 pub fn derive_control(input: TokenStream) -> TokenStream {
     let DeriveInput { ident, data, .. } = parse_macro_input!(input as DeriveInput);
@@ -85,10 +88,19 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
         let Some(ident) = &field.ident else {
             continue;
         };
+        let on_change = get_attr_and_payload(field, "on_change")
+            .map(|method| {
+                let method = format_ident!("{method}");
+                quote! {
+                    self.#method(emitter);
+                }
+            })
+            .unwrap_or_default();
         if field_has_attr(field, "force_osc_control") {
             control_lines = quote! {
                 #control_lines
                 if crate::fixture::control::OscControl::control(&mut self.#ident, msg, emitter)? {
+                    #on_change
                     return Ok(true);
                 }
             }
@@ -96,6 +108,7 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
             control_lines = quote! {
                 #control_lines
                 if self.#ident.control(msg, emitter)? {
+                    #on_change
                     return Ok(true);
                 }
             }
@@ -103,7 +116,10 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
         if field_has_attr(field, "channel_control") {
             channel_control_lines = quote! {
                 #channel_control_lines
-                self.#ident.control_from_channel(msg, emitter)?;
+                if self.#ident.control_from_channel(msg, emitter)? {
+                    #on_change
+                    return Ok(true);
+                }
             }
         }
 
@@ -152,9 +168,9 @@ pub fn derive_control(input: TokenStream) -> TokenStream {
                 &mut self,
                 msg: &crate::channel::ChannelControlMessage,
                 emitter: &crate::osc::FixtureStateEmitter,
-            ) -> anyhow::Result<()> {
+            ) -> anyhow::Result<bool> {
                 #channel_control_lines
-                Ok(())
+                Ok(false)
             }
         }
 
@@ -168,4 +184,26 @@ fn field_has_attr(field: &Field, ident: &str) -> bool {
         .attrs
         .iter()
         .any(|attr| attr.meta.path().is_ident(ident))
+}
+
+fn get_attr_and_payload(field: &Field, ident: &str) -> Option<String> {
+    field
+        .attrs
+        .iter()
+        .filter_map(|attr| {
+            if !attr.meta.path().is_ident(ident) {
+                return None;
+            }
+            let Meta::NameValue(nm) = &attr.meta else {
+                panic!("attribute {ident} must be name/value, not {:?}", attr.meta);
+            };
+            let Expr::Lit(f) = &nm.value else {
+                panic!("attribute {ident} expected a literal as argument");
+            };
+            let Lit::Str(s) = &f.lit else {
+                panic!("attribute {ident} expected a string literal as argument");
+            };
+            Some(s.value())
+        })
+        .next()
 }

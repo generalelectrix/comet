@@ -36,6 +36,7 @@ use crate::fixture::cosmic_burst::CosmicBurst;
 use crate::fixture::freq_strobe::FreqStrobe;
 use crate::fixture::fusion_roll::FusionRoll;
 use crate::fixture::group::GroupFixtureConfig;
+use crate::fixture::rug_doctor::RugDoctor;
 use crate::fixture::wizlet::Wizlet;
 
 type UsedAddrs = HashMap<(UniverseIdx, usize), FixtureConfig>;
@@ -66,6 +67,7 @@ lazy_static! {
         Radiance::patcher(),
         RotosphereQ3::patcher(),
         RushWizard::patcher(),
+        RugDoctor::patcher(),
         SolarSystem::patcher(),
         Starlight::patcher(),
         UvLedBrick::patcher(),
@@ -98,12 +100,26 @@ impl Patch {
                 candidate.fixture_type
             );
         }
-        info!(
-            "Controlling {} at {} (group: {}).",
-            cfg.name,
-            cfg.addr,
-            cfg.group.as_deref().unwrap_or("none")
-        );
+        if let Some(addr) = cfg.addr {
+            info!(
+                "Controlling {} at {} (group: {}).",
+                cfg.name,
+                addr,
+                cfg.group.as_deref().unwrap_or("none")
+            );
+        } else {
+            ensure!(
+                candidate.channel_count == 0,
+                "No DMX address provided for DMX-controlled fixture {}",
+                candidate.fixture_type
+            );
+            info!(
+                "Controlling {} (non-DMX fixture) (group: {}).",
+                cfg.name,
+                cfg.group.as_deref().unwrap_or("none")
+            );
+        }
+
         let key = FixtureGroupKey {
             fixture: candidate.fixture_type,
             group: cfg.group,
@@ -112,7 +128,7 @@ impl Patch {
         if let Some(group) = self.fixtures.get_mut(&key) {
             group.patch(GroupFixtureConfig {
                 universe: cfg.universe,
-                dmx_addr: cfg.addr.dmx_index(),
+                dmx_addr: cfg.addr.map(|a| a.dmx_index()),
                 mirror: cfg.mirror,
             });
             return Ok(());
@@ -124,7 +140,7 @@ impl Patch {
             key.clone(),
             GroupFixtureConfig {
                 universe: cfg.universe,
-                dmx_addr: cfg.addr.dmx_index(),
+                dmx_addr: cfg.addr.map(|a| a.dmx_index()),
                 mirror: cfg.mirror,
             },
             candidate.channel_count,
@@ -156,18 +172,22 @@ impl Patch {
         cfg: &FixtureConfig,
     ) -> Result<UsedAddrs> {
         let mut used_addrs = self.used_addrs.clone();
-        let dmx_index = cfg.addr.dmx_index();
+        let Some(dmx_addr) = cfg.addr else {
+            return Ok(used_addrs);
+        };
+        let dmx_index = dmx_addr.dmx_index();
         for addr in dmx_index..dmx_index + candidate.channel_count {
             match used_addrs.get(&(cfg.universe, addr)) {
                 Some(existing_fixture) => {
                     bail!(
                         "{} at {} overlaps at DMX address {} in universe {} with {} at {}.",
                         cfg.name,
-                        cfg.addr,
+                        dmx_addr,
                         addr + 1,
                         cfg.universe,
                         existing_fixture.name,
-                        existing_fixture.addr,
+                        // Existing fixtures must have an address to have ended up in used_addrs.
+                        existing_fixture.addr.unwrap(),
                     );
                 }
                 None => {

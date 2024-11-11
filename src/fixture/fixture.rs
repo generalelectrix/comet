@@ -52,9 +52,9 @@ pub trait Control {
         &mut self,
         msg: &ChannelControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         // Ignore channel control messages by default.
-        Ok(())
+        Ok(false)
     }
 }
 
@@ -160,7 +160,7 @@ impl<F: AnimatedFixture> Control for FixtureWithAnimations<F> {
         &mut self,
         msg: &ChannelControlMessage,
         emitter: &FixtureStateEmitter,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         self.fixture.control_from_channel(msg, emitter)
     }
 }

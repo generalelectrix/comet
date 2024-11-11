@@ -2,6 +2,7 @@ use crate::channel::{ChannelStateChange, ChannelStateEmitter};
 use crate::control::ControlMessage;
 use crate::control::EmitControlMessage;
 use crate::fixture::FixtureGroupKey;
+use crate::wled::EmitWledControlMessage;
 use anyhow::bail;
 use anyhow::Result;
 use log::{error, info};
@@ -103,6 +104,12 @@ impl<'a> EmitScopedOscMessage for FixtureStateEmitter<'a> {
             addr,
             args: vec![msg.arg],
         });
+    }
+}
+
+impl<'a> EmitWledControlMessage for FixtureStateEmitter<'a> {
+    fn emit_wled(&self, msg: crate::wled::WledControlMessage) {
+        self.channel_emitter.emit_wled(msg);
     }
 }
 

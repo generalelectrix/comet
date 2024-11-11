@@ -1,3 +1,4 @@
+wled_addr: http://4.3.2.1
 fixtures:
   - name: Wizlet
     addr: 1
@@ -54,8 +55,10 @@ fixtures:
     channel: True
     options:
       kind: rgbw
-  # - name: FreedomFries
-  #   addr: 672
-  #   channel: True
+  - name: FreedomFries
+    addr: 300
+    channel: True
   - name: FreqStrobe
     addr: 210
+  - name: RugDoctor
+    channel: True

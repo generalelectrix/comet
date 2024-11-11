@@ -11,6 +11,7 @@ use crate::{
     master::MasterControls,
     midi::{MidiControlMessage, MidiHandler},
     osc::{OscControlMessage, ScopedControlEmitter},
+    wled::WledResponse,
 };
 
 pub use crate::channel::ChannelId;
@@ -113,6 +114,7 @@ impl Show {
         match msg {
             ControlMessage::Midi(msg) => self.handle_midi_message(&msg),
             ControlMessage::Osc(msg) => self.handle_osc_message(&msg),
+            ControlMessage::Wled(msg) => self.handle_wled_response(&msg),
         }
     }
 
@@ -202,6 +204,12 @@ impl Show {
                 )
             }
         }
+    }
+
+    /// Handle a single response from WLED.
+    fn handle_wled_response(&mut self, _msg: &WledResponse) -> Result<()> {
+        // TODO: decide how to map responses back
+        Ok(())
     }
 
     /// Update the state of the show using the provided timestep.

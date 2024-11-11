@@ -15,6 +15,7 @@ pub mod hypnotic;
 pub mod lumasphere;
 pub mod radiance;
 pub mod rotosphere_q3;
+pub mod rug_doctor;
 pub mod rush_wizard;
 pub mod solar_system;
 pub mod starlight;

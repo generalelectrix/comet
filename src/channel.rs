@@ -3,7 +3,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
-use log::error;
+use log::{debug, error};
 use number::{BipolarFloat, UnipolarFloat};
 use serde::Deserialize;
 
@@ -12,6 +12,7 @@ use crate::{
     control::EmitControlMessage,
     fixture::{FixtureGroup, FixtureGroupKey, Patch},
     osc::{EmitOscMessage, GroupControlMap, OscControlMessage, ScopedControlEmitter},
+    wled::EmitWledControlMessage,
 };
 
 /// The index of a channel.
@@ -237,7 +238,8 @@ impl Channels {
                             anyhow!("no channel ID provided or selected for channel control message {msg:?}")
                         )?
                 };
-                self.group_by_channel_mut(patch, channel_id)?
+                let handled = self
+                    .group_by_channel_mut(patch, channel_id)?
                     .control_from_channel(
                         msg,
                         ChannelStateEmitter {
@@ -245,6 +247,9 @@ impl Channels {
                             emitter,
                         },
                     )?;
+                if !handled {
+                    debug!("Fixture in channel {channel_id} did not handle channel control message {msg:?}.");
+                }
             }
         }
         Ok(())
@@ -287,6 +292,12 @@ impl<'a> ChannelStateEmitter<'a> {
 impl<'a> EmitOscMessage for ChannelStateEmitter<'a> {
     fn emit_osc(&self, msg: rosc::OscMessage) {
         self.emitter.emit_osc(msg);
+    }
+}
+
+impl<'a> EmitWledControlMessage for ChannelStateEmitter<'a> {
+    fn emit_wled(&self, msg: crate::wled::WledControlMessage) {
+        self.emitter.emit_wled(msg);
     }
 }
 
