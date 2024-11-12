@@ -272,30 +272,11 @@ impl LedState {
         0b1100 + self.red + (self.green << 4)
     }
 
-    /// Map negative values to brighter red, positive values to brighter green.
-    /// Near 0 is dark.
-    pub fn from_bipolar(val: BipolarFloat) -> Self {
-        let mag = ((val.val().abs() * 4.0) as u8).min(3);
-        if val.val() < 0.0 {
-            Self { red: mag, green: 0 }
-        } else {
-            Self { red: 0, green: mag }
-        }
-    }
-
-    /// Map values to shades of yellow.
-    pub fn from_unipolar(val: UnipolarFloat) -> Self {
-        let mag = ((val.val() * 4.0) as u8).min(3);
-        Self {
-            red: mag,
-            green: mag,
-        }
-    }
-
+    /// Set bipolar knobs to green, unipolar knobs to red.
     pub fn from_knob_value(val: &KnobValue) -> Self {
-        match *val {
-            KnobValue::Bipolar(v) => Self::from_bipolar(v),
-            KnobValue::Unipolar(v) => Self::from_unipolar(v),
+        match val {
+            KnobValue::Bipolar(_) => Self { red: 0, green: 3 },
+            KnobValue::Unipolar(_) => Self { red: 3, green: 0 },
         }
     }
 }
