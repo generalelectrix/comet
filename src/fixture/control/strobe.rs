@@ -1,6 +1,6 @@
 //! Control for a generic strobe function.
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, time::Duration};
 
 use anyhow::bail;
 use number::UnipolarFloat;
@@ -262,4 +262,11 @@ impl<S: OscControl<T> + RenderToDmxWithAnimations, R: RenderToDmx<Option<Unipola
             self.shutter.render(animations, dmx_buf);
         }
     }
+}
+
+pub struct Flasher {
+    /// How long has the current flash been on?
+    flash_age: Duration,
+    /// How long should each flash last?
+    flash_len: Duration,
 }

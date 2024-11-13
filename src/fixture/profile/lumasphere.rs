@@ -196,13 +196,13 @@ impl Strobe {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum StrobeStateChange {
+enum StrobeStateChange {
     Intensity(UnipolarFloat),
     State(GenericStrobeStateChange),
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum StateChange {
+enum StateChange {
     Lamp1Intensity(UnipolarFloat),
     Lamp2Intensity(UnipolarFloat),
     BallRotation(BipolarFloat),
@@ -214,7 +214,7 @@ pub enum StateChange {
 }
 
 // Lumasphere has no controls that are not represented as state changes.
-pub type ControlMessage = StateChange;
+type ControlMessage = StateChange;
 
 const BALL_START: Button = button("ball_start");
 const COLOR_START: Button = button("color_start");
@@ -259,4 +259,44 @@ where
     map.add_unipolar(&format!("strobe_{}_intensity", index), move |v| {
         wrap(Intensity(v))
     });
+}
+
+/// Most basic strobe control - active/not, plus rate.
+#[derive(Default, Clone, Debug)]
+struct GenericStrobe {
+    pub on: bool,
+    pub rate: UnipolarFloat,
+}
+
+impl GenericStrobe {
+    pub fn on(&self) -> bool {
+        self.on
+    }
+
+    pub fn rate(&self) -> UnipolarFloat {
+        self.rate
+    }
+
+    pub fn emit_state<F>(&self, emit: &mut F)
+    where
+        F: FnMut(GenericStrobeStateChange),
+    {
+        use GenericStrobeStateChange::*;
+        emit(On(self.on));
+        emit(Rate(self.rate));
+    }
+
+    pub fn handle_state_change(&mut self, sc: &GenericStrobeStateChange) {
+        use GenericStrobeStateChange::*;
+        match sc {
+            On(v) => self.on = *v,
+            Rate(v) => self.rate = *v,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum GenericStrobeStateChange {
+    On(bool),
+    Rate(UnipolarFloat),
 }

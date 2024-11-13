@@ -5,59 +5,6 @@ use std::time::Duration;
 use number::UnipolarFloat;
 
 use crate::{config::Options, osc::GroupControlMap};
-
-/// Most basic strobe control - active/not, plus rate.
-#[derive(Default, Clone, Debug)]
-pub struct GenericStrobe {
-    pub on: bool,
-    pub rate: UnipolarFloat,
-}
-
-impl GenericStrobe {
-    pub fn on(&self) -> bool {
-        self.on
-    }
-
-    pub fn rate(&self) -> UnipolarFloat {
-        self.rate
-    }
-
-    pub fn emit_state<F>(&self, emit: &mut F)
-    where
-        F: FnMut(GenericStrobeStateChange),
-    {
-        use GenericStrobeStateChange::*;
-        emit(On(self.on));
-        emit(Rate(self.rate));
-    }
-
-    pub fn handle_state_change(&mut self, sc: &GenericStrobeStateChange) {
-        use GenericStrobeStateChange::*;
-        match sc {
-            On(v) => self.on = *v,
-            Rate(v) => self.rate = *v,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum GenericStrobeStateChange {
-    On(bool),
-    Rate(UnipolarFloat),
-}
-
-pub fn map_strobe<F, T>(map: &mut GroupControlMap<T>, name: &str, wrap: &'static F)
-where
-    F: Fn(GenericStrobeStateChange) -> T + 'static,
-{
-    map.add_bool(&format!("{}On", name), move |v| {
-        wrap(GenericStrobeStateChange::On(v))
-    });
-    map.add_unipolar(&format!("{}Rate", name), move |v| {
-        wrap(GenericStrobeStateChange::Rate(v))
-    });
-}
-
 #[derive(Debug)]
 pub struct Timer {
     pub on: Duration,

@@ -4,7 +4,7 @@ use std::{iter::zip, time::Duration};
 use log::error;
 use rand::prelude::*;
 
-use crate::fixture::prelude::*;
+use crate::{fixture::prelude::*, master::strobe_interval_from_rate};
 
 const CELL_COUNT: usize = 16;
 
@@ -51,20 +51,27 @@ impl ControllableFixture for FreqStrobe {
     fn update(&mut self, master_controls: &MasterControls, dt: std::time::Duration) {
         let master_strobe = master_controls.strobe();
         let run = master_strobe.on && self.run.val();
-        let rate = if master_strobe.use_master_rate {
-            master_strobe.rate
+        let rate_or_flash = if master_strobe.use_master_rate {
+            RateOrFlash::Flash(master_strobe.flash)
         } else {
-            self.rate.control.val()
+            RateOrFlash::Rate(self.rate.control.val())
         };
         self.flasher.update(
             dt,
             run,
-            rate,
+            rate_or_flash,
             self.pattern.selected(),
             self.multiplier.selected(),
             self.reverse.val(),
         );
     }
+}
+
+/// Instruct the flasher to either use a given rate, or listen to the provided
+/// external flash trigger.
+enum RateOrFlash {
+    Rate(UnipolarFloat),
+    Flash(bool),
 }
 
 impl AnimatedFixture for FreqStrobe {
@@ -120,7 +127,7 @@ impl Flasher {
         &mut self,
         dt: Duration,
         run: bool,
-        rate: UnipolarFloat,
+        rate_or_flash: RateOrFlash,
         selected_chase: ChaseIndex,
         selected_multiplier: usize,
         reverse: bool,
@@ -136,26 +143,28 @@ impl Flasher {
             self.chases.reset(selected_chase, selected_multiplier);
         }
 
-        if run && self.last_flash_age >= interval_from_rate(rate) {
-            self.chases.next(
-                self.selected_chase,
-                self.selected_multiplier,
-                reverse,
-                &mut self.state,
-            );
-            self.last_flash_age = Duration::ZERO;
+        if !run {
+            return;
         }
-    }
-}
 
-fn interval_from_rate(rate: UnipolarFloat) -> Duration {
-    // lowest rate: 1 flash/sec => 1 sec interval
-    // highest rate: 50 flash/sec => 20 ms interval
-    // use exact frame intervals
-    // FIXME: this should depend on the show framerate explicitly.
-    let raw_interval = (100. / (rate.val() + 0.09)) as u64 - 70;
-    let coerced_interval = ((raw_interval / 20) * 20).max(20);
-    Duration::from_millis(coerced_interval)
+        // If master flash trigger provided, use it.
+        // Otherwise, compute our own internal trigger.
+        let should_flash = match rate_or_flash {
+            RateOrFlash::Flash(should_flash) => should_flash,
+            RateOrFlash::Rate(rate) => self.last_flash_age >= strobe_interval_from_rate(rate),
+        };
+        if !should_flash {
+            return;
+        }
+
+        self.chases.next(
+            self.selected_chase,
+            self.selected_multiplier,
+            reverse,
+            &mut self.state,
+        );
+        self.last_flash_age = Duration::ZERO;
+    }
 }
 
 struct FlashState {
