@@ -30,7 +30,7 @@ use super::profile::uv_led_brick::UvLedBrick;
 use super::profile::venus::Venus;
 use super::profile::wizard_extreme::WizardExtreme;
 use crate::channel::Channels;
-use crate::config::{FixtureConfig, Options};
+use crate::config::{FixtureConfig, FixtureGroupConfig, Options};
 use crate::dmx::UniverseIdx;
 use crate::fixture::cosmic_burst::CosmicBurst;
 use crate::fixture::freq_strobe::FreqStrobe;
@@ -77,20 +77,38 @@ lazy_static! {
     ];
 }
 
+fn get_candidate(name: &str, options: &Options) -> Result<PatchCandidate> {
+    let mut candidates = PATCHERS
+        .iter()
+        .flat_map(|p| p(name, options))
+        .collect::<Result<Vec<_>>>()?;
+    let candidate = match candidates.len() {
+        0 => bail!("unable to patch {name}"),
+        1 => candidates.pop().unwrap(),
+        _ => bail!(
+            "multiple fixture patch candidates: {:?}",
+            candidates.iter().map(|c| &c.fixture_type).join(", ")
+        ),
+    };
+    Ok(candidate)
+}
+
 impl Patch {
-    pub fn patch(&mut self, channels: &mut Channels, cfg: FixtureConfig) -> anyhow::Result<()> {
-        let mut candidates = PATCHERS
-            .iter()
-            .flat_map(|p| p(&cfg))
-            .collect::<Result<Vec<_>>>()?;
-        let candidate = match candidates.len() {
-            0 => bail!("unable to patch {cfg:?}"),
-            1 => candidates.pop().unwrap(),
-            _ => bail!(
-                "multiple fixture patch candidates: {:?}",
-                candidates.iter().map(|c| &c.fixture_type).join(", ")
-            ),
-        };
+    pub fn patch(
+        &mut self,
+        channels: &mut Channels,
+        cfg: FixtureGroupConfig,
+    ) -> anyhow::Result<()> {
+        let candidate = get_candidate(&cfg.name, &cfg.options)?;
+        for fixture_cfg in cfg.fixture_configs(candidate.channel_count) {
+            self.patch_one(channels, fixture_cfg)?;
+        }
+        Ok(())
+    }
+
+    /// Patch a single fixture config.
+    fn patch_one(&mut self, channels: &mut Channels, cfg: FixtureConfig) -> anyhow::Result<()> {
+        let candidate = get_candidate(&cfg.name, &cfg.options)?;
         self.used_addrs = self.check_collision(&candidate, &cfg)?;
         // Add channel mapping index if provided.  Ensure this is an animatable fixture.
         if cfg.channel {
@@ -234,7 +252,7 @@ pub struct PatchCandidate {
     fixture: Box<dyn Fixture>,
 }
 
-pub type Patcher = Box<dyn Fn(&FixtureConfig) -> Option<Result<PatchCandidate>> + Sync>;
+pub type Patcher = Box<dyn Fn(&str, &Options) -> Option<Result<PatchCandidate>> + Sync>;
 
 /// Fixture constructor trait to handle patching non-animating fixtures.
 pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
@@ -242,11 +260,11 @@ pub trait PatchFixture: NonAnimatedFixture + Default + 'static {
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
     fn patcher() -> Patcher {
-        Box::new(|cfg| {
-            if *cfg.name != *Self::NAME {
+        Box::new(|name: &str, options: &Options| {
+            if *name != *Self::NAME {
                 return None;
             }
-            match Self::new(&cfg.options) {
+            match Self::new(options) {
                 Ok(fixture) => Some(Ok(PatchCandidate {
                     fixture_type: Self::NAME,
                     channel_count: fixture.channel_count(),
@@ -274,11 +292,11 @@ pub trait PatchAnimatedFixture: AnimatedFixture + Default + 'static {
 
     /// Return a closure that will try to patch a fixture if it has the appropriate name.
     fn patcher() -> Patcher {
-        Box::new(|cfg| {
-            if *cfg.name != *Self::NAME {
+        Box::new(|name, options| {
+            if *name != *Self::NAME {
                 return None;
             }
-            match Self::new(&cfg.options) {
+            match Self::new(options) {
                 Ok(fixture) => Some(Ok(PatchCandidate {
                     fixture_type: Self::NAME,
                     channel_count: fixture.channel_count(),

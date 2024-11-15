@@ -1,4 +1,6 @@
-debug: True
+debug: False
+controllers:
+  - 192.168.1.1:8000
 fixtures:
   - name: WizardExtreme
     addr: 1
@@ -7,5 +9,7 @@ fixtures:
     addr: 20
     channel: True
   - name: Color
-    addr: 30
+    addr:
+      start: 30
+      count: 10
     channel: True

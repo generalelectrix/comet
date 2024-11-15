@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::Add};
 
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,13 @@ impl DmxAddr {
 impl Display for DmxAddr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl Add<usize> for DmxAddr {
+    type Output = DmxAddr;
+    fn add(self, rhs: usize) -> Self::Output {
+        Self(self.0 + rhs)
     }
 }
 
