@@ -47,7 +47,7 @@ impl Device {
     /// Return all known midi device types.
     pub fn all() -> Vec<Self> {
         vec![
-            Self::Apc20(AkaiApc20 { channel_offset: 0 }),
+            // Self::Apc20(AkaiApc20 { channel_offset: 0 }),
             Self::LaunchControlXL(NovationLaunchControlXL { channel_offset: 0 }),
         ]
     }
