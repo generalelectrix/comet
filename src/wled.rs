@@ -2,7 +2,10 @@
 use anyhow::Result;
 use log::{error, info, warn};
 use std::{
-    sync::mpsc::{channel, Sender},
+    sync::{
+        mpsc::{channel, Sender},
+        Arc, Mutex,
+    },
     time::Duration,
 };
 
@@ -24,9 +27,36 @@ impl WledController {
     pub fn run(addr: &str, _send: Sender<ControlMessage>) -> Result<Self> {
         let url = Url::try_from(addr).context("parsing WLED URL")?;
         let (send_state, recv_state) = channel();
+
+        let state = Arc::new(Mutex::new(None));
+        let state_clone = state.clone();
+        // Drain control channel using a thread into mutex.
+        std::thread::spawn(move || {
+            for msg in recv_state {
+                let Ok(mut lock) = state_clone.lock() else {
+                    error!("Failed to get WLED state lock.");
+                    continue;
+                };
+                lock.replace(msg);
+            }
+            info!("WLED handler thread shutting down.");
+        });
+
         std::thread::spawn(move || {
             let mut wled = initialize(&url, Duration::from_secs(5));
-            for msg in recv_state {
+            let sleep = Duration::from_millis(100);
+            loop {
+                std::thread::sleep(sleep);
+                let msg = {
+                    let Ok(mut lock) = state.lock() else {
+                        error!("Failed to get WLED state lock.");
+                        continue;
+                    };
+                    let Some(state) = lock.take() else {
+                        continue;
+                    };
+                    state
+                };
                 match msg {
                     WledControlMessage::SetState(state) => {
                         wled.state = Some(state);
@@ -43,7 +73,6 @@ impl WledController {
                     }
                 }
             }
-            info!("WLED handler thread shutting down.");
         });
         Ok(Self { send: send_state })
     }
