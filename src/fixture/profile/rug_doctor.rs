@@ -75,22 +75,28 @@ impl RugDoctor {
     fn update_level(&self, emitter: &FixtureStateEmitter) {
         let mut state = State::default();
         self.set_level(&mut state);
+        self.set_speed(&mut state);
+        self.set_size(&mut state);
         emitter.emit_wled(WledControlMessage::SetState(state));
     }
 
     fn update_speed(&self, emitter: &FixtureStateEmitter) {
         let mut state = State::default();
+        self.set_level(&mut state);
         self.set_speed(&mut state);
+        self.set_size(&mut state);
         emitter.emit_wled(WledControlMessage::SetState(state));
     }
 
     fn update_effect_intensity(&self, emitter: &FixtureStateEmitter) {
         let mut state = State::default();
+        self.set_level(&mut state);
+        self.set_speed(&mut state);
         self.set_size(&mut state);
         emitter.emit_wled(WledControlMessage::SetState(state));
     }
 
-    fn update_preset(&self, emitter: &FixtureStateEmitter) {
+    fn update_state(&self, emitter: &FixtureStateEmitter) {
         let mut state = State {
             ps: Some(self.preset.selected() as i32),
             ..Default::default()
