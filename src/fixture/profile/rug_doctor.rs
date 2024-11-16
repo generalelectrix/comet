@@ -96,7 +96,7 @@ impl RugDoctor {
         emitter.emit_wled(WledControlMessage::SetState(state));
     }
 
-    fn update_state(&self, emitter: &FixtureStateEmitter) {
+    fn update_preset(&self, emitter: &FixtureStateEmitter) {
         let mut state = State {
             ps: Some(self.preset.selected() as i32),
             ..Default::default()
