@@ -30,6 +30,10 @@ const USE_AUDIO_SIZE: Button = button("UseAudioSize");
 const USE_AUDIO_SPEED: Button = button("UseAudioSpeed");
 const STANDING: Button = button("Standing");
 
+// clipboard
+const COPY: Button = button("Copy");
+const PASTE: Button = button("Paste");
+
 const WAVEFORM_SELECT: RadioButton = RadioButton {
     control: "Waveform",
     n: 5,
@@ -87,6 +91,9 @@ impl AnimationUIState {
 
         ANIMATION_TARGET_SELECT.map(map, AnimationControlMessage::Target);
         ANIMATION_SELECT.map(map, AnimationControlMessage::SelectAnimation);
+
+        COPY.map_trigger(map, || AnimationControlMessage::Copy);
+        PASTE.map_trigger(map, || AnimationControlMessage::Paste);
     }
 }
 

@@ -1,7 +1,7 @@
 //! Maintain UI state for animations.
 use anyhow::{bail, Result};
 use std::collections::HashMap;
-use tunnels::animation::EmitStateChange as EmitAnimationStateChange;
+use tunnels::animation::{Animation, EmitStateChange as EmitAnimationStateChange};
 
 use crate::{
     control::EmitScopedControlMessage,
@@ -15,6 +15,7 @@ use crate::{
 
 pub struct AnimationUIState {
     selected_animator_by_channel: HashMap<ChannelId, usize>,
+    clipboard: Animation,
     controls: GroupControlMap<ControlMessage>,
 }
 
@@ -24,6 +25,7 @@ impl AnimationUIState {
         Self::map_controls(&mut controls);
         let mut state = Self {
             selected_animator_by_channel: Default::default(),
+            clipboard: Default::default(),
             controls,
         };
         if let Some(channel) = initial_channel {
@@ -75,6 +77,12 @@ impl AnimationUIState {
                 }
                 self.set_current_animation(channel, n)?;
                 self.emit_state(channel, group, emitter)?;
+            }
+            ControlMessage::Copy => {
+                self.clipboard = self.current_animation(channel, group)?.anim().clone();
+            }
+            ControlMessage::Paste => {
+                *self.current_animation(channel, group)?.anim_mut() = self.clipboard.clone();
             }
         }
         Ok(())
@@ -159,6 +167,8 @@ pub enum ControlMessage {
     Animation(tunnels::animation::ControlMessage),
     Target(AnimationTargetIndex),
     SelectAnimation(usize),
+    Copy,
+    Paste,
 }
 
 #[derive(Clone, Debug)]
