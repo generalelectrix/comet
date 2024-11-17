@@ -83,6 +83,7 @@ impl AnimationUIState {
             }
             ControlMessage::Paste => {
                 *self.current_animation(channel, group)?.anim_mut() = self.clipboard.clone();
+                self.emit_state(channel, group, emitter)?;
             }
         }
         Ok(())
